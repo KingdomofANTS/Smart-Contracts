@@ -46,6 +46,14 @@ contract ANTCoin is ERC20, Ownable {
         currentCirculationSupply -= _amount;
     }
 
+    /**
+    * @notice Check address has minterRole
+    */
+
+    function getMinterRole(address _address) public view returns(bool) {
+        return minters[_address];
+    }
+
     // Function to grant mint role
     function addMinterRole(address _address) external onlyOwner {
         minters[_address] = true;
