@@ -31,7 +31,7 @@ contract ANTCoin is ERC20, Ownable {
     */
 
     function mint(address receipt, uint256 _amount) public onlyMinter {
-        require(currentCirculationSupply + _amount > maxCirculationSupply, "ANTCoin: Mint amount exceed Max Circulation Supply");
+        require(currentCirculationSupply + _amount <= maxCirculationSupply, "ANTCoin: Mint amount exceed Max Circulation Supply");
         _mint(receipt, _amount);
         currentCirculationSupply += _amount;
     }
@@ -41,9 +41,17 @@ contract ANTCoin is ERC20, Ownable {
     * @param _amount The amount to mint the tokens
     */
 
-    function burn(address account, uint256 _amount) external {
+    function burn(address account, uint256 _amount) external onlyMinter {
         _burn(account, _amount);
         currentCirculationSupply -= _amount;
+    }
+
+    /**
+    * @notice Check address has minterRole
+    */
+
+    function getMinterRole(address _address) public view returns(bool) {
+        return minters[_address];
     }
 
     // Function to grant mint role

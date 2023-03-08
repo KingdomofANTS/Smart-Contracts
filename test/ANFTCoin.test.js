@@ -1,0 +1,97 @@
+const { expect } = require("chai");
+const { BigNumber } = require("ethers");
+const { ethers } = require("hardhat")
+
+describe("ANTCoin", function () {
+    let ANTCoin, ANTCoinContract;
+
+    beforeEach(async function () {
+        [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
+
+        // ANTCoin smart contract deployment
+        ANTCoin = await ethers.getContractFactory("ANTCoin");
+        ANTCoinContract = await ANTCoin.deploy();
+        await ANTCoinContract.deployed();
+    });
+
+    describe("Test Suite", function () {
+        it("Should set the right owner", async function () {
+            const owner = await ANTCoinContract.owner();
+            expect(owner).to.be.equal(deployer.address);
+        });
+
+        it("addMinterRole: should fail if caller is not owner", async () => {
+            await expect(ANTCoinContract.connect(user1).addMinterRole(user2.address)).to.be.revertedWith("Ownable: caller is not the owner");
+        })
+
+        it("addMinterRole: should work if caller is owner", async () => {
+            await ANTCoinContract.addMinterRole(user1.address);
+            const role = await ANTCoinContract.getMinterRole(user1.address);
+            expect(role).to.be.equal(true);
+        })
+
+        it("revokeMinterRole: should fail if caller is not owner", async () => {
+            await expect(ANTCoinContract.connect(badActor).revokeMinterRole(user2.address)).to.be.revertedWith("Ownable: caller is not the owner");
+        })
+
+        it("revokeMinterRole: should work if caller is owner", async () => {
+            await ANTCoinContract.addMinterRole(user1.address);
+            const role1 = await ANTCoinContract.getMinterRole(user1.address);
+            expect(role1).to.be.equal(true);
+            await ANTCoinContract.revokeMinterRole(user1.address);
+            const role2 = await ANTCoinContract.getMinterRole(user1.address);
+            expect(role2).to.be.equal(false);
+        })
+
+        it("mint: should fail if caller is not minter", async () => {
+            await expect(ANTCoinContract.connect(badActor).mint(user1.address, 10000)).to.be.revertedWith("ANTCoin: Caller is not the minter");
+        })
+        
+        it("mint: should fail if mint amount exceed the max circulation supply", async () => {
+            const maxCirculationSupply = await ANTCoinContract.maxCirculationSupply();
+            await expect(ANTCoinContract.mint(user1.address, maxCirculationSupply + 1)).to.be.revertedWith("ANTCoin: Mint amount exceed Max Circulation Supply");
+        })
+
+        it("mint: should work if caller is minter", async () => {
+            await ANTCoinContract.mint(user1.address, 1000000);
+            const expected = await ANTCoinContract.balanceOf(user1.address);
+            expect(expected).to.be.equal(1000000);
+        })
+
+        it("burn: should fail if caller is not minter", async () => {
+            await expect(ANTCoinContract.connect(badActor).burn(user1.address, 10000)).to.be.revertedWith("ANTCoin: Caller is not the minter");
+        })
+
+        it("burn: burn function should work", async () => {
+            const mintAmount = 1000000;
+            await ANTCoinContract.addMinterRole(user3.address);
+            await ANTCoinContract.mint(user1.address, mintAmount);
+            const balance1 = await ANTCoinContract.balanceOf(user1.address);
+            expect(balance1).to.be.equal(mintAmount);
+            await ANTCoinContract.connect(user3).burn(user1.address, mintAmount);
+            const balance2 = await ANTCoinContract.balanceOf(user1.address);
+            expect(balance2).to.be.equal(0);
+        })
+
+        it("currentCirculationSupply: should be calculated correctly if minter mint or burn ANTCoint tokens", async () => {
+            const mintAmount = BigNumber.from("100000000");
+            const initialMintAmount = BigNumber.from("100000000000000000000000000"); // 100 million
+            const maxCirculationSupply = await ANTCoinContract.maxCirculationSupply();
+            await ANTCoinContract.addMinterRole(user1.address);
+            const currentCirculationSupply1 = await ANTCoinContract.currentCirculationSupply();
+            expect(currentCirculationSupply1).to.be.equal(initialMintAmount);
+            await ANTCoinContract.connect(user1).mint(user2.address, mintAmount);
+            const currentCirculationSupply2 = await ANTCoinContract.currentCirculationSupply();
+            expect(currentCirculationSupply2).to.be.equal(initialMintAmount.add(mintAmount));
+            await ANTCoinContract.connect(user1).mint(user2.address, mintAmount);
+            const currentCirculationSupply3 = await ANTCoinContract.currentCirculationSupply();
+            expect(currentCirculationSupply3).to.be.equal(initialMintAmount.add(mintAmount.mul(2)));
+            await expect(ANTCoinContract.connect(user1).mint(user2.address, maxCirculationSupply.sub(initialMintAmount.add(mintAmount.mul(2))))).to.be.not.reverted;
+            await expect(ANTCoinContract.connect(user1).mint(user2.address, 1)).to.be.revertedWith("ANTCoin: Mint amount exceed Max Circulation Supply");
+            await ANTCoinContract.connect(user1).burn(user2.address, mintAmount.mul(2));
+            await expect(ANTCoinContract.connect(user1).mint(user2.address, mintAmount)).to.be.not.reverted;
+            await expect(ANTCoinContract.connect(user1).mint(user2.address, mintAmount)).to.be.not.reverted;
+            await expect(ANTCoinContract.connect(user1).mint(user2.address, mintAmount)).to.be.revertedWith("ANTCoin: Mint amount exceed Max Circulation Supply");
+        })
+    });
+});
