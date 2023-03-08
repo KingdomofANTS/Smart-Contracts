@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract ANTCoin is ERC20, Ownable {
 
     // Max Circulation Supply Amount
-    uint256 public constant maxCirculationSupply = 200000000 ether;
+    uint256 public constant maxCirculationSupply = 200000000 ether; // 200 million
     // Current Circulation Supply Amount
     uint256 public currentCirculationSupply = 0;
     // minters
@@ -20,6 +20,7 @@ contract ANTCoin is ERC20, Ownable {
 
     constructor() ERC20("ANT Coin", "ANTC") {
         minters[_msgSender()] = true;
+        mint(_msgSender(), 100000000 ether); // 100 million
     }
 
     /**
