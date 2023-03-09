@@ -93,5 +93,29 @@ describe("ANTCoin", function () {
             await expect(ANTCoinContract.connect(user1).mint(user2.address, mintAmount)).to.be.not.reverted;
             await expect(ANTCoinContract.connect(user1).mint(user2.address, mintAmount)).to.be.revertedWith("ANTCoin: Mint amount exceed Max Circulation Supply");
         })
+
+        it("setPaused: should fail if caller is not the owner", async () => {
+            await expect(ANTCoinContract.connect(user1).setPaused(true)).to.be.revertedWith("Ownable: caller is not the owner")
+        })
+
+        it("setPaused: if paused, all transfer, mint and burn functions should be passed", async () => {
+            await ANTCoinContract.setPaused(true);
+            await expect(ANTCoinContract.mint(user1.address, 1000000)).to.be.revertedWith("Pausable: paused");
+            await expect(ANTCoinContract.burn(user1.address, 1000000)).to.be.revertedWith("Pausable: paused");
+            await expect(ANTCoinContract.transferFrom(deployer.address, user1.address, 1000000)).to.be.revertedWith("Pausable: paused");
+            await expect(ANTCoinContract.transfer(user1.address, 1000000)).to.be.revertedWith("Pausable: paused");
+            await ANTCoinContract.setPaused(false);
+            await expect(ANTCoinContract.mint(user1.address, 1000000)).to.be.not.reverted;
+            await expect(ANTCoinContract.burn(user1.address, 1000000)).to.be.not.reverted;
+            const ownerBalance = await ANTCoinContract.balanceOf(deployer.address);
+            console.log(ownerBalance)
+            await ANTCoinContract.approve(user1.address, 10000);
+            await ANTCoinContract.connect(user1).transferFrom(deployer.address, user1.address, 10000);
+            const expectedBalance1 = await ANTCoinContract.balanceOf(user1.address);
+            expect(expectedBalance1).to.be.equal(10000);
+            await expect(ANTCoinContract.transfer(user2.address, 10000)).to.be.not.reverted;
+            const expectedBalance2 = await ANTCoinContract.balanceOf(user2.address);
+            expect(expectedBalance2).to.be.equal(10000);
+        })
     });
 });
