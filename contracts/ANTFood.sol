@@ -140,6 +140,26 @@ contract ANTFood is ERC20, IANTFood, Ownable, ReentrancyGuard, Pausable {
     }
 
     /**
+    * @notice Override `transferFrom` function
+    */
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override whenNotPaused returns (bool) {
+        return super.transferFrom(from, to, amount);
+    }
+
+    /**
+    * @notice Override `transfer` function
+    */
+
+    function transfer(address to, uint256 amount) public virtual override whenNotPaused returns (bool) {
+        return super.transfer(to, amount);
+    }
+
+    /**
     *   ██████  ██     ██ ███    ██ ███████ ██████
     *  ██    ██ ██     ██ ████   ██ ██      ██   ██
     *  ██    ██ ██  █  ██ ██ ██  ██ █████   ██████
@@ -163,7 +183,7 @@ contract ANTFood is ERC20, IANTFood, Ownable, ReentrancyGuard, Pausable {
     * @param _amount The amount to mint the tokens
     */
 
-    function burn(address account, uint256 _amount) external override onlyMinter {
+    function burn(address account, uint256 _amount) external override whenNotPaused onlyMinter {
         _burn(account, _amount);
     }
 
