@@ -94,6 +94,22 @@ contract ANTFood is ERC20, Ownable {
     * ███████ ██   ██    ██
     * This section has external functions
     */
+    
+    /**
+    * @notice Check address has minterRole
+    */
+
+    function getMinterRole(address _address) public view returns(bool) {
+        return minters[_address];
+    }
+    
+    /**
+    * @notice Override ANTFood token decimal to 1
+    */
+
+    function decimals() public view virtual override returns (uint8) {
+        return 1;
+    }
 
     /**
     * @notice Mint ANT Food tokens to receipt address
