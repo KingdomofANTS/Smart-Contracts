@@ -42,9 +42,11 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import '@openzeppelin/contracts/security/Pausable.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import "./interfaces/IANTFood.sol";
 
-contract ANTFood is ERC20, IANTFood, Ownable {
+contract ANTFood is ERC20, IANTFood, Ownable, ReentrancyGuard, Pausable {
 
     // Mint method. true => Matic mint, false => mint with tokens
     bool public mintMethod = false;
@@ -125,7 +127,7 @@ contract ANTFood is ERC20, IANTFood, Ownable {
     * @param _amount The amount to mint the tokens
     */
 
-    function mint(address receipt, uint256 _amount) public payable {
+    function mint(address receipt, uint256 _amount) public payable whenNotPaused nonReentrant {
         if(mintMethod) {
             require(msg.value >= mintPrice * _amount, "ANTFood: Pay amount is not enough to mint");
         }
@@ -214,6 +216,14 @@ contract ANTFood is ERC20, IANTFood, Ownable {
     function setTokenAmountForMint(uint256 _tokenAmount) external onlyOwner {
         require(_tokenAmount > 0, "ANTFood: Token amount must be greater than zero");
         tokenAmountForMint = _tokenAmount;
+    }
+    
+    /**
+    * enables owner to pause / unpause contract
+    */
+    function setPaused(bool _paused) external onlyOwner {
+        if (_paused) _pause();
+        else _unpause();
     }
 
    /**
