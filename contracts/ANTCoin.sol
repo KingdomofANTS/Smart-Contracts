@@ -81,6 +81,14 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     }
 
     /**
+    * @notice Check address has minterRole
+    */
+
+    function getMinterRole(address _address) public view returns(bool) {
+        return minters[_address];
+    }
+
+    /**
     * @notice Mint ANT Coin tokens to receipt address
     * @dev Modifer to require msg.sender to be minter
     * @param receipt Receipt address to mint the tokens
@@ -103,6 +111,14 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
         uint256 amount
     ) public virtual override whenNotPaused returns (bool) {
         return super.transferFrom(from, to, amount);
+    }
+
+    /**
+    * @notice Override `transfer` function of ERC20 token
+    */
+
+    function transfer(address to, uint256 amount) public virtual override whenNotPaused returns (bool) {
+        return super.transfer(to, amount);
     }
 
     /**
