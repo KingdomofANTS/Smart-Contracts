@@ -42,8 +42,9 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IANTCoin.sol";
 
-contract ANTCoin is ERC20, Ownable {
+contract ANTCoin is ERC20, IANTCoin, Ownable {
 
     // Max Circulation Supply Amount
     uint256 public constant maxCirculationSupply = 200000000 ether; // 200 million
@@ -95,10 +96,17 @@ contract ANTCoin is ERC20, Ownable {
     * @param _amount The amount to mint the tokens
     */
 
-    function mint(address receipt, uint256 _amount) public onlyMinter {
+    function mint(address receipt, uint256 _amount) public override onlyMinter {
         require(currentCirculationSupply + _amount <= maxCirculationSupply, "ANTCoin: Mint amount exceed Max Circulation Supply");
         _mint(receipt, _amount);
         currentCirculationSupply += _amount;
+    }
+
+    /**
+     * @dev See {IERC20-balanceOf}.
+     */
+    function balanceOf(address account) public view override(ERC20, IANTCoin) returns (uint256) {
+        return super.balanceOf(account);
     }
 
     /**
@@ -106,7 +114,7 @@ contract ANTCoin is ERC20, Ownable {
     * @param _amount The amount to mint the tokens
     */
 
-    function burn(address account, uint256 _amount) external onlyMinter {
+    function burn(address account, uint256 _amount) external override onlyMinter {
         _burn(account, _amount);
         currentCirculationSupply -= _amount;
     }
