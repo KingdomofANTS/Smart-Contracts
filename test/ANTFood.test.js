@@ -194,7 +194,27 @@ describe("ANTFood", function () {
             const contractBalance2 = await ANTCoinContract.balanceOf(ANTFoodContract.address);
             expect(contractBalance2).to.be.equal(0);
             const expectedBalance = await ANTCoinContract.balanceOf(user2.address);
-            expect(expectedBalance).to.be.equal(tokenAmountForMint);  
+            expect(expectedBalance).to.be.equal(tokenAmountForMint);
+        })
+
+        it("setPaused: should fail if caller is not the owner", async () => {
+            await expect(ANTFoodContract.connect(badActor).setPaused(true)).to.be.revertedWith("Ownable: caller is not the owner");
+        })
+
+        it("setPaused: if unpaused, mint function should not work", async () => {
+            const mintPrice = await ANTFoodContract.mintPrice();
+            await ANTFoodContract.setMintMethod(true);
+            await ANTFoodContract.connect(user1).mint(user1.address, 1, { value: mintPrice });
+            await ANTFoodContract.setPaused(true);
+            await expect(ANTFoodContract.connect(user1).mint(user1.address, 1)).to.be.revertedWith("Pausable: paused")
+            await expect(ANTFoodContract.connect(user1).transfer(user2.address, 1)).to.be.revertedWith("Pausable: paused");
+            await expect(ANTFoodContract.connect(user1).burn(user1.address, 1)).to.be.revertedWith("Pausable: paused");
+            await expect(ANTFoodContract.connect(user1).transferFrom(user1.address, user2.address, 1)).to.be.revertedWith("Pausable: paused");
+            await ANTFoodContract.setPaused(false);
+            await expect(ANTFoodContract.mint(user1.address, 1, { value: mintPrice })).to.be.not.reverted;
+            await expect(ANTFoodContract.connect(user1).transfer(user2.address, 1)).to.be.not.reverted;
+            await ANTFoodContract.connect(user1).approve(user2.address, 1);
+            await expect(ANTFoodContract.connect(user2).transferFrom(user1.address, user2.address, 1)).to.be.not.reverted;
         })
     })
 });
