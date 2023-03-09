@@ -42,8 +42,9 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IANTFood.sol";
 
-contract ANTFood is ERC20, Ownable {
+contract ANTFood is ERC20, IANTFood, Ownable {
 
     // Mint method. true => Matic mint, false => mint with tokens
     bool public mintMethod = false;
@@ -94,6 +95,13 @@ contract ANTFood is ERC20, Ownable {
     * ███████ ██   ██    ██
     * This section has external functions
     */
+
+    /**
+     * @dev See {IERC20-balanceOf}.
+     */
+    function balanceOf(address account) public view override(ERC20, IANTFood) returns (uint256) {
+        return super.balanceOf(account);
+    }
     
     /**
     * @notice Check address has minterRole
@@ -153,7 +161,7 @@ contract ANTFood is ERC20, Ownable {
     * @param _amount The amount to mint the tokens
     */
 
-    function burn(address account, uint256 _amount) external onlyMinter {
+    function burn(address account, uint256 _amount) external override onlyMinter {
         _burn(account, _amount);
     }
 
