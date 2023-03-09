@@ -1,4 +1,43 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
+
+/*
+W: https://kingdomofants.io 
+
+                ▒▒██            ██▒▒                
+                    ██        ██                    
+                    ██  ████  ██                    
+                    ████▒▒▒▒████                    
+████              ██▒▒▒▒▒▒▒▒▒▒▒▒██              ████
+██▒▒██            ██▒▒██▒▒▒▒██▒▒██            ██▒▒██
+██▒▒██            ██▒▒██▒▒▒▒██▒▒██            ██▒▒██
+  ██              ██▒▒▒▒▒▒▒▒▒▒▒▒██              ██  
+    ██            ██▒▒██▒▒▒▒██▒▒██            ██    
+      ██          ▓▓▒▒▒▒████▒▒▒▒██          ██      
+        ██          ████████████          ██        
+          ██          ██▒▒▒▒██          ██          
+            ██████████▒▒▒▒▒▒▒▒██████████            
+                    ██▒▒▒▒▒▒▒▒██                    
+          ████████████▒▒▒▒▒▒▒▒████████████          
+        ██          ██▒▒▒▒▒▒▒▒██          ██        
+      ██            ██▒▒▒▒▒▒▒▒██            ██      
+    ██            ████▒▒▒▒▒▒▒▒████            ██    
+  ██            ██    ████████    ██            ██  
+██▒▒██        ██    ██▒▒▒▒▒▒▒▒██    ██        ██▒▒██
+██▒▒██      ██      ██▒▒▒▒▒▒▒▒██      ██      ██▒▒██
+████      ██        ██▒▒▒▒▒▒▒▒██        ██      ████
+        ██          ██▒▒▒▒▒▒▒▒██          ██        
+        ██          ██▒▒▒▒▒▒▒▒██          ██        
+        ██          ██▒▒▒▒▒▒▒▒██          ██        
+        ██          ██▒▒▒▒▒▒▒▒██          ██        
+        ██            ██▒▒▒▒██            ██        
+      ████            ██▒▒▒▒██            ████      
+    ██▒▒██              ████              ██▒▒██    
+    ██████                                ██████    
+
+* Howdy folks! Thanks for glancing over our contracts
+* Y'all have a nice day! Enjoy the game
+*/
+
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -24,6 +63,15 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
         minters[_msgSender()] = true;
         mint(_msgSender(), 100000000 ether); // 100 million
     }
+
+    /**
+    * ███████ ██   ██ ████████
+    * ██       ██ ██     ██
+    * █████     ███      ██
+    * ██       ██ ██     ██
+    * ███████ ██   ██    ██
+    * This section has external functions
+    */
 
     /**
      * @dev See {IERC20-balanceOf}.
@@ -58,6 +106,15 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     }
 
     /**
+    *   ██████  ██     ██ ███    ██ ███████ ██████
+    *  ██    ██ ██     ██ ████   ██ ██      ██   ██
+    *  ██    ██ ██  █  ██ ██ ██  ██ █████   ██████
+    *  ██    ██ ██ ███ ██ ██  ██ ██ ██      ██   ██
+    *   ██████   ███ ███  ██   ████ ███████ ██   ██
+    * This section will have all the internals set to onlyOwner
+    */
+
+    /**
     * @notice Burn ANT Coin tokens
     * @param _amount The amount to mint the tokens
     */
@@ -65,14 +122,6 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     function burn(address account, uint256 _amount) external override whenNotPaused onlyMinter {
         _burn(account, _amount);
         currentCirculationSupply -= _amount;
-    }
-
-    /**
-    * @notice Check address has minterRole
-    */
-
-    function getMinterRole(address _address) public view returns(bool) {
-        return minters[_address];
     }
 
     // Function to grant mint role
