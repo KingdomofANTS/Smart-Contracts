@@ -172,7 +172,7 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     */
 
     function burn(uint256 typeId, uint256 quantity, address burnFrom) external override whenNotPaused onlyMinter {
-        require(typeInfo[typeId].mints > 0, "ANTShop: None minted");
+        require(typeInfo[typeId].mints - typeInfo[typeId].burns > 0, "ANTShop: None minted");
         typeInfo[typeId].burns += quantity;
         _burn(burnFrom , typeId, quantity);
         emit Burn(typeId, burnFrom, quantity);
