@@ -153,6 +153,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
         mintInfo[_typeId].tokenAddressForMint = _tokenAddressForMint;
         mintInfo[_typeId].tokenAmountForMint = _tokenAmountForMint;
         mintInfo[_typeId].isSet = true;
+        mintInfo[_typeId].mintMethod = true;
     }
 
     /**
