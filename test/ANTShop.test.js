@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat")
 
-describe.skip("ANTFood", function () {
+describe("ANTFood", function () {
     let ANTShop, ANTShopContract;
 
     beforeEach(async function () {
