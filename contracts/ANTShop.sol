@@ -107,6 +107,14 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     }
 
     /**
+    * @notice Check address has minterRole
+    */
+
+    function getMinterRole(address _address) public view returns(bool) {
+        return minters[_address];
+    }
+
+    /**
     * @notice A distinct Uniform Resource Identifier (URI) for a given asset.
     * @dev See {IERC721Metadata-tokenURI}.
     */
@@ -123,6 +131,22 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     *   ██████   ███ ███  ██   ████ ███████ ██   ██
     * This section will have all the internals set to onlyOwner
     */
+
+    /**
+    * @notice Function to grant mint role
+    * @param _address address to get minter role
+    */
+    function addMinterRole(address _address) external onlyOwner {
+        minters[_address] = true;
+    }
+
+    /**
+    * @notice Function to revoke mint role
+    * @param _address address to revoke minter role
+    */
+    function revokeMinterRole(address _address) external onlyOwner {
+        minters[_address] = false;
+    }
 
     /**
     * @notice Mint tokens to recipient address
