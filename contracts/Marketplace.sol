@@ -135,6 +135,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     */
 
     function setMintInfo(uint256 _typeId, uint256 _mintPrice, address _tokenAddressForMint, uint256 _tokenAmountForMint) external onlyOwner {
+        require(_tokenAddressForMint != address(0x0), "Marketplace: token address can't be a null address");
         mintInfo[_typeId].mintPrice = _mintPrice;
         mintInfo[_typeId].tokenAddressForMint = _tokenAddressForMint;
         mintInfo[_typeId].tokenAmountForMint = _tokenAmountForMint;
