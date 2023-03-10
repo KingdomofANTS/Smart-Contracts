@@ -97,6 +97,9 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
 
     /**
     * @notice Sell ANTShop Tokens
+    * @param _typeId type id for mint info 0 => ANTFood, 1 => Leveling Potion
+    * @param _quantity ANTShop mint tokens number
+    * @param _receipient buy token recipient wallet address
     */
 
     function buyTokens(uint256 _typeId, uint256 _quantity, address _receipient) external payable whenNotPaused nonReentrant {
@@ -114,6 +117,16 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
             IERC20(_mintInfo.tokenAddressForMint).transferFrom(_msgSender(), address(this), _mintInfo.tokenAmountForMint * _quantity);
         }
         ANTShop.mint(_typeId, _quantity, _receipient);
+    }
+
+    /**
+    * @notice Return Mint information(mint price, token address and amount for mint)
+    * @param _typeId type id for mint info 0 => ANTFood, 1 => Leveling Potion
+    */
+
+    function getMintInfo(uint256 _typeId) external view returns(MintInfo memory) {
+        require(mintInfo[_typeId].isSet, "Marketplace: Mint information not set yet");
+        return mintInfo[_typeId];
     }
 
     /**
