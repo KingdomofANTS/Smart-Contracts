@@ -108,7 +108,6 @@ describe("ANTCoin", function () {
             await expect(ANTCoinContract.mint(user1.address, 1000000)).to.be.not.reverted;
             await expect(ANTCoinContract.burn(user1.address, 1000000)).to.be.not.reverted;
             const ownerBalance = await ANTCoinContract.balanceOf(deployer.address);
-            console.log(ownerBalance)
             await ANTCoinContract.approve(user1.address, 10000);
             await ANTCoinContract.connect(user1).transferFrom(deployer.address, user1.address, 10000);
             const expectedBalance1 = await ANTCoinContract.balanceOf(user1.address);

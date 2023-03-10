@@ -112,8 +112,8 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
         }
         else {
             require(_mintInfo.tokenAddressForMint != address(0x0), "Marketplace: token address can't be null");
-            require(IERC20(_mintInfo.tokenAddressForMint).balanceOf(_msgSender()) > _mintInfo.tokenAmountForMint * _quantity, "Marketplace: Insufficient Tokens");
-            require(IERC20(_mintInfo.tokenAddressForMint).allowance(_msgSender(), address(this)) > _mintInfo.tokenAmountForMint * _quantity, "Marketplace: Insufficient Tokens");
+            require(IERC20(_mintInfo.tokenAddressForMint).balanceOf(_msgSender()) >= _mintInfo.tokenAmountForMint * _quantity, "Marketplace: Insufficient Tokens");
+            require(IERC20(_mintInfo.tokenAddressForMint).allowance(_msgSender(), address(this)) >= _mintInfo.tokenAmountForMint * _quantity, "Marketplace: You should approve tokens for minting");
             IERC20(_mintInfo.tokenAddressForMint).transferFrom(_msgSender(), address(this), _mintInfo.tokenAmountForMint * _quantity);
         }
         ANTShop.mint(_typeId, _quantity, _receipient);
