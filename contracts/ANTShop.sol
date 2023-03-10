@@ -65,7 +65,7 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     event Burn(uint256 typeId, address owner, uint256 quantity);
 
     constructor () ERC1155('') {
-
+      minters[_msgSender()] = true;
     }
 
     /**
