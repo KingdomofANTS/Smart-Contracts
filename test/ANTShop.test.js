@@ -8,7 +8,7 @@ describe("ANTFood", function () {
     beforeEach(async function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
 
-        // ANTFood smart contract deployment
+        // ANTShop smart contract deployment
         ANTShop = await ethers.getContractFactory("ANTShop");
         ANTShopContract = await ANTShop.deploy();
         await ANTShopContract.deployed();
