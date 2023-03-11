@@ -1,8 +1,7 @@
 const { expect } = require("chai");
-const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat")
 
-describe("ANTFood", function () {
+describe("Marketplace", function () {
     let ANTShop, ANTShopContract, Marketplace, MarketplaceContract, ANTCoin, ANTCoinContract;;
 
     beforeEach(async function () {
