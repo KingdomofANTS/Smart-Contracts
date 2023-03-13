@@ -50,7 +50,7 @@ import 'erc721a/contracts/extensions/ERC721AQueryable.sol';
 import './interfaces/IANTShop.sol';
 import './interfaces/IPremiumANTs.sol';
 
-contract PremiumAnt is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, ReentrancyGuard {
+contract PremiumANT is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, ReentrancyGuard {
 
     using Strings for uint256;
     using SafeMath for uint256;
@@ -223,7 +223,7 @@ contract PremiumAnt is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
 
         premiumBatches[batchIndex].minted += quantity;
         minted += quantity;
-        ANTShop.safeTransferFrom(_msgSender(), address(this), antFoodTokenId, batchInfo.mintPrice * quantity, '');
+        ANTShop.burn(antFoodTokenId, batchInfo.mintPrice * quantity, _msgSender());
         _mint(recipient, quantity);
         emit Mint(recipient, quantity);
     }
