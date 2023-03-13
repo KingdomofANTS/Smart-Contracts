@@ -236,7 +236,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
     * @param potionAmount Leveling potion amount for upgrading ant
     */
 
-    function upgradePremiumANT(uint256 tokenId, uint256 potionAmount) external {
+    function upgradePremiumANT(uint256 tokenId, uint256 potionAmount) external whenNotPaused {
         require(ownerOf(tokenId) == _msgSender(), "PremiumANT: you are not owner of this token");
         require(potionAmount > 0, "PremiumANT: leveling potion amount must be greater than zero");
         require(ANTShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "PremiumANT: you don't have enough potions for upgrading");
