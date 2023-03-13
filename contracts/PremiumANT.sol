@@ -211,7 +211,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
         uint256 tokenId = batchInfo.minted + 1;
         uint256 remainingPotions = 0;
         while (i < quantity) {
-            premiumANTs[tokenId] = ANTInfo({
+            premiumANTs[minted + i + 1] = ANTInfo({
                 level: startLevel,
                 remainPotions: remainingPotions,
                 batchIndex: batchIndex,
