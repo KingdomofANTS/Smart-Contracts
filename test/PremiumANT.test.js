@@ -177,6 +177,30 @@ describe("PremiumANT", function () {
                 expect(antInfo3.toString()).to.be.equal("20,0,1,29");
                 await expect(PremiumANTContract.connect(user1).mint(1, user1.address, 10)).to.be.revertedWith("PremiumANT: mint amount exceeds the maximum supply for this batch");
             })
+
+            it("ownerMint + userMint: should work", async () => {
+                await ANTShopContract.mint(0, 100, user1.address);
+                await PremiumANTContract.setBatchInfo(0, "name1", "testBaseURI1", 100, 2);
+                await PremiumANTContract.setBatchInfo(1, "name2", "testBaseURI2", 100, 1);
+                await PremiumANTContract.connect(user1).mint(0, user1.address, 2);
+                await PremiumANTContract.ownerMint(0, user1.address, 3);
+                await PremiumANTContract.connect(user1).mint(0, user1.address, 1);
+                const tokensOfOwner = await PremiumANTContract.tokensOfOwner(user1.address);
+                expect(tokensOfOwner.toString()).to.be.equal("1,2,3,4,5,6");
+                const testANTInfo1 = await PremiumANTContract.getANTInfo(2);
+                const testANTInfo2 = await PremiumANTContract.getANTInfo(4);
+                const testANTInfo3 = await PremiumANTContract.getANTInfo(6);
+                expect(testANTInfo1.toString()).to.be.equal("20,0,0,2");
+                expect(testANTInfo2.toString()).to.be.equal("20,0,0,4");
+                expect(testANTInfo3.toString()).to.be.equal("20,0,0,6");
+                const batchInfo = await PremiumANTContract.getBatchInfo(0);
+                expect(batchInfo.toString()).to.be.equal("name1,testBaseURI1,6,100,2")
+                await PremiumANTContract.ownerMint(1, user1.address, 1);
+                const batchInfo1 = await PremiumANTContract.getBatchInfo(1);
+                expect(batchInfo1.toString()).to.be.equal("name2,testBaseURI2,1,100,1")
+                const testANTInfo4 = await PremiumANTContract.getANTInfo(7);
+                expect(testANTInfo4.toString()).to.be.equal("20,0,1,1");
+            })
         })
 
         describe("upgradeMint", () => {
