@@ -68,6 +68,8 @@ contract PremiumANT is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
     uint256 public minted = 0;
     // start level of Premium ANTs
     uint256 public startLevel = 20;
+    // max level of Premium ANTs
+    uint256 public maxLevel = 40;
     // ANT Foood token id of ANTShop
     uint256 public antFoodTokenId = 0;
     // Leveling Potion token id of ANTShop
@@ -240,18 +242,28 @@ contract PremiumANT is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
         require(ANTShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "PremiumANT: you don't have enough potions for upgrading");
 
         ANTInfo storage antInfo = premiumANTs[tokenId];
+        require(antInfo.level < maxLevel, "Premium ANT: ant can no longer be upgraded");
         uint256 level = antInfo.level;
         uint256 remainPotions = antInfo.remainPotions + potionAmount;
 
         while (remainPotions >= level + 1) {
             level++;
             remainPotions -= level;
+            if(level >= maxLevel) {
+                break;
+            }
         }
 
         antInfo.level = level;
         antInfo.remainPotions = remainPotions;
 
-        ANTShop.burn(levelingPotionTokenId, potionAmount, _msgSender());
+        if(level >= maxLevel) {
+            ANTShop.burn(levelingPotionTokenId, potionAmount.sub(remainPotions), _msgSender());
+        }
+        else {
+            ANTShop.burn(levelingPotionTokenId, potionAmount, _msgSender());
+        }
+
         emit UpgradeANT(tokenId, _msgSender(), level);
     }
 
@@ -314,6 +326,16 @@ contract PremiumANT is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
 
     function setStartLevel(uint256 _startLevel) external onlyOwner {
         startLevel = _startLevel;
+    }
+
+    /**
+    * @notice Function to set the max level of Premium ANT
+    * @dev This function can only be called by the owner
+    * @param _maxLevel max level value
+    */
+
+    function setMaxLevel(uint256 _maxLevel) external onlyOwner {
+        maxLevel = _maxLevel;
     }
 
     /**
