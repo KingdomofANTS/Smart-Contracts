@@ -69,9 +69,9 @@ contract PremiumAnt is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
     // start level of Premium ANTs
     uint256 public startLevel = 20;
     // ANT Foood token id of ANTShop
-    uint256 public antFoodTokenId = 1;
+    uint256 public antFoodTokenId = 0;
     // Leveling Potion token id of ANTShop
-    uint256 public levelingPotionTokenId = 2;
+    uint256 public levelingPotionTokenId = 1;
 
     // Upgrade ANT Event
     event UpgradeANT(uint256 tokenId, address owner, uint256 currentLevel);
