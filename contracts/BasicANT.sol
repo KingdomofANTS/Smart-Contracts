@@ -48,9 +48,9 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import 'erc721a/contracts/extensions/ERC721AQueryable.sol';
 import './interfaces/IANTShop.sol';
-import './interfaces/IPremiumANT.sol';
+import './interfaces/IBasicANT.sol';
 
-contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, ReentrancyGuard {
+contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyGuard {
 
     using Strings for uint256;
     using SafeMath for uint256;
@@ -60,15 +60,15 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
 
     // minters
     mapping(address => bool) private minters;
-    // info of Premium ANTs
-    mapping(uint256 => ANTInfo) public premiumANTs;
-    // info of Premium Batch
-    mapping(uint256 => BatchInfo) public premiumBatches;
-    // total number of minted Premium ANT
+    // info of Basic ANTs
+    mapping(uint256 => ANTInfo) public basicANTs;
+    // info of Basic Batch
+    mapping(uint256 => BatchInfo) public basicBatches;
+    // total number of minted Basic ANT
     uint256 public minted = 0;
-    // start level of Premium ANTs
-    uint256 public startLevel = 20;
-    // max level of Premium ANTs
+    // start level of Basic ANTs
+    uint256 public startLevel = 1;
+    // max level of Basic ANTs
     uint256 public maxLevel = 40;
     // ANT Foood token id of ANTShop
     uint256 public antFoodTokenId = 0;
@@ -82,11 +82,11 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
 
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
-        require(minters[_msgSender()], 'PremiumANT: Caller is not the minter');
+        require(minters[_msgSender()], 'BasicANT: Caller is not the minter');
         _;
     }
 
-    constructor(IANTShop _antShop) ERC721A('Premium ANT', 'ANTP') {
+    constructor(IANTShop _antShop) ERC721A('Basic ANT', 'ANTB') {
         ANTShop = _antShop;
         minters[_msgSender()] = true;
     }
@@ -117,6 +117,17 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     /**
+    * @notice Transfer ETH and return the success status.
+    * @dev This function only forwards 30,000 gas to the callee.
+    * @param to Address for ETH to be send to
+    * @param value Amount of ETH to send
+    */
+    function _safeTransferETH(address to, uint256 value) internal returns (bool) {
+        (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
+        return success;
+    }
+
+    /**
     * ███████ ██   ██ ████████
     * ██       ██ ██     ██
     * █████     ███      ██
@@ -142,7 +153,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     function getANTExperience(uint256 tokenId) external view returns(uint256) {
-        ANTInfo memory ant = premiumANTs[tokenId];
+        ANTInfo memory ant = basicANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
         uint256 remainderPotions = ant.remainPotions;
         uint256 experience = (totalPotions + remainderPotions) * 10 + (ant.level * 10 + remainderPotions * 10 / ant.level) * 2;
@@ -150,10 +161,10 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     /**
-    * @notice Override `transferFrom` function for IPremiumANTs interface
+    * @notice Override `transferFrom` function for IBasicANT interface
     */
 
-    function transferFrom(address from, address to, uint256 _tokenId) public payable override(ERC721A, IERC721A, IPremiumANT) {
+    function transferFrom(address from, address to, uint256 _tokenId) public payable override(ERC721A, IERC721A, IBasicANT) {
         super.transferFrom(from, to, _tokenId);
     }
 
@@ -171,49 +182,55 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     function getBatchInfo(uint256 batchIndex) public view returns(BatchInfo memory) {
-        return premiumBatches[batchIndex];
+        return basicBatches[batchIndex];
     }
 
     /**
-    * @notice Return Premium ANT information including level, mintedNums, batchIndex, ...
-    * @param tokenId tokenId to get Premium ANT information
+    * @notice Return Basic ANT information including level, mintedNums, batchIndex, ...
+    * @param tokenId tokenId to get Basic ANT information
     */
 
     function getANTInfo(uint256 tokenId) public view returns(ANTInfo memory) {
-        return premiumANTs[tokenId];
+        return basicANTs[tokenId];
     }
 
     /**
     * @notice Override `tokenURI` function of ERC721A
-    * @param tokenId tokenId to get Premium ANT metadata
+    * @param tokenId tokenId to get Basic ANT metadata
     */
 
     function tokenURI(uint256 tokenId) public view override(ERC721A, IERC721A) returns(string memory) {
-        require(tokenId <= totalSupply(), 'PremiumANT: Token does not exist.');
-        ANTInfo memory _antInfo = premiumANTs[tokenId];
-        BatchInfo memory _batchInfo = premiumBatches[_antInfo.batchIndex];
-        return string(abi.encodePacked(_batchInfo.baseURI, _antInfo.tokenIdOfBatch.toString(), '.json'));
+        require(tokenId <= totalSupply(), 'BasicANT: Token does not exist.');
+        ANTInfo memory _antInfo = basicANTs[tokenId];
+        BatchInfo memory _batchInfo = basicBatches[_antInfo.batchIndex];
+        return string(abi.encodePacked(_batchInfo.baseURI));
     }
 
     /**
-    * @notice Mint Premium ANTs
-    * @param batchIndex batch index for Premium ANT mint
-    * @param recipient recipient wallet address to get a new Premium ANTs
+    * @notice Mint Basic ANTs
+    * @param batchIndex batch index for Basic ANT mint
+    * @param recipient recipient wallet address to get a new Basic ANTs
     * @param quantity the number of tokens to mint
     */
 
-    function mint(uint256 batchIndex, address recipient, uint256 quantity) external whenNotPaused {
-        BatchInfo storage batchInfo = premiumBatches[batchIndex];
-        require(recipient == tx.origin, 'PremiumANT: caller is not minter');
-        require(batchInfo.maxSupply > 0, "PremiumANT: batch information has not yet been set");
-        require(batchInfo.minted + quantity <= batchInfo.maxSupply, "PremiumANT: mint amount exceeds the maximum supply for this batch");
-        require(ANTShop.balanceOf(_msgSender(), antFoodTokenId) >= batchInfo.mintPrice * quantity, "PremiumANT: insufficient balance");
+    function mint(uint256 batchIndex, address recipient, uint256 quantity) external payable whenNotPaused {
+        BatchInfo storage batchInfo = basicBatches[batchIndex];
+        require(recipient == tx.origin, 'BasicANT: caller is not minter');
+        if(batchInfo.mintMethod){
+            // Matic mint
+            require(msg.value >= batchInfo.mintPrice * quantity, 'BasicANT: insufficient Matic');
+        }
+        else {
+            require(IERC20(batchInfo.tokenAddressForMint).balanceOf(_msgSender()) >= batchInfo.tokenAmountForMint * quantity, "BasicANT: insufficient Tokens");
+            require(IERC20(batchInfo.tokenAddressForMint).allowance(_msgSender(), address(this)) >= batchInfo.tokenAmountForMint * quantity, "BasicANT: You should approve tokens for minting");
+            IERC20(batchInfo.tokenAddressForMint).transferFrom(_msgSender(), address(this), batchInfo.tokenAmountForMint * quantity);
+        }
 
         uint256 i = 0;
         uint256 tokenId = batchInfo.minted + 1;
         uint256 remainingPotions = 0;
         while (i < quantity) {
-            premiumANTs[minted + i + 1] = ANTInfo({
+            basicANTs[minted + i + 1] = ANTInfo({
                 level: startLevel,
                 remainPotions: remainingPotions,
                 batchIndex: batchIndex,
@@ -223,26 +240,25 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
             i++;
         }
 
-        premiumBatches[batchIndex].minted += quantity;
+        basicBatches[batchIndex].minted += quantity;
         minted += quantity;
-        ANTShop.burn(antFoodTokenId, batchInfo.mintPrice * quantity, _msgSender());
         _mint(recipient, quantity);
         emit Mint(recipient, quantity);
     }
 
     /**
-    * @notice Upgrade Premium ANTs with Leveling Potions
-    * @param tokenId Premium ant token id for upgrading
+    * @notice Upgrade Basic ANTs with Leveling Potions
+    * @param tokenId Basic ant token id for upgrading
     * @param potionAmount Leveling potion amount for upgrading ant
     */
 
-    function upgradePremiumANT(uint256 tokenId, uint256 potionAmount) external whenNotPaused {
-        require(ownerOf(tokenId) == _msgSender(), "PremiumANT: you are not owner of this token");
-        require(potionAmount > 0, "PremiumANT: leveling potion amount must be greater than zero");
-        require(ANTShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "PremiumANT: you don't have enough potions for upgrading");
+    function upgradeBasicANT(uint256 tokenId, uint256 potionAmount) external whenNotPaused {
+        require(ownerOf(tokenId) == _msgSender(), "BasicANT: you are not owner of this token");
+        require(potionAmount > 0, "BasicANT: leveling potion amount must be greater than zero");
+        require(ANTShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "BasicANT: you don't have enough potions for upgrading");
 
-        ANTInfo storage antInfo = premiumANTs[tokenId];
-        require(antInfo.level < maxLevel, "Premium ANT: ant can no longer be upgraded");
+        ANTInfo storage antInfo = basicANTs[tokenId];
+        require(antInfo.level < maxLevel, "BasicANT: ant can no longer be upgraded");
         uint256 level = antInfo.level;
         uint256 remainPotions = antInfo.remainPotions + potionAmount;
 
@@ -278,23 +294,21 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     /**
-    * @notice Function to mint Premium ANTs for free if caller is a minter
+    * @notice Function to mint Basic ANTs for free if caller is a minter
     * @dev This function can only be called by the owner
-    * @param _batchIndex batch index for Premium ANT mint
-    * @param recipient recipient wallet address to get a new Premium ANTs
+    * @param _batchIndex batch index for Basic ANT mint
+    * @param recipient recipient wallet address to get a new Basic ANTs
     * @param quantity the number of tokens to mint
     */
 
     function ownerMint(uint256 _batchIndex, address recipient, uint256 quantity) external onlyMinter {
-        BatchInfo storage batchInfo = premiumBatches[_batchIndex];
-        require(batchInfo.maxSupply > 0, "PremiumANT: batch information has not yet been set");
-        require(batchInfo.minted + quantity <= batchInfo.maxSupply, "PremiumANT: mint amount exceeds the maximum supply for this batch");
+        BatchInfo storage batchInfo = basicBatches[_batchIndex];
 
         uint256 startMinted = batchInfo.minted;
         uint256 endMinted = startMinted + quantity;
 
-        for (uint256 i = startMinted + 1; i <= endMinted; i++) {
-            premiumANTs[i] = ANTInfo({
+        for (uint256 i = 1; i <= quantity; i++) {
+            basicANTs[minted + i] = ANTInfo({
                 level: startLevel,
                 remainPotions: 0,
                 batchIndex: _batchIndex,
@@ -308,19 +322,19 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     /**
-    * @notice Function to update Premium ANTs level
+    * @notice Function to update Basic ANTs level
     * @dev This function can only be called by the minter
-    * @param tokenId Premium ant token id for updating level
+    * @param tokenId Basic ant token id for updating level
     * @param newLevel the number of new level
     */
 
     function downgradeLevel(uint256 tokenId, uint256 newLevel) external onlyMinter {
-        premiumANTs[tokenId].level = newLevel;
-        premiumANTs[tokenId].remainPotions = 0;
+        basicANTs[tokenId].level = newLevel;
+        basicANTs[tokenId].remainPotions = 0;
     }
 
     /**
-    * @notice Function to set the start level of Premium ANT
+    * @notice Function to set the start level of Basic ANT
     * @dev This function can only be called by the owner
     * @param _startLevel start level value
     */
@@ -330,7 +344,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     /**
-    * @notice Function to set the max level of Premium ANT
+    * @notice Function to set the max level of Basic ANT
     * @dev This function can only be called by the owner
     * @param _maxLevel max level value
     */
@@ -363,16 +377,20 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @notice Function to set the batch info including name, baseURI, maxSupply
     * @dev This function can only be called by the owner
     * @param _batchIndex batch index to set the batch information
-    * @param _name Premium Batch name of batch index
-    * @param _baseURI Premium Batch baseURI of batch index
-    * @param _maxSupply Premium Batch maxSupply of batch index default => 1000
+    * @param _name Basic Batch name of batch index
+    * @param _baseURI Basic Batch baseURI of batch index
+    * @param _mintPrice Basic ANT mint price with Matic
+    * @param _tokenAddressFroMint token address for basic ant minting
+    * @param _tokenAmountForMint token amount for basic ant minting
     */
 
-    function setBatchInfo(uint256 _batchIndex, string calldata _name, string calldata _baseURI, uint256 _maxSupply, uint256 _antFoodAmountForMint) external onlyOwner {
-        premiumBatches[_batchIndex].name = _name;
-        premiumBatches[_batchIndex].baseURI = _baseURI;
-        premiumBatches[_batchIndex].maxSupply = _maxSupply;
-        premiumBatches[_batchIndex].mintPrice = _antFoodAmountForMint;
+    function setBatchInfo(uint256 _batchIndex, string calldata _name, string calldata _baseURI, uint256 _mintPrice, address _tokenAddressFroMint, uint256 _tokenAmountForMint) external onlyOwner {
+        basicBatches[_batchIndex].name = _name;
+        basicBatches[_batchIndex].baseURI = _baseURI;
+        basicBatches[_batchIndex].mintPrice = _mintPrice;
+        basicBatches[_batchIndex].tokenAddressForMint = _tokenAddressFroMint;
+        basicBatches[_batchIndex].tokenAmountForMint = _tokenAmountForMint;
+        basicBatches[_batchIndex].mintMethod = true;
     }
 
     /**
@@ -399,5 +417,30 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
+    }
+
+    /**
+    * @notice Allows owner to withdraw ETH funds to an address
+    * @dev wraps _user in payable to fix address -> address payable
+    * @param to Address for ETH to be send to
+    * @param amount Amount of ETH to send
+    */
+    function withdraw(address payable to, uint256 amount) public onlyOwner {
+        require(_safeTransferETH(to, amount));
+    }
+
+    /**
+    * @notice Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract Address for the token
+    * @param to Address for token to be send to
+    * @param amount Amount of token to send
+    */
+    function withdrawToken(
+        address _tokenContract,
+        address to,
+        uint256 amount
+    ) public onlyOwner {
+        IERC20 tokenContract = IERC20(_tokenContract);
+        tokenContract.transfer(to, amount);
     }
 }

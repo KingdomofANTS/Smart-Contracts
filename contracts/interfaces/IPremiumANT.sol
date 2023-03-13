@@ -40,7 +40,7 @@ W: https://kingdomofants.io
 
 pragma solidity ^0.8.13;
 
-interface IPremiumANTs {
+interface IPremiumANT {
 
     struct BatchInfo {
         string name;
