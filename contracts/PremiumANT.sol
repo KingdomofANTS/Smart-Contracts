@@ -145,7 +145,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
         ANTInfo memory ant = premiumANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
         uint256 remainderPotions = ant.remainPotions;
-        uint256 experience = (totalPotions + remainderPotions) * 10 + (ant.level + remainderPotions * 10 / ant.level) * 20;
+        uint256 experience = (totalPotions + remainderPotions) * 10 + (ant.level * 10 + remainderPotions * 10 / ant.level) * 2;
         return experience;
     }
 
@@ -259,6 +259,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANTs, Ownable, Pausable, Reentr
 
         if(level >= maxLevel) {
             ANTShop.burn(levelingPotionTokenId, potionAmount.sub(remainPotions), _msgSender());
+            antInfo.remainPotions = 0;
         }
         else {
             ANTShop.burn(levelingPotionTokenId, potionAmount, _msgSender());
