@@ -100,8 +100,15 @@ describe("PremiumANT", function () {
             await expect(PremiumANTContract.connect(badActor).downgradeLevel(0, 1)).to.be.revertedWith("PremiumANT: Caller is not the minter");
         })
 
-        it.skip("downgradeLevel: should work if caller has a minter role", async () => {
-
+        it("downgradeLevel: should work if caller has a minter role", async () => {
+            await ANTShopContract.mint(0, 2, user1.address);
+            await PremiumANTContract.setBatchInfo(0, "name1", "testBaseURI1", 100, 2);
+            await PremiumANTContract.setBatchInfo(1, "name2", "testBaseURI2", 100, 1);
+            await PremiumANTContract.connect(user1).mint(0, user1.address, 1);
+            await PremiumANTContract.addMinterRole(user1.address);
+            await PremiumANTContract.downgradeLevel(1, 0);
+            const antInfo = await PremiumANTContract.getANTInfo(1);
+            expect(antInfo.toString()).to.be.equal("0,0,0,1")
         })
 
         it("ownerMint: should fail if caller is not the minter", async () => {
