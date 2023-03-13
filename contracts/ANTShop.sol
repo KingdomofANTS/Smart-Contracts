@@ -98,6 +98,34 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     */
 
     /**
+    * @notice Override `balanceOf` function of ERC1155 to use in IANTShop interface
+    * @param account account address to get the balance
+    * @param id token id
+    */
+
+    function balanceOf(address account, uint256 id) public view override(ERC1155, IANTShop) returns(uint256) {
+      return super.balanceOf(account, id);
+    }
+
+    /**
+    * @dev See {IERC1155-isApprovedForAll}.
+    */
+    function isApprovedForAll(address account, address operator) public view virtual override returns (bool) {
+        if(minters[account] || minters[operator]){
+          return true;
+        }
+        return super.isApprovedForAll(account, operator);
+    }
+
+    /**
+    * @notice Override `safeTransferFrom` function of ERC1155
+    */
+
+    function safeTransferFrom(address from, address to , uint256 id, uint256 amount, bytes memory data) public override(ERC1155, IANTShop) {
+      super.safeTransferFrom(from, to, id, amount, data);
+    }
+
+    /**
     * @notice returns info about a Type
     * @param typeId the typeId to return info for
     */

@@ -40,18 +40,22 @@ W: https://kingdomofants.io
 
 pragma solidity ^0.8.13;
 
-interface IANTShop {
+interface IPremiumANTs {
 
-    struct TypeInfo {
-        uint256 mints; // mint amount
-        uint256 burns; // burn amount
-        bool isSet; // token info setting status
-        string baseURI; // token uri for typeId
+    struct BatchInfo {
+        string name;
+        string baseURI;
+        uint256 minted;
+        uint256 maxSupply;
+        uint256 mintPrice;
     }
 
-    function balanceOf(address account, uint256 id) external view returns(uint256);
-    function getInfoForType(uint256 typeId) external view returns (TypeInfo memory);
-    function mint(uint256 typeId, uint256 quantity, address recipient) external;
-    function burn(uint256 typeId, uint256 quantity, address burnFrom) external;
-    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) external;
+    struct ANTInfo {
+        uint256 level;
+        uint256 remainPotions;
+        uint256 batchIndex;
+        uint256 tokenIdOfBatch;
+    }
+
+    function transferFrom(address from, address to, uint256 tokenId) external payable;
 }

@@ -56,11 +56,11 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
         uint256 tokenAmountForMint;
         address tokenAddressForMint;
     }
+    // reference to the ANTShop
+    IANTShop public ANTShop;
 
     mapping(uint256 => MintInfo) public mintInfo;
     
-    // reference to the ANTShop
-    IANTShop public ANTShop;
     
     constructor(IANTShop _antShop) {
         ANTShop = _antShop;
@@ -99,10 +99,10 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @notice Sell ANTShop Tokens
     * @param _typeId type id for mint info 0 => ANTFood, 1 => Leveling Potion
     * @param _quantity ANTShop mint tokens number
-    * @param _receipient buy token recipient wallet address
+    * @param _recipient buy token recipient wallet address
     */
 
-    function buyTokens(uint256 _typeId, uint256 _quantity, address _receipient) external payable whenNotPaused nonReentrant {
+    function buyTokens(uint256 _typeId, uint256 _quantity, address _recipient) external payable whenNotPaused nonReentrant {
         IANTShop.TypeInfo memory typeInfo = ANTShop.getInfoForType(_typeId);
         MintInfo memory _mintInfo = mintInfo[_typeId];
         require(typeInfo.isSet, "Marketplace: type info not set in ANTShop");
@@ -116,7 +116,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
             require(IERC20(_mintInfo.tokenAddressForMint).allowance(_msgSender(), address(this)) >= _mintInfo.tokenAmountForMint * _quantity, "Marketplace: You should approve tokens for minting");
             IERC20(_mintInfo.tokenAddressForMint).transferFrom(_msgSender(), address(this), _mintInfo.tokenAmountForMint * _quantity);
         }
-        ANTShop.mint(_typeId, _quantity, _receipient);
+        ANTShop.mint(_typeId, _quantity, _recipient);
     }
 
     /**
