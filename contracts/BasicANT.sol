@@ -322,6 +322,17 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
+    * @notice Set mint method true => Matic mint, false => custom token mint
+    * @dev This function can only be called by the owner
+    * @param _batchIndex batch index to set the mint method
+    * @param _mintMethod mint method value
+    */
+
+    function setMintMethod(uint256 _batchIndex, bool _mintMethod) external onlyOwner {
+        basicBatches[_batchIndex].mintMethod = _mintMethod;
+    }
+
+    /**
     * @notice Function to update Basic ANTs level
     * @dev This function can only be called by the minter
     * @param tokenId Basic ant token id for updating level
