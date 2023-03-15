@@ -82,7 +82,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     // Mint event
     event Mint(address owner, uint256 quantity);
     // Purse category event
-    event PurseCategoryEvent(address owner, uint256 tokenId, string categoryName);
+    event UsePurseToken(address owner, uint256 tokenId, string categoryName);
 
     constructor(IRandomizer _randomizer, IANTShop _antShop) ERC721A("Purse Token", "Purse") {
         randomizer = _randomizer;
@@ -219,7 +219,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
             antShop.mint(lotteryTicketTokenId, purseCategory.lotteryTicketRewardAmount, owner);
         }
         _burn(tokenId); // burn used purse token
-        emit PurseCategoryEvent(_msgSender(), tokenId, purseCategory.categoryName);
+        emit UsePurseToken(_msgSender(), tokenId, purseCategory.categoryName);
     }
 
     /**
