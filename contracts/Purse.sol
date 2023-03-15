@@ -251,11 +251,11 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     */
 
     function addMultiPurseCategories(string[] memory _names, uint256[] memory _rarities, uint256[] memory _antFoodRarities, uint256[] memory _levelingPotionsRarities, uint256[] memory _lotteryTicketRarities, uint256[] memory _antFoodRewardAmounts, uint256[] memory _levelingPotionAmounts, uint256[] memory _lotteryTicketAmounts, uint256[] memory _minted) external onlyOwner {
-        require(_names.length == _rarities.length && _rarities.length == _antFoodRarities.length && _antFoodRarities.length == _levelingPotionsRarities.length && _levelingPotionsRarities.length == _lotteryTicketRarities.length && _lotteryTicketRarities.length == _antFoodRewardAmounts.length && _antFoodRewardAmounts.length == _levelingPotionAmounts.length && _levelingPotionAmounts.length == _lotteryTicketAmounts.length, "ANTShop: invalid purse category data");
-        require(getSumValue(_rarities) == 100, "ANTShop: invalid purse category data");
+        require(_names.length == _rarities.length && _rarities.length == _antFoodRarities.length && _antFoodRarities.length == _levelingPotionsRarities.length && _levelingPotionsRarities.length == _lotteryTicketRarities.length && _lotteryTicketRarities.length == _antFoodRewardAmounts.length && _antFoodRewardAmounts.length == _levelingPotionAmounts.length && _levelingPotionAmounts.length == _lotteryTicketAmounts.length, "Purse: invalid purse category data");
+        require(getSumValue(_rarities) == 100, "Purse: invalid purse category data");
         delete purseCategories;
         for(uint256 i = 0; i < _rarities.length; i ++) {
-            require(_antFoodRarities[i] + _levelingPotionsRarities[i] + _lotteryTicketRarities[i] == 100, "ANTShop: invalid purse category data");
+            require(_antFoodRarities[i] + _levelingPotionsRarities[i] + _lotteryTicketRarities[i] == 100, "Purse: invalid purse category data");
             purseCategories.push(PurseCategory({
                 categoryName: _names[i], rarity: _rarities[i], antFoodRarity: _antFoodRarities[i], 
                 levelingPotionRarity: _levelingPotionsRarities[i], lotteryTicketRarity: _lotteryTicketRarities[i], 
@@ -279,11 +279,11 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     */
 
     function updatePurseCategories(string[] memory _names, uint256[] memory _rarities, uint256[] memory _antFoodRarities, uint256[] memory _levelingPotionsRarities, uint256[] memory _lotteryTicketRarities, uint256[] memory _antFoodRewardAmounts, uint256[] memory _levelingPotionAmounts, uint256[] memory _lotteryTicketAmounts) external onlyOwner {
-        require(_names.length == _rarities.length && _rarities.length == _antFoodRarities.length && _antFoodRarities.length == _levelingPotionsRarities.length && _levelingPotionsRarities.length == _lotteryTicketRarities.length && _lotteryTicketRarities.length == _antFoodRewardAmounts.length && _antFoodRewardAmounts.length == _levelingPotionAmounts.length && _levelingPotionAmounts.length == _lotteryTicketAmounts.length, "ANTShop: invalid purse category data");
-        require(_names.length == purseCategories.length, "ANTShop: length doesn't match with purseCategory");
-        require(getSumValue(_rarities) == 100, "ANTShop: invalid purse category data");
+        require(_names.length == _rarities.length && _rarities.length == _antFoodRarities.length && _antFoodRarities.length == _levelingPotionsRarities.length && _levelingPotionsRarities.length == _lotteryTicketRarities.length && _lotteryTicketRarities.length == _antFoodRewardAmounts.length && _antFoodRewardAmounts.length == _levelingPotionAmounts.length && _levelingPotionAmounts.length == _lotteryTicketAmounts.length, "Purse: invalid purse category data");
+        require(_names.length == purseCategories.length, "Purse: length doesn't match with purseCategory");
+        require(getSumValue(_rarities) == 100, "Purse: invalid purse category data");
         for(uint256 i = 0; i < _rarities.length; i ++) {
-            require(_antFoodRarities[i] + _levelingPotionsRarities[i] + _lotteryTicketRarities[i] == 100, "ANTShop: invalid purse category data");
+            require(_antFoodRarities[i] + _levelingPotionsRarities[i] + _lotteryTicketRarities[i] == 100, "Purse: invalid purse category data");
             purseCategories[i] = PurseCategory({
                 categoryName: _names[i], rarity: _rarities[i], antFoodRarity: _antFoodRarities[i], 
                 levelingPotionRarity: _levelingPotionsRarities[i], lotteryTicketRarity: _lotteryTicketRarities[i], 
