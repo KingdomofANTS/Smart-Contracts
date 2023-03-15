@@ -82,7 +82,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     // Mint event
     event Mint(address owner, uint256 quantity);
     // Purse category event
-    event UsePurseToken(address owner, uint256 tokenId, string categoryName);
+    event UsePurseToken(address owner, uint256 tokenId, string categoryName, uint256 rewardType, uint256 quantity);
 
     constructor(IRandomizer _randomizer, IANTShop _antShop) ERC721A("Purse Token", "Purse") {
         randomizer = _randomizer;
@@ -204,22 +204,28 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param tokenId purse token id to get reward
     */
 
-    function usePurseReward(uint256 tokenId) external {
-        address owner = ownerOf(tokenId);
-        require(owner == _msgSender(), "Purse: you are not owner of this token");
+    function usePurseToken(uint256 tokenId) external {
+        require(ownerOf(tokenId) == _msgSender(), "Purse: you are not owner of this token");
 
         PurseCategory storage purseCategory = purseCategories[purseInfo[tokenId]];
         uint256 random = randomizer.randomToken(tokenId).mod(100);
+        uint256 rewardTypeId;
+        uint256 quantity;
 
         if (random < purseCategory.antFoodRarity) {
-            antShop.mint(antFoodTokenId, purseCategory.antFoodRewardAmount, owner);
+            rewardTypeId = antFoodTokenId;
+            quantity = purseCategory.antFoodRewardAmount;
         } else if (random < purseCategory.levelingPotionRarity) {
-            antShop.mint(levelingPotionTokenId, purseCategory.levelingPotionRewardAmount, owner);
+            rewardTypeId = levelingPotionTokenId;
+            quantity = purseCategory.levelingPotionRewardAmount;
         } else {
-            antShop.mint(lotteryTicketTokenId, purseCategory.lotteryTicketRewardAmount, owner);
+            rewardTypeId = lotteryTicketTokenId;
+            quantity = purseCategory.lotteryTicketRewardAmount;
         }
-        _burn(tokenId); // burn used purse token
-        emit UsePurseToken(_msgSender(), tokenId, purseCategory.categoryName);
+
+        antShop.mint(rewardTypeId, quantity, _msgSender());
+        _burn(tokenId);
+        emit UsePurseToken(_msgSender(), tokenId, purseCategory.categoryName, rewardTypeId, quantity);
     }
 
     /**

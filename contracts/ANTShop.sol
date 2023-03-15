@@ -55,7 +55,7 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
 
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
-        require(minters[_msgSender()], "ANTFood: Caller is not the minter");
+        require(minters[_msgSender()], "ANTShop: Caller is not the minter");
         _;
     }
 
