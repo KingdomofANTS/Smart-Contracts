@@ -141,12 +141,13 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
 
     /**
     * @notice Return randomness pruse category id
+    * @param _tokenId purse token id to get random category item
     */
 
-    function getPurseCategoryRarity() internal view returns(uint256 categoryType) {
+    function getPurseCategoryRarity(uint256 _tokenId) internal view returns(uint256 categoryType) {
         require(purseCategories.length > 0, "Purse: purse categories have not set been yet");
 
-        uint256 random = randomizer.random().mod(100);
+        uint256 random = randomizer.randomToken(_tokenId).mod(100);
 
         uint256 raritySum = 0;
         for (uint256 i = 0; i < purseCategories.length; i++) {
@@ -208,7 +209,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
         require(owner == _msgSender(), "PremiumANT: you are not owner of this token");
 
         PurseCategory storage purseCategory = purseCategories[purseInfo[tokenId]];
-        uint256 random = randomizer.random().mod(100);
+        uint256 random = randomizer.randomToken(tokenId).mod(100);
 
         if (random < purseCategory.antFoodRarity) {
             antShop.mint(antFoodTokenId, purseCategory.antFoodRewardAmount, owner);
@@ -237,9 +238,9 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param quantity purse token qunatity to mint
     */
 
-    function mint(address recipient, uint256 quantity) external onlyMinter {
+    function mint(address recipient, uint256 quantity) external override onlyMinter {
         for(uint256 i = 1; i <= quantity; i ++) {
-            purseInfo[minted + i] = getPurseCategoryRarity();
+            purseInfo[minted + i] = getPurseCategoryRarity(minted + i);
         }
         minted += quantity;
         _mint(recipient, quantity);

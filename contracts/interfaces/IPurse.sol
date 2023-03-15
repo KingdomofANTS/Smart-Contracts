@@ -52,4 +52,6 @@ interface IPurse {
         uint256 levelingPotionRewardAmount; // leveling potion reward amounts
         uint256 lotteryTicketRewardAmount; // lottery ticekt reward amounts
     }
+
+    function mint(address receipient, uint256 quantity) external;
 }
