@@ -241,6 +241,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     function mint(address recipient, uint256 quantity) external override onlyMinter {
         for(uint256 i = 1; i <= quantity; i ++) {
             purseInfo[minted + i] = getPurseCategoryRarity(minted + i);
+            purseCategories[purseInfo[minted + i]].minted += 1;
         }
         minted += quantity;
         _mint(recipient, quantity);
