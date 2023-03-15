@@ -183,9 +183,9 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param tokenId purse token id to get category data
     */
 
-    function getPurseCateogryInfoOfToken(uint256 tokenId) public view returns(string memory) {
+    function getPurseCategoryInfoOfToken(uint256 tokenId) public view returns(string memory) {
         require(tokenId <= minted, "Purse: token doesn't exist");
-        PurseCategory memory _purseCategory = purseCategories[tokenId];
+        PurseCategory memory _purseCategory = purseCategories[purseInfo[tokenId]];
         return _purseCategory.categoryName;
     }
 
@@ -194,7 +194,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param _infoId purse info id to get category data
     */
 
-    function getPurseCateogryInfo(uint256 _infoId) public view returns(PurseCategory memory) {
+    function getPurseCategoryInfo(uint256 _infoId) public view returns(PurseCategory memory) {
         require(_infoId < purseCategories.length, "Purse: token doesn't exist");
         return purseCategories[_infoId];
     }
