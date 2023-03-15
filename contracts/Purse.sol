@@ -206,7 +206,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
 
     function usePurseReward(uint256 tokenId) external {
         address owner = ownerOf(tokenId);
-        require(owner == _msgSender(), "PremiumANT: you are not owner of this token");
+        require(owner == _msgSender(), "Purse: you are not owner of this token");
 
         PurseCategory storage purseCategory = purseCategories[purseInfo[tokenId]];
         uint256 random = randomizer.randomToken(tokenId).mod(100);
