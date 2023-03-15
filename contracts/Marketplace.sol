@@ -144,7 +144,6 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     */
 
     function buyPurseTokens(address _recipient, uint256 _quantity) external payable whenNotPaused nonReentrant {
-        require(purseMintTokenAddress != address(0x0), "Marketplace: token address for purse token minting can't be null address");
         if(purseMintMethod){
             require(msg.value >= purseMintPrice * _quantity, "Marketplace: Insufficient Matic");
         }

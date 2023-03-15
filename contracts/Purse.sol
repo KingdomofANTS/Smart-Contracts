@@ -75,7 +75,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
 
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
-        require(minters[_msgSender()], 'BasicANT: Caller is not the minter');
+        require(minters[_msgSender()], 'Purse: Caller is not the minter');
         _;
     }
 
