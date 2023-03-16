@@ -146,11 +146,37 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return Premium ANT Stake information
+    */
+
+    function getPremiumANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
+        return premiumANTWorkforce[_tokenId];
+    }
+
+    /**
     * @notice Return Baisc ANT Stake information
     */
 
     function getBasicANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
         return basicANTWorkforce[_tokenId];
+    }
+
+    /**
+    * @notice Return Staked Premium ANTs token ids
+    * @param _owner user address to get the staked premium ant token ids
+    */
+
+    function getPremiumANTStakedByAddress(address _owner) public view returns(uint256[] memory) {
+        return premiumANTStakedNFTs[_owner];
+    }
+
+    /**
+    * @notice Return Staked Basic ANTs token ids
+    * @param _owner user address to get the staked basic ant token ids
+    */
+
+    function getBasicANTStakedByAddress(address _owner) public view returns(uint256[] memory) {
+        return basicANTStakedNFTs[_owner];
     }
 
     /**
@@ -185,14 +211,6 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         else {
             pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod).div(10 ** 4);
         }
-    }
-
-    /**
-    * @notice Return Premium ANT Stake information
-    */
-
-    function getPremiumANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
-        return premiumANTWorkforce[_tokenId];
     }
 
     /**
@@ -258,6 +276,12 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         premiumANT.transferFrom(address(this), _msgSender(), _tokenId);
         antCoin.transferFrom(address(this), _msgSender(), _stakeANTInfo.antCStakeAmount);
         antCoin.mint(_msgSender(), rewardAmount);
+        uint256 lastStakedNFTs = premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1];
+        premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTsIndicies[_tokenId]] = lastStakedNFTs;
+        premiumANTStakedNFTsIndicies[premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1]] = premiumANTStakedNFTsIndicies[_tokenId];
+        premiumANTStakedNFTs[_msgSender()].pop();
+        delete premiumANTStakedNFTsIndicies[_tokenId];
+        delete premiumANTWorkforce[_tokenId];
         emit UnStakePremiumANT(_tokenId, _msgSender());
     }
 
@@ -274,6 +298,12 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         basicANT.transferFrom(address(this), _msgSender(), _tokenId);
         antCoin.transferFrom(address(this), _msgSender(), _stakeANTInfo.antCStakeAmount);
         antCoin.mint(_msgSender(), rewardAmount);
+        uint256 lastStakedNFTs = basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1];
+        basicANTStakedNFTs[_msgSender()][basicANTStakedNFTsIndicies[_tokenId]] = lastStakedNFTs;
+        basicANTStakedNFTsIndicies[basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1]] = basicANTStakedNFTsIndicies[_tokenId];
+        basicANTStakedNFTs[_msgSender()].pop();
+        delete basicANTStakedNFTsIndicies[_tokenId];
+        delete basicANTWorkforce[_tokenId];
         emit UnStakeBasicANT(_tokenId, _msgSender());
     }
 
