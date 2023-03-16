@@ -137,11 +137,18 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     /**
+    * @notice Override `ownerOf` function to call from other contracts
+    */
+    function ownerOf(uint256 tokenId) public view override(ERC721A, IERC721A, IPremiumANT) returns (address) {
+        return super.ownerOf(tokenId);
+    }
+
+    /**
     * @notice Returns an experience percentage number calculated by level.
     * @dev Added 2 digits after the decimal point. e.g. 6500 = 65.00%
     */
 
-    function getANTExperience(uint256 tokenId) external view returns(uint256) {
+    function getANTExperience(uint256 tokenId) external view override returns(uint256) {
         ANTInfo memory ant = premiumANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
         uint256 remainderPotions = ant.remainPotions;
@@ -179,7 +186,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param tokenId tokenId to get Premium ANT information
     */
 
-    function getANTInfo(uint256 tokenId) public view returns(ANTInfo memory) {
+    function getANTInfo(uint256 tokenId) public view override returns(ANTInfo memory) {
         return premiumANTs[tokenId];
     }
 
@@ -314,7 +321,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param newLevel the number of new level
     */
 
-    function downgradeLevel(uint256 tokenId, uint256 newLevel) external onlyMinter {
+    function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinter {
         premiumANTs[tokenId].level = newLevel;
         premiumANTs[tokenId].remainPotions = 0;
     }
