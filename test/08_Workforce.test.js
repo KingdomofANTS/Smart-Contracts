@@ -474,6 +474,39 @@ describe("Workforce", function () {
             const stakedBasicANTs3 = await WorkforceContract.getBasicANTStakedByAddress(user1.address);
             expect(stakedBasicANTs3.toString()).to.be.equal("2,3,5");
         })
+
+        it("withdrawToken: should fail if caller is not the owner", async () => {
+            await expect(WorkforceContract.connect(badActor).withdrawToken(ANTCoinContract.address, user1.address, 10000)).to.be.revertedWith("Ownable: caller is not the owner")
+        })
+
+        it("withdrawToken: should withdraw ERC20 tokens successfully if caller is the owner", async () => {
+            const antCoinTransferAmount = 100000000000;
+            await ANTShopContract.mint(0, 10, user1.address);
+            await PremiumANTContract.setBatchInfo(0, "Worker ANT", "testBaseURI1", 1000, 1);
+            // batch index 0 mint of premium ants
+            await PremiumANTContract.connect(user1).mint(0, user1.address, 4);
+            await ANTCoinContract.transfer(user1.address, antCoinTransferAmount)
+            await WorkforceContract.connect(user1).stakePremiumANT(1, 1000);
+            await WorkforceContract.withdrawToken(ANTCoinContract.address, user3.address, 1000);
+            const expectedBalance = await ANTCoinContract.balanceOf(user3.address);
+            expect(expectedBalance).to.be.equal(1000)
+        })
+
+        it("setPaused: should fail if caller is not the owner", async () => {
+            await expect(WorkforceContract.connect(badActor).setPaused(true)).to.be.revertedWith("Ownable: caller is not the owner");
+        })
+
+        it("setPaused: should stop all functions work if paused", async () => {
+            await WorkforceContract.setPaused(true);
+            const antCoinTransferAmount = 100000000000;
+            await ANTShopContract.mint(0, 10, user1.address);
+            await PremiumANTContract.setBatchInfo(0, "Worker ANT", "testBaseURI1", 1000, 1);
+            // batch index 0 mint of premium ants
+            await PremiumANTContract.connect(user1).mint(0, user1.address, 4);
+            await ANTCoinContract.transfer(user1.address, antCoinTransferAmount)
+            await expect(WorkforceContract.connect(user1).stakePremiumANT(1, 1000)).to.be.revertedWith("Pausable: paused");
+            await expect(WorkforceContract.connect(user1).unStakePremiumANT(1)).to.be.revertedWith("Pausable: paused");
+        })
     });
 });
 
