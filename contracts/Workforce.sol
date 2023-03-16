@@ -154,7 +154,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Baisc ANT Stake information
+    * @notice Return Basic ANT Stake information
     */
 
     function getBasicANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
@@ -180,7 +180,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Baisc ANT Stake information
+    * @notice Return Basic ANT Stake information
     */
 
     function pendingRewardOfBasicToken(uint256 _tokenId) public view returns(uint256 pendingAmount) {
@@ -286,8 +286,8 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice UnStake Baisc ANT from Workforce with reward
-    * @param _tokenId Baisc ant token id for unstake
+    * @notice UnStake Basic ANT from Workforce with reward
+    * @param _tokenId Basic ant token id for unstake
     */
 
     function unStakeBasicANT(uint256 _tokenId) external {
