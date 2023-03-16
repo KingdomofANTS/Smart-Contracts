@@ -1,6 +1,5 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat")
-const { BigNumber } = require("ethers")
 
 describe("BasicANT", function () {
     let ANTShop, ANTShopContract, BasicANT, BasicANTContract, ANTCoin, ANTCoinContract;
