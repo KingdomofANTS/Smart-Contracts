@@ -137,6 +137,13 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     */
 
     /**
+    * @notice Override `ownerOf` function to call from other contracts
+    */
+    function ownerOf(uint256 tokenId) public view override(ERC721A, IERC721A, IBasicANT) returns (address) {
+        return super.ownerOf(tokenId);
+    }
+
+    /**
     * @notice Override `isApprovedForAll` function to give the approve permission if caller is minter
     */
     function isApprovedForAll(address owner, address operator) public view virtual override(ERC721A, IERC721A) returns (bool) {
@@ -152,7 +159,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @dev Added 2 digits after the decimal point. e.g. 6500 = 65.00%
     */
 
-    function getANTExperience(uint256 tokenId) external view returns(uint256) {
+    function getANTExperience(uint256 tokenId) external view override returns(uint256) {
         ANTInfo memory ant = basicANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
         uint256 remainderPotions = ant.remainPotions;
@@ -190,7 +197,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param tokenId tokenId to get Basic ANT information
     */
 
-    function getANTInfo(uint256 tokenId) public view returns(ANTInfo memory) {
+    function getANTInfo(uint256 tokenId) public view override returns(ANTInfo memory) {
         return basicANTs[tokenId];
     }
 
@@ -339,7 +346,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param newLevel the number of new level
     */
 
-    function downgradeLevel(uint256 tokenId, uint256 newLevel) external onlyMinter {
+    function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinter {
         basicANTs[tokenId].level = newLevel;
         basicANTs[tokenId].remainPotions = 0;
     }
