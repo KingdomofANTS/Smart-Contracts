@@ -317,6 +317,26 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * @notice Set max stake period by timestamp
+    * @dev This function can only be called by the owner
+    * @param _maxStakePeriod max stake period timestamp
+    */
+
+    function setMaxStakePeriod(uint256 _maxStakePeriod) external onlyOwner {
+        maxStakePeriod = _maxStakePeriod;
+    }
+
+    /**
+    * @notice Set cycle stake period by timestamp
+    * @dev This function can only be called by the owner
+    * @param _cycleStakePeriod one reward cycle period timestamp
+    */
+
+    function setCycleStakePeriod(uint256 _cycleStakePeriod) external onlyOwner {
+        cycleStakePeriod = _cycleStakePeriod;
+    }
+
+    /**
     * @notice Set init level after unstake ant
     * @dev This function can only be called by the owner
     * @param _level init level value
