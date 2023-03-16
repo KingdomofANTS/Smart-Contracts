@@ -163,7 +163,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
         uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
         if(stakePeriod > maxStakePeriod) {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod.sub(_stakeANTInfo.originTimestamp)).div(cycleStakePeriod.mul(100));
+            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod.mul(100));
         }
         else {
             pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod.mul(100));
@@ -180,7 +180,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
         uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
         if(stakePeriod > maxStakePeriod) {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod.sub(_stakeANTInfo.originTimestamp)).div(cycleStakePeriod.mul(100));
+            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod.mul(100));
         }
         else {
             pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod.mul(100));
