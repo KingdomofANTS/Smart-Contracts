@@ -44,6 +44,7 @@ import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './interfaces/IPremiumANT.sol';
 import './interfaces/IBasicANT.sol';
 import './interfaces/IANTCoin.sol';
@@ -127,6 +128,17 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * ██ ██   ████    ██
     * This section has internal only functions
     */
+
+    /**
+    * @notice Transfer ETH and return the success status.
+    * @dev This function only forwards 30,000 gas to the callee.
+    * @param to Address for ETH to be send to
+    * @param value Amount of ETH to send
+    */
+    function _safeTransferETH(address to, uint256 value) internal returns (bool) {
+        (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
+        return success;
+    }
 
     /**
     * ███████ ██   ██ ████████
@@ -219,7 +231,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _antCAmount ant coin stake amount
     */
 
-    function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external {
+    function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused {
         require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
         IPremiumANT.ANTInfo memory _premiumANTInfo = premiumANT.getANTInfo(_tokenId);
@@ -244,7 +256,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _antCAmount ant coin stake amount
     */
 
-    function stakeBasicANT(uint256 _tokenId, uint256 _antCAmount) external {
+    function stakeBasicANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused {
         require(basicANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
         IBasicANT.ANTInfo memory _basicANTInfo = basicANT.getANTInfo(_tokenId);
@@ -268,7 +280,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _tokenId Premium ant token id for unstake
     */
 
-    function unStakePremiumANT(uint256 _tokenId) external {
+    function unStakePremiumANT(uint256 _tokenId) external whenNotPaused {
         StakeANT memory _stakeANTInfo = premiumANTWorkforce[_tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'Workforce: you are not owner of this premium ant');
         uint256 rewardAmount = pendingRewardOfPremiumToken(_tokenId);
@@ -290,7 +302,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _tokenId Baisc ant token id for unstake
     */
 
-    function unStakeBasicANT(uint256 _tokenId) external {
+    function unStakeBasicANT(uint256 _tokenId) external whenNotPaused {
         StakeANT memory _stakeANTInfo = basicANTWorkforce[_tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'Workforce: you are not owner of this basic ant');
         uint256 rewardAmount = pendingRewardOfBasicToken(_tokenId);
@@ -412,5 +424,38 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
+    }
+
+    /**
+    * enables owner to pause / unpause contract
+    */
+    function setPaused(bool _paused) external onlyOwner {
+        if (_paused) _pause();
+        else _unpause();
+    }
+
+    /**
+    * @notice Allows owner to withdraw ETH funds to an address
+    * @dev wraps _user in payable to fix address -> address payable
+    * @param to Address for ETH to be send to
+    * @param amount Amount of ETH to send
+    */
+    function withdraw(address payable to, uint256 amount) public onlyOwner {
+        require(_safeTransferETH(to, amount));
+    }
+
+    /**
+    * @notice Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract Address for the token
+    * @param to Address for token to be send to
+    * @param amount Amount of token to send
+    */
+    function withdrawToken(
+        address _tokenContract,
+        address to,
+        uint256 amount
+    ) public onlyOwner {
+        IERC20 tokenContract = IERC20(_tokenContract);
+        tokenContract.transfer(to, amount);
     }
 }
