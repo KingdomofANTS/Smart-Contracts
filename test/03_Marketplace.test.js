@@ -2,23 +2,37 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat")
 
 describe("Marketplace", function () {
-    let ANTShop, ANTShopContract, Marketplace, MarketplaceContract, ANTCoin, ANTCoinContract;;
+    let ANTShop, ANTShopContract, Marketplace, MarketplaceContract, ANTCoin, ANTCoinContract, Randomizer, RandomizerContract, Purse, PurseContract;
 
     beforeEach(async function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
+
+        // Randomizer smart contract deployment
+        const keyHash = "0x01f7a05a9b9582bd382add6f255d31774e3846da15c0f45959a3b0266cb40d6b";
+        const linkToken = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
+        const vrfCordinator = "0xa555fC018435bef5A13C6c6870a9d4C11DEC329C";
+        const vrfFee = "1000000000000000000"
+        Randomizer = await ethers.getContractFactory("Randomizer");
+        RandomizerContract = await Randomizer.deploy(keyHash, linkToken, vrfCordinator, vrfFee);
+        await RandomizerContract.deployed();
 
         // ANTShop smart contract deployment
         ANTShop = await ethers.getContractFactory("ANTShop");
         ANTShopContract = await ANTShop.deploy();
         await ANTShopContract.deployed();
+        
+        // Purse smart contract deployment
+        Purse = await ethers.getContractFactory("Purse");
+        PurseContract = await Purse.deploy(RandomizerContract.address, ANTShopContract.address);
+        await PurseContract.deployed();
 
         // Marketplace smart contract deployment
         Marketplace = await ethers.getContractFactory("Marketplace");
-        MarketplaceContract = await Marketplace.deploy(ANTShopContract.address);
+        MarketplaceContract = await Marketplace.deploy(ANTShopContract.address, PurseContract.address);
         await MarketplaceContract.deployed();
 
         await ANTShopContract.addMinterRole(MarketplaceContract.address);
-
+        
         // ANTCoin smart contract deployment
         ANTCoin = await ethers.getContractFactory("ANTCoin");
         ANTCoinContract = await ANTCoin.deploy();
