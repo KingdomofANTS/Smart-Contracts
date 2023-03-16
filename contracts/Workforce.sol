@@ -202,7 +202,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     */
 
     function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external {
-        require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Workforce : you are not owner of this token');
+        require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Workforce :you are not owner of this token');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
         IPremiumANT.ANTInfo memory _premiumANTInfo = premiumANT.getANTInfo(_tokenId);
         premiumANTWorkforce[_tokenId] = StakeANT({
@@ -238,7 +238,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
             originTimestamp: block.timestamp
         });
         basicANTStakedNFTs[_msgSender()].push(_tokenId);
-        basicANTStakedNFTsIndicies[_tokenId] = premiumANTStakedNFTs[_msgSender()].length - 1;
+        basicANTStakedNFTsIndicies[_tokenId] = basicANTStakedNFTs[_msgSender()].length - 1;
         totalBasicANTStaked += 1;
         basicANT.transferFrom(_msgSender(), address(this), _tokenId);
         antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
