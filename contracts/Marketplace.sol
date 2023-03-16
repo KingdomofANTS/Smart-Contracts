@@ -45,6 +45,7 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './interfaces/IANTShop.sol';
+import './interfaces/IPurse.sol';
 
 contract Marketplace is Pausable, Ownable, ReentrancyGuard {
 
@@ -58,12 +59,28 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     }
     // reference to the ANTShop
     IANTShop public ANTShop;
+    // reference to the Purse
+    IPurse public Purse;
 
+    // purse token mint method true => matic mint, false => custom token mint like usdt
+    bool public purseMintMethod;
+    // matic price for purse minting
+    uint256 public purseMintPrice;
+    // token address for purse minting
+    address public purseMintTokenAddress;
+    // token amount for purse minting
+    uint256 public purseMintTokenAmount;
+    // ANTShop tokens mint information
     mapping(uint256 => MintInfo) public mintInfo;
     
+    // buy ANTShop tokens event
+    event BuyANTShopToken(uint256 typeId, address recipient, uint256 quantity);
+    // buy Purse tokens event
+    event BuyPurseToken(address recipient, uint256 quantity);
     
-    constructor(IANTShop _antShop) {
+    constructor(IANTShop _antShop, IPurse _purse) {
         ANTShop = _antShop;
+        Purse = _purse;
     }
 
     /**
@@ -117,6 +134,27 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
             IERC20(_mintInfo.tokenAddressForMint).transferFrom(_msgSender(), address(this), _mintInfo.tokenAmountForMint * _quantity);
         }
         ANTShop.mint(_typeId, _quantity, _recipient);
+        emit BuyANTShopToken(_typeId, _recipient, _quantity);
+    }
+
+    /**
+    * @notice Sell Purse Tokens
+    * @param _recipient buy token recipient wallet address
+    * @param _quantity mint tokens number to see purse tokens
+    */
+
+    function buyPurseTokens(address _recipient, uint256 _quantity) external payable whenNotPaused nonReentrant {
+        if(purseMintMethod){
+            require(msg.value >= purseMintPrice * _quantity, "Marketplace: Insufficient Matic");
+        }
+        else {
+            require(purseMintTokenAddress != address(0x0), "Marketplace: token address can't be null");
+            require(IERC20(purseMintTokenAddress).balanceOf(_msgSender()) >= purseMintTokenAmount * _quantity, "Marketplace: Insufficient Tokens");
+            require(IERC20(purseMintTokenAddress).allowance(_msgSender(), address(this)) >= purseMintTokenAmount * _quantity, "Marketplace: You should approve tokens for minting");
+            IERC20(purseMintTokenAddress).transferFrom(_msgSender(), address(this), purseMintTokenAmount * _quantity);
+        }
+        Purse.mint(_recipient, _quantity);
+        emit BuyPurseToken(_recipient, _quantity);
     }
 
     /**
@@ -165,6 +203,33 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
 
     function setMintMethod(uint256 _typeId, bool _mintMethod) external onlyOwner {
         mintInfo[_typeId].mintMethod = _mintMethod;
+    }
+
+    /**
+    * @notice Set Purse token mint info
+    * @dev This function can only be called by the owner
+    * @param _mintMethod mint method value true => matic mint, false => custom token mint like usdt
+    * @param _maticPrice  matic mint price
+    * @param _tokenAddress token address for minting
+    * @param _tokenAmount token amount for minting
+    */
+
+    function setPurseMintInfo(bool _mintMethod, uint256 _maticPrice, address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
+        purseMintMethod = _mintMethod;
+        purseMintPrice = _maticPrice;
+        purseMintTokenAddress = _tokenAddress;
+        purseMintTokenAmount = _tokenAmount;
+    }
+
+    /**
+    * @notice Set a new Purse smart contract address
+    * @dev This function can only be called by the owner
+    * @param _purse Reference to Purse
+    */
+
+    function setPurse(IPurse _purse) external onlyOwner {
+        require(address(_purse) != address(0x0), "Marketplace: Purse address can't be null address");
+        Purse = _purse;
     }
 
     /**
