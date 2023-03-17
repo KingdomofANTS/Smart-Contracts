@@ -56,7 +56,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     using SafeMath for uint256;
 
     // Reference to ANTShop
-    IANTShop public ANTShop;
+    IANTShop public antShop;
 
     // minters
     mapping(address => bool) private minters;
@@ -87,7 +87,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     constructor(IANTShop _antShop) ERC721A('Premium ANT', 'ANTP') {
-        ANTShop = _antShop;
+        antShop = _antShop;
         minters[_msgSender()] = true;
     }
 
@@ -214,7 +214,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
         require(recipient == tx.origin, 'PremiumANT: caller is not minter');
         require(batchInfo.maxSupply > 0, "PremiumANT: batch information has not yet been set");
         require(batchInfo.minted + quantity <= batchInfo.maxSupply, "PremiumANT: mint amount exceeds the maximum supply for this batch");
-        require(ANTShop.balanceOf(_msgSender(), antFoodTokenId) >= batchInfo.mintPrice * quantity, "PremiumANT: insufficient balance");
+        require(antShop.balanceOf(_msgSender(), antFoodTokenId) >= batchInfo.mintPrice * quantity, "PremiumANT: insufficient balance");
 
         uint256 i = 0;
         uint256 tokenId = batchInfo.minted + 1;
@@ -232,7 +232,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
 
         premiumBatches[batchIndex].minted += quantity;
         minted += quantity;
-        ANTShop.burn(antFoodTokenId, batchInfo.mintPrice * quantity, _msgSender());
+        antShop.burn(antFoodTokenId, batchInfo.mintPrice * quantity, _msgSender());
         _mint(recipient, quantity);
         emit Mint(recipient, quantity);
     }
@@ -246,7 +246,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     function upgradePremiumANT(uint256 tokenId, uint256 potionAmount) external whenNotPaused {
         require(ownerOf(tokenId) == _msgSender(), "PremiumANT: you are not owner of this token");
         require(potionAmount > 0, "PremiumANT: leveling potion amount must be greater than zero");
-        require(ANTShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "PremiumANT: you don't have enough potions for upgrading");
+        require(antShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "PremiumANT: you don't have enough potions for upgrading");
 
         ANTInfo storage antInfo = premiumANTs[tokenId];
         require(antInfo.level < maxLevel, "Premium ANT: ant can no longer be upgraded");
@@ -265,11 +265,11 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
         antInfo.remainPotions = remainPotions;
 
         if(level >= maxLevel) {
-            ANTShop.burn(levelingPotionTokenId, potionAmount.sub(remainPotions), _msgSender());
+            antShop.burn(levelingPotionTokenId, potionAmount.sub(remainPotions), _msgSender());
             antInfo.remainPotions = 0;
         }
         else {
-            ANTShop.burn(levelingPotionTokenId, potionAmount, _msgSender());
+            antShop.burn(levelingPotionTokenId, potionAmount, _msgSender());
         }
 
         emit UpgradeANT(tokenId, _msgSender(), level);
@@ -324,6 +324,16 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinter {
         premiumANTs[tokenId].level = newLevel;
         premiumANTs[tokenId].remainPotions = 0;
+    }
+
+    /**
+    * @notice Function to set ant shop contract addres
+    * @dev This function can only be called by the owner
+    * @param _antShop ant shop contract address
+    */
+
+    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+        antShop = _antShop;
     }
 
     /**
