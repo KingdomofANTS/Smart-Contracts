@@ -53,7 +53,7 @@ contract FoodGathering is Ownable, Pausable {
 
     struct StakeInfo{
         uint256 stakedAmount; // how many staked tokens the uer has provided
-        uint256 depositTimestamp; // deposit timestamp
+        uint256 stakedTimestamp; // deposit timestamp
         uint256 rewardDebt; // Reward Debt 
     }
 
@@ -68,9 +68,9 @@ contract FoodGathering is Ownable, Pausable {
     // ant food token id
     uint256 public antFoodTokenId = 0;
     // ant coin stake fee amount
-    uint256 public stakeFeeAmount;
+    uint256 public stakeFeeAmount = 1000 * 10**18; // 1k ANT Coin
     // max amount to stake
-    uint256 public maxAmountForStake = 90000 * 10**18; // 90k ANT Coin
+    uint256 public maxAmountForStake = 900000 * 10**18; // 900k ANT Coin
     // one cycle stake amount
     uint256 public cycleStakedAmount = 30000 * 10**18; // 30k ANT Coin
     // one cycle time stamp
@@ -132,11 +132,19 @@ contract FoodGathering is Ownable, Pausable {
     }
 
     /**
+    * @notice Return staked information of staker including antc staked amount, stake timestamp, etc
+    */
+
+    function getStakedInfo(address _staker) external view returns(StakeInfo memory) {
+        return stakedInfo[_staker];
+    }
+
+    /**
     * @notice Return ant food reward amount 1,000 = 1 ANT Food
     */
 
     function pendingRewardByAddress(address _staker) public view returns(uint256) {
-        uint256 stakedPeriod = block.timestamp - stakedInfo[_staker].depositTimestamp;
+        uint256 stakedPeriod = block.timestamp - stakedInfo[_staker].stakedTimestamp;
         return stakedPeriod * stakedInfo[_staker].stakedAmount * 10000 / (cycleTimestamp * cycleStakedAmount) + stakedInfo[_staker].rewardDebt;
     }
 
@@ -151,7 +159,7 @@ contract FoodGathering is Ownable, Pausable {
 
         staked.rewardDebt += pendingReward;
         staked.stakedAmount = totalStaked;
-        staked.depositTimestamp = block.timestamp;
+        staked.stakedTimestamp = block.timestamp;
 
         antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
         antCoin.transferFrom(_msgSender(), burnAddress, stakeFeeAmount);
