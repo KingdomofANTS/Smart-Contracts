@@ -66,7 +66,7 @@ contract FoodGathering is Ownable, Pausable {
     // staked information for each user
     mapping (address => StakeInfo) public stakedInfo;
     // ant food token id
-    uint256 public antFoodTokenId = 1;
+    uint256 public antFoodTokenId = 0;
     // ant coin stake fee amount
     uint256 public stakeFeeAmount;
     // max amount to stake
