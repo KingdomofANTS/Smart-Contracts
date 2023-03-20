@@ -28,15 +28,6 @@ describe("Workforce", function () {
         await BasicANTContract.deployed();
         await ANTShopContract.addMinterRole(BasicANTContract.address);
 
-        // ANTShop smart contract deployment
-        ANTShop = await ethers.getContractFactory("ANTShop");
-        ANTShopContract = await ANTShop.deploy();
-        await ANTShopContract.deployed();
-
-        // set ANTFood and LevelingPotions contract
-        await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-        await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
-
         // Premium ANT smart contract deployment
         PremiumANT = await ethers.getContractFactory('PremiumANT');
         PremiumANTContract = await PremiumANT.deploy(ANTShopContract.address);

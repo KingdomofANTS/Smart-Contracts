@@ -145,10 +145,16 @@ contract FoodGathering is Ownable, Pausable {
 
     function pendingRewardByAddress(address _staker) public view returns(uint256) {
         uint256 stakedPeriod = block.timestamp - stakedInfo[_staker].stakedTimestamp;
-        return stakedPeriod * stakedInfo[_staker].stakedAmount * 10000 / (cycleTimestamp * cycleStakedAmount) + stakedInfo[_staker].rewardDebt;
+        return stakedPeriod * stakedInfo[_staker].stakedAmount * 1000 / (cycleTimestamp * cycleStakedAmount) + stakedInfo[_staker].rewardDebt;
     }
 
-    function stake(uint256 _antCAmount) external {
+    /**
+    * @notice Function to stake ant coin amount for getting ant food reward
+    * @dev need to pay ant coin stake fee amount
+    * @param _antCAmount ant coin stake amount
+    */
+
+    function stake(uint256 _antCAmount) external whenNotPaused {
         StakeInfo storage staked = stakedInfo[_msgSender()];
         uint256 senderBalance = antCoin.balanceOf(_msgSender());
         require(senderBalance >= _antCAmount + stakeFeeAmount, "FoodGathering: you don't have enough ant coin balance for staking");
@@ -162,19 +168,23 @@ contract FoodGathering is Ownable, Pausable {
         staked.stakedTimestamp = block.timestamp;
 
         antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
-        antCoin.transferFrom(_msgSender(), burnAddress, stakeFeeAmount);
+        antCoin.burn(_msgSender(), stakeFeeAmount);
 
         emit FoodGatheringStaked(_msgSender(), totalStaked);
     }
 
-    function unStake() external {
+    /**
+    * @notice Function to unStake staked tokens for ant food rewards
+    */
+
+    function unStake() external whenNotPaused {
         StakeInfo storage staked = stakedInfo[_msgSender()];
         uint256 stakedAmount = staked.stakedAmount;
         require(stakedAmount > 0, "FoodGathering: You didn't stake any amount of ant coins");
         
-        delete stakedInfo[_msgSender()];
-
         uint256 rewardAmount = pendingRewardByAddress(_msgSender());
+        
+        delete stakedInfo[_msgSender()];
 
         if (rewardAmount > 0) {
             antShop.mint(antFoodTokenId, rewardAmount.div(1000), _msgSender());
@@ -184,7 +194,7 @@ contract FoodGathering is Ownable, Pausable {
             antCoin.transfer(_msgSender(), stakedAmount);
         }
         
-        emit FoodGatheringUnStaked(_msgSender(), stakedAmount, rewardAmount);
+        emit FoodGatheringUnStaked(_msgSender(), stakedAmount, rewardAmount.div(1000));
     }
 
     /**
