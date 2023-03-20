@@ -202,6 +202,14 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
+    * @notice Return max level of basic ant
+    */
+
+    function getMaxLevel() public view override returns(uint256){
+        return maxLevel;
+    }
+
+    /**
     * @notice Override `tokenURI` function of ERC721A
     * @param tokenId tokenId to get Basic ANT metadata
     */
@@ -299,6 +307,39 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     *   ██████   ███ ███  ██   ████ ███████ ██   ██
     * This section will have all the internals set to onlyOwner
     */
+
+    /**
+    * @notice Function to upgrade basic ant
+    * @dev This function can only be called by the minter
+    * @param tokenId token id of basic ant for upgrading
+    * @param potionAmount potion amount for upgrading
+    */
+
+    function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinter {
+        ANTInfo storage antInfo = basicANTs[tokenId];
+        if(antInfo.level >= maxLevel) {
+            return;
+        }
+        uint256 level = antInfo.level;
+        uint256 remainPotions = antInfo.remainPotions + potionAmount;
+
+        while (remainPotions >= level + 1) {
+            level++;
+            remainPotions -= level;
+            if(level >= maxLevel) {
+                break;
+            }
+        }
+
+        antInfo.level = level;
+        antInfo.remainPotions = remainPotions;
+
+        if(level >= maxLevel) {
+            antInfo.remainPotions = 0;
+        }
+
+        emit UpgradeANT(tokenId, _msgSender(), level);
+    }
 
     /**
     * @notice Function to mint Basic ANTs for free if caller is a minter
