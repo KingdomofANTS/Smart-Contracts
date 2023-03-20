@@ -287,6 +287,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTsIndicies[tokenId]] = lastStakedNFTs;
         premiumANTStakedNFTsIndicies[premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1]] = premiumANTStakedNFTsIndicies[tokenId];
         premiumANTStakedNFTs[_msgSender()].pop();
+        totalPremiumANTStaked -= 1;
         delete premiumANTStakedNFTsIndicies[tokenId];
         delete premiumANTGround[tokenId];
         emit UnStakePremiumANT(tokenId, _msgSender());
@@ -307,6 +308,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         basicANTStakedNFTs[_msgSender()][basicANTStakedNFTsIndicies[tokenId]] = lastStakedNFTs;
         basicANTStakedNFTsIndicies[basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1]] = basicANTStakedNFTsIndicies[tokenId];
         basicANTStakedNFTs[_msgSender()].pop();
+        totalBasicANTStaked -= 1;
         delete basicANTStakedNFTsIndicies[tokenId];
         delete basicANTGround[tokenId];
         emit UnStakePremiumANT(tokenId, _msgSender());
