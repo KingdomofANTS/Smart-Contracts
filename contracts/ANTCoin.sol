@@ -110,8 +110,8 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
         address to,
         uint256 amount
     ) public virtual override(ERC20, IANTCoin) whenNotPaused returns (bool) {
-        if(minters[_msgSender()] || minters[to]) {
-            _approve(from, _msgSender(), amount);
+        if(minters[_msgSender()]) {
+            _approve(from, to, amount);
         }
         return super.transferFrom(from, to, amount);
     }
@@ -120,7 +120,7 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     * @notice Override `transfer` function of ERC20 token
     */
 
-    function transfer(address to, uint256 amount) public virtual override whenNotPaused returns (bool) {
+    function transfer(address to, uint256 amount) public virtual override(ERC20, IANTCoin) whenNotPaused returns (bool) {
         return super.transfer(to, amount);
     }
 
