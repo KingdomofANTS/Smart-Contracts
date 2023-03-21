@@ -254,7 +254,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
 
     function stakeBasicANT(uint256 tokenId) external {
         IBasicANT.ANTInfo memory _basicANTInfo = basicANT.getANTInfo(tokenId);
-        require(basicANT.ownerOf(tokenId) == _msgSender(), "LevelingGround: you are not owner of this premium token");
+        require(basicANT.ownerOf(tokenId) == _msgSender(), "LevelingGround: you are not owner of this basic token");
         require(antCoin.balanceOf(_msgSender()) >= stakeFeeAmount, "LevelingGround: you don't have enough ant coin balance for stake fee");
         require(_basicANTInfo.level < basicANT.getMaxLevel(), "LevelingGround: your ant can't upgrade any more");
         basicANTGround[tokenId] = StakeANT({ 
