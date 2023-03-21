@@ -109,6 +109,17 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     /**
+    * @notice Transfer ETH and return the success status.
+    * @dev This function only forwards 30,000 gas to the callee.
+    * @param to Address for ETH to be send to
+    * @param value Amount of ETH to send
+    */
+    function _safeTransferETH(address to, uint256 value) internal returns (bool) {
+        (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
+        return success;
+    }
+
+    /**
     * @notice Return total used leveling potions amount of level
     * @param _level level to calculate the total used leveling potions
     */
@@ -179,6 +190,14 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
 
     function getBatchInfo(uint256 batchIndex) public view returns(BatchInfo memory) {
         return premiumBatches[batchIndex];
+    }
+
+    /**
+    * @notice Return max level of premium ant
+    */
+
+    function getMaxLevel() public view override returns(uint256){
+        return maxLevel;
     }
 
     /**
@@ -283,6 +302,39 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     *   ██████   ███ ███  ██   ████ ███████ ██   ██
     * This section will have all the internals set to onlyOwner
     */
+
+    /**
+    * @notice Function to upgrade premium ant
+    * @dev This function can only be called by the minter
+    * @param tokenId token id of premium ant for upgrading
+    * @param potionAmount potion amount for upgrading
+    */
+
+    function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinter {
+        ANTInfo storage antInfo = premiumANTs[tokenId];
+        if(antInfo.level >= maxLevel) {
+            return;
+        }
+        uint256 level = antInfo.level;
+        uint256 remainPotions = antInfo.remainPotions + potionAmount;
+
+        while (remainPotions >= level + 1) {
+            level++;
+            remainPotions -= level;
+            if(level >= maxLevel) {
+                break;
+            }
+        }
+
+        antInfo.level = level;
+        antInfo.remainPotions = remainPotions;
+
+        if(level >= maxLevel) {
+            antInfo.remainPotions = 0;
+        }
+
+        emit UpgradeANT(tokenId, _msgSender(), level);
+    }
 
     /**
     * @notice Function to mint Premium ANTs for free if caller is a minter
@@ -416,5 +468,30 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
+    }
+
+    /**
+    * @notice Allows owner to withdraw ETH funds to an address
+    * @dev wraps _user in payable to fix address -> address payable
+    * @param to Address for ETH to be send to
+    * @param amount Amount of ETH to send
+    */
+    function withdraw(address payable to, uint256 amount) public onlyOwner {
+        require(_safeTransferETH(to, amount));
+    }
+
+    /**
+    * @notice Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract Address for the token
+    * @param to Address for token to be send to
+    * @param amount Amount of token to send
+    */
+    function withdrawToken(
+        address _tokenContract,
+        address to,
+        uint256 amount
+    ) public onlyOwner {
+        IERC20 tokenContract = IERC20(_tokenContract);
+        tokenContract.transfer(to, amount);
     }
 }

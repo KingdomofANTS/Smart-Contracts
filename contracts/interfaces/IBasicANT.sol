@@ -60,8 +60,10 @@ interface IBasicANT {
     }
 
     function ownerOf(uint256 tokenId) external view returns(address);
-    function getANTExperience(uint256 tokenId) external view returns(uint256);
+    function getMaxLevel() external view returns(uint256);
     function getANTInfo(uint256 tokenId) external view returns(ANTInfo memory);
+    function getANTExperience(uint256 tokenId) external view returns(uint256);
     function transferFrom(address from, address to, uint256 tokenId) external payable;
     function downgradeLevel(uint256 tokenId, uint256 newLevel) external;
+    function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external;
 }
