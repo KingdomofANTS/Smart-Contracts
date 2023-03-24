@@ -40,49 +40,102 @@ W: https://kingdomofants.io
 
 pragma solidity ^0.8.13;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import '@chainlink/contracts/src/v0.8/VRFConsumerBase.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
+import "./interfaces/IRandomizer.sol";
+import "./interfaces/IANTLottery.sol";
 
-interface IERC20 {
-  function transfer(address _to, uint256 _amount) external returns (bool);
-}
+contract RandomNumberGenerator is VRFConsumerBase, IRandomizer, Ownable {
+    using SafeERC20 for IERC20;
 
-contract Randomizer is VRFConsumerBase, Ownable {
-    bytes32 internal keyHash;
-    uint256 internal fee;
+    address public antLottery;
+    bytes32 public keyHash;
+    bytes32 public latestRequestId;
+    uint32 public randomResult;
+    uint256 public fee;
+    uint256 public latestLotteryId;
 
-    uint256 public randomResult;
-    
-    constructor(
-        bytes32 _keyHash,
-        address _linkToken,
-        address _vrfCordinator,
-        uint256 _vrfFee
-    )
-        VRFConsumerBase(
-        _vrfCordinator, // VRF Coordinator
-        _linkToken // LINK Token
-        )
-    {
+    /**
+     * @notice Constructor
+     * @dev RandomNumberGenerator must be deployed before the lottery.
+     * Once the lottery contract is deployed, setLotteryAddress must be called.
+     * https://docs.chain.link/docs/vrf-contracts/
+     * @param _vrfCoordinator: address of the VRF coordinator
+     * @param _linkToken: address of the LINK token
+     */
+    constructor(bytes32 _keyHash, address _vrfCoordinator, address _linkToken, uint256 _vrfFee) VRFConsumerBase(_vrfCoordinator, _linkToken) {
         keyHash = _keyHash;
         fee = _vrfFee; // 0.1 LINK (Varies by network)
     }
 
     /**
-    * Requests randomness, this is called to create a random result to be used in random()
-    * Only needs to be called a few times during minting, maybe once a week, or once every XXXX mints
-    */
-    function getRandomNumber() public returns (bytes32 requestId) {
-        require(LINK.balanceOf(address(this)) >= fee, 'Not enough LINK - fill contract with faucet');
-        return requestRandomness(keyHash, fee);
+     * @notice Request randomness from a user-provided seed
+     */
+    function getRandomNumber() external override {
+        require(msg.sender == antLottery, "Only antLottery");
+        require(keyHash != bytes32(0), "Must have valid key hash");
+        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK tokens");
+
+        latestRequestId = requestRandomness(keyHash, fee);
     }
 
     /**
-    * Callback function used by VRF Coordinator
-    */
+     * @notice Change the fee
+     * @param _fee: new fee (in LINK)
+     */
+    function setFee(uint256 _fee) external onlyOwner {
+        fee = _fee;
+    }
+
+    /**
+     * @notice Change the keyHash
+     * @param _keyHash: new keyHash
+     */
+    function setKeyHash(bytes32 _keyHash) external onlyOwner {
+        keyHash = _keyHash;
+    }
+
+    /**
+     * @notice Set the address for the antLottery
+     * @param _antLottery: address of the PancakeSwap lottery
+     */
+    function setLotteryAddress(address _antLottery) external onlyOwner {
+        antLottery = _antLottery;
+    }
+
+    /**
+     * @notice It allows the admin to withdraw tokens sent to the contract
+     * @param _tokenAddress: the address of the token to withdraw
+     * @param _tokenAmount: the number of token amount to withdraw
+     * @dev Only callable by owner.
+     */
+    function withdrawTokens(address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
+        IERC20(_tokenAddress).safeTransfer(address(msg.sender), _tokenAmount);
+    }
+
+    /**
+     * @notice View latestLotteryId
+     */
+    function viewLatestLotteryId() external view override returns (uint256) {
+        return latestLotteryId;
+    }
+
+    /**
+     * @notice View random result
+     */
+    function viewRandomResult() external view override returns (uint32) {
+        return randomResult;
+    }
+
+    /**
+     * @notice Callback function used by ChainLink's VRF Coordinator
+     */
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-        uint256 newRandomness = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), requestId, randomness)));
-        randomResult = newRandomness;
+        require(latestRequestId == requestId, "Wrong requestId");
+        randomResult = uint32(1000000 + (randomness % 1000000));
+        latestLotteryId = IANTLottery(antLottery).viewCurrentLotteryId();
     }
 
     /**
@@ -98,18 +151,6 @@ contract Randomizer is VRFConsumerBase, Ownable {
         uint256 seed = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), randomResult, _tokenId)));
         return seed;
     }
-
-    /**
-    * @notice FOR TESTING ONLY: Generate a pseudo-random uint256 using the previous blockhash
-    */
-    // prettier-ignore
-    function randomTest() external view returns (uint256) {
-            uint256 pseudorandomness = uint256(
-                keccak256(abi.encodePacked(blockhash(block.number - 1), block.number ))
-            );
-
-            return pseudorandomness;
-        }
 
     /**
     * @notice Transfer ETH and return the success status.
@@ -130,20 +171,5 @@ contract Randomizer is VRFConsumerBase, Ownable {
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
         require(_safeTransferETH(to, amount));
-    }
-
-    /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
-    * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
-    */
-    function withdrawToken(
-        address _tokenContract,
-        address to,
-        uint256 amount
-    ) external {
-        IERC20 tokenContract = IERC20(_tokenContract);
-        tokenContract.transfer(to, amount);
     }
 }
