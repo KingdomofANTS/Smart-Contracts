@@ -187,13 +187,13 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
         return size > 0;
     }
 
-    function reverseUint256(uint256 input) public pure returns (uint256 output) {
-        assembly {
-            let wordLength := 0x20
-            for {let i := 32} gt(i, 0) {i := sub(i, 1)} {
-                output := or(output, shl(sub(31, mul(i, 8)), shr(mul(i, 8), input)))
-            }
+    function reverseUint256(uint256 x) public pure returns (uint256) {
+        uint256 result = 0;
+        while (x > 0) {
+            result = result * 10 + x % 10;
+            x = x / 10;
         }
+        return result;
     }
 
     /**
