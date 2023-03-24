@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IRandomizer.sol";
 import "../interfaces/IANTLottery.sol";
 
-contract Randomzier is IRandomizer, Ownable {
+contract MockRandomizer is IRandomizer, Ownable {
     address public antLottery;
     uint32 public randomResult;
     uint256 public nextRandomResult;

@@ -47,7 +47,7 @@ import '@chainlink/contracts/src/v0.8/VRFConsumerBase.sol';
 import "./interfaces/IRandomizer.sol";
 import "./interfaces/IANTLottery.sol";
 
-contract RandomNumberGenerator is VRFConsumerBase, IRandomizer, Ownable {
+contract Randomizer is VRFConsumerBase, IRandomizer, Ownable {
     using SafeERC20 for IERC20;
 
     address public antLottery;
