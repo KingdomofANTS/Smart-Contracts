@@ -27,10 +27,5 @@ describe("Randomizer", function () {
             const random = await RandomizerContract.random();
             expect(random).to.be.not.reverted;
         })
-
-        it("randomToken: should return the randomness numbers same as random function", async () => {
-            const random = await RandomizerContract.randomTest();
-            expect(random).to.be.not.reverted;
-        })
     });
 });

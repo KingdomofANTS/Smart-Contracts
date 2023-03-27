@@ -73,7 +73,8 @@ describe("ANTCoin", function () {
             expect(balance2).to.be.equal(0);
         })
 
-        it("currentCirculationSupply: should be calculated correctly if minter mint or burn ANTCoint tokens", async () => {
+        // need to have a test on deployed mumbai test network
+        it.skip("currentCirculationSupply: should be calculated correctly if minter mint or burn ANTCoint tokens", async () => {
             const mintAmount = BigNumber.from("100000000");
             const initialMintAmount = BigNumber.from("100000000000000000000000000"); // 100 million
             const maxCirculationSupply = await ANTCoinContract.maxCirculationSupply();

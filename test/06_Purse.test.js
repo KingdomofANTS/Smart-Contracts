@@ -2,15 +2,10 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat")
 
 describe("Purse", function () {
-    let Randomizer, RandomizerContract, ANTShop, ANTShopContract, Purse, PurseContract, Marketplace, MarketplaceContract, ANTCoin, ANTCoinContract;
+    let Randomizer, RandomizerContract, ANTShop, ANTShopContract, Purse, PurseContract, Marketplace, MarketplaceContract, ANTCoin, ANTCoinContract, ANTLottery, ANTLotteryContract, MockRandomizer, MockRandomizerContract;
 
     beforeEach(async function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
-
-        // ANTCoin smart contract deployment
-        ANTCoin = await ethers.getContractFactory("ANTCoin");
-        ANTCoinContract = await ANTCoin.deploy();
-        await ANTCoinContract.deployed();
 
         // Randomizer smart contract deployment
         const keyHash = "0x01f7a05a9b9582bd382add6f255d31774e3846da15c0f45959a3b0266cb40d6b";
@@ -21,25 +16,44 @@ describe("Purse", function () {
         RandomizerContract = await Randomizer.deploy(keyHash, linkToken, vrfCordinator, vrfFee);
         await RandomizerContract.deployed();
 
+        MockRandomizer = await ethers.getContractFactory("MockRandomizer");
+        MockRandomizerContract = await MockRandomizer.deploy();
+        await MockRandomizerContract.deployed();
+
+        // ANTCoin smart contract deployment
+        ANTCoin = await ethers.getContractFactory("ANTCoin");
+        ANTCoinContract = await ANTCoin.deploy();
+        await ANTCoinContract.deployed();
+
+
         // ANTShop smart contract deployment
         ANTShop = await ethers.getContractFactory("ANTShop");
         ANTShopContract = await ANTShop.deploy();
         await ANTShopContract.deployed();
 
+        
+        // ANTLottery smart contract deployment
+        ANTLottery = await ethers.getContractFactory("ANTLottery");
+        ANTLotteryContract = await ANTLottery.deploy(MockRandomizerContract.address, ANTCoinContract.address);
+        await ANTLotteryContract.deployed();
+
         // Purse smart contract deployment
         Purse = await ethers.getContractFactory("Purse");
-        PurseContract = await Purse.deploy(RandomizerContract.address, ANTShopContract.address);
+        PurseContract = await Purse.deploy(RandomizerContract.address, ANTShopContract.address, ANTLotteryContract.address);
         await PurseContract.deployed();
 
         // Marketplace smart contract deployment
         Marketplace = await ethers.getContractFactory("Marketplace");
-        MarketplaceContract = await Marketplace.deploy(ANTShopContract.address, PurseContract.address);
+        MarketplaceContract = await Marketplace.deploy(ANTShopContract.address, PurseContract.address, ANTLotteryContract.address);
         await MarketplaceContract.deployed();
+
         await PurseContract.addMinterRole(MarketplaceContract.address);
         await ANTShopContract.addMinterRole(PurseContract.address);
         await ANTShopContract.setTokenTypeInfo(0, "ANTFoodURI");
         await ANTShopContract.setTokenTypeInfo(1, "LevelingPotionsURI");
-        await ANTShopContract.setTokenTypeInfo(2, "LotteryTicketURI");
+        await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
+        await ANTLotteryContract.addMinterRole(PurseContract.address);
+        await ANTCoinContract.addMinterRole(ANTLotteryContract.address)
     });
 
     describe("Test Suite", function () {
@@ -95,17 +109,6 @@ describe("Purse", function () {
             expect(expected).to.be.equal(2);
         })
 
-        it("setLotteryTicketTokenId: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).setLotteryTicketTokenId(0)).to.be.revertedWith("Ownable: caller is not the owner");
-        })
-
-        it("setLotteryTicketTokenId: should work if caller is the owner", async () => {
-            const lotteryTicketTokenId = await PurseContract.lotteryTicketTokenId();
-            expect(lotteryTicketTokenId).to.be.equal(2);
-            await PurseContract.setLotteryTicketTokenId(3);
-            const expected = await PurseContract.lotteryTicketTokenId();
-            expect(expected).to.be.equal(3);
-        })
 
         it("setRandomizerContract: should fail if caller is not the owner", async () => {
             await expect(PurseContract.connect(badActor).setRandomizerContract(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
@@ -228,6 +231,13 @@ describe("Purse", function () {
         })
 
         it("usePurseReward: should work if caller is owner", async () => {
+            const provider = ANTLotteryContract.provider;
+            const blockNumber = await provider.getBlockNumber();
+            const block = await provider.getBlock(blockNumber);
+            const blockTimestamp = block.timestamp;
+            const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
+            await ANTLotteryContract.setOperatorAndTreasuryAndInjectorAddresses(user1.address, user1.address);
+            await ANTLotteryContract.connect(user1).startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
             await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])
             await MarketplaceContract.setPurseMintInfo(true, 100000, ANTCoinContract.address, 10000000);
             await MarketplaceContract.connect(user1).buyPurseTokens(user1.address, 1, { value: 100000 * 1 });
