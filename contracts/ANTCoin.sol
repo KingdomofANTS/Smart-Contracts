@@ -49,8 +49,10 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
 
     // Max Circulation Supply Amount
     uint256 public constant maxCirculationSupply = 200000000 ether; // 200 million
-    // Current Circulation Supply Amount
-    uint256 public currentCirculationSupply = 0;
+
+    address public burnWallet1 = 0x0000000000000000000000000000000000000000;
+    address public burnWallet2 = 0x000000000000000000000000000000000000dEaD;
+
     // minters
     mapping(address => bool) private minters;
     // modifier to check _msgSender has minter role
@@ -96,9 +98,8 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     */
 
     function mint(address receipt, uint256 _amount) public override whenNotPaused onlyMinter {
-        require(currentCirculationSupply + _amount <= maxCirculationSupply, "ANTCoin: Mint amount exceed Max Circulation Supply");
+        require(totalCirculatingSupply() + _amount <= maxCirculationSupply, "ANTCoin: Mint amount exceed Max Circulation Supply");
         _mint(receipt, _amount);
-        currentCirculationSupply += _amount;
     }
 
     /**
@@ -124,6 +125,10 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
         return super.transfer(to, amount);
     }
 
+    function totalCirculatingSupply() public view returns(uint256) {
+        return totalSupply() - balanceOf(burnWallet1) - balanceOf(burnWallet2);
+    }
+
     /**
     *   ██████  ██     ██ ███    ██ ███████ ██████
     *  ██    ██ ██     ██ ████   ██ ██      ██   ██
@@ -140,7 +145,6 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
 
     function burn(address account, uint256 _amount) external override whenNotPaused onlyMinter {
         _burn(account, _amount);
-        currentCirculationSupply -= _amount;
     }
 
     // Function to grant mint role

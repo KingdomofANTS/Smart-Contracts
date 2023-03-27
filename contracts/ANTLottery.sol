@@ -45,13 +45,16 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import '@openzeppelin/contracts/security/Pausable.sol';
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import '@openzeppelin/contracts/utils/Strings.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import './interfaces/IRandomizer.sol';
 import './interfaces/IANTCoin.sol';
 import './interfaces/IANTLottery.sol';
+import 'hardhat/console.sol';
 
 contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
 
     using Strings for uint256;
+    using SafeMath for uint256;
 
     // Reference to randomizer
     IRandomizer public randomizer;
@@ -73,6 +76,10 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
 
     uint256 public constant MIN_LENGTH_LOTTERY = 7 days - 1 hours;
     uint256 public constant MAX_LENGTH_LOTTERY = 7 days + 1 hours;
+
+    // The sum of the values below must be 100.
+    uint256 public injectionNextLotteryPercentage = 60;
+    uint256 public burnPercentage = 40;
 
     // lottery id status    
     enum Status {
@@ -118,7 +125,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
 
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
-        require(minters[_msgSender()], "ANTShop: Caller is not the minter");
+        require(minters[_msgSender()], "ANTLottery: Caller is not the minter");
         _;
     }
 
@@ -259,21 +266,21 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @dev Callable by users only, not contract!
      */
     function claimTickets(uint256 _lotteryId, uint256[] calldata _ticketIds, uint256[] calldata _brackets) external notContract nonReentrant {
-        require(_ticketIds.length == _brackets.length, "Not same length");
-        require(_ticketIds.length != 0, "Length must be >0");
-        require(_lotteries[_lotteryId].status == Status.Claimable, "Lottery not claimable");
+        require(_ticketIds.length == _brackets.length, "ANTLottery: Not same length");
+        require(_ticketIds.length != 0, "ANTLottery: Length must be >0");
+        require(_lotteries[_lotteryId].status == Status.Claimable, "ANTLottery: Lottery not claimable");
 
         // Initializes the rewardInAntCoinToTransfer
         uint256 rewardInAntCoinToTransfer;
 
         for (uint256 i = 0; i < _ticketIds.length; i++) {
-            require(_brackets[i] < 6, "Bracket out of range"); // Must be between 0 and 5
+            require(_brackets[i] < 6, "ANTLottery: Bracket out of range"); // Must be between 0 and 5
 
             uint256 thisTicketId = _ticketIds[i];
 
-            require(_lotteries[_lotteryId].firstTicketIdNextLottery > thisTicketId, "TicketId too high");
-            require(_lotteries[_lotteryId].firstTicketId <= thisTicketId, "TicketId too low");
-            require(msg.sender == _tickets[thisTicketId].owner, "Not the owner");
+            require(_lotteries[_lotteryId].firstTicketIdNextLottery > thisTicketId, "ANTLottery: TicketId too high");
+            require(_lotteries[_lotteryId].firstTicketId <= thisTicketId, "ANTLottery: TicketId too low");
+            require(msg.sender == _tickets[thisTicketId].owner, "ANTLottery: Not the owner");
 
             // Update the lottery ticket owner to 0x address
             _tickets[thisTicketId].owner = address(0);
@@ -281,12 +288,12 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
             uint256 rewardForTicketId = _calculateRewardsForTicketId(_lotteryId, thisTicketId, _brackets[i]);
 
             // Check user is claiming the correct bracket
-            require(rewardForTicketId != 0, "No prize for this bracket");
+            require(rewardForTicketId != 0, "ANTLottery: No prize for this bracket");
 
             if (_brackets[i] != 5) {
                 require(
                     _calculateRewardsForTicketId(_lotteryId, thisTicketId, _brackets[i] + 1) == 0,
-                    "Bracket must be higher"
+                    "ANTLottery: Bracket must be higher"
                 );
             }
 
@@ -403,7 +410,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @dev Callable by operator
      * @param _endTime: endTime of the lottery
      * @param _rewardsBreakdown: breakdown of rewards per bracket (must sum to 10,000)
-     */  
+     */
     function startLottery(uint256 _endTime, uint256[6] calldata _rewardsBreakdown) external override onlyOperator {
         require((currentLotteryId == 0) || (_lotteries[currentLotteryId].status == Status.Claimable), "ANTLottery: Not time to start lottery");
         require(((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) && ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY), "ANTLottery: Lottery length outside of range");
@@ -435,8 +442,8 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @dev Callable by operator
      */
     function closeLottery(uint256 _lotteryId) external override onlyOperator nonReentrant {
-        require(_lotteries[_lotteryId].status == Status.Open, "Lottery not open");
-        require(block.timestamp > _lotteries[_lotteryId].endTime, "Lottery not over");
+        require(_lotteries[_lotteryId].status == Status.Open, "ANTLottery: Lottery not open");
+        require(block.timestamp > _lotteries[_lotteryId].endTime, "ANTLottery: Lottery not over");
         _lotteries[_lotteryId].firstTicketIdNextLottery = currentTicketId;
 
         // Request a random number from the generator based on a seed
@@ -455,8 +462,8 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      */
     function buyTickets(address _recipient, uint256 _quantity) external override onlyMinter notContract nonReentrant {
         require(_quantity != 0, "No ticket specified");
-        require(_lotteries[currentLotteryId].status == Status.Open, "Lottery is not open");
-        require(block.timestamp < _lotteries[currentLotteryId].endTime, "Lottery is over");
+        require(_lotteries[currentLotteryId].status == Status.Open, "ANTLottery: Lottery is not open");
+        require(block.timestamp < _lotteries[currentLotteryId].endTime, "ANTLottery: Lottery is over");
 
         uint256 amountANTForTransfer = antCoinAmountPerTicket * _quantity;
 
@@ -464,9 +471,8 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
         _lotteries[currentLotteryId].amountCollectedInAntCoin += amountANTForTransfer;
 
         for (uint256 i = 0; i < _quantity; i++) {
-            uint256 thisTicketNumber = reverseUint256(randomizer.randomToken(block.timestamp + currentLotteryId + i) % 1000000) + 10000000;
-
-            require((thisTicketNumber >= 1000000) && (thisTicketNumber <= 1999999), "Outside range");
+            uint256 thisTicketNumber = reverseUint256(randomizer.randomToken(block.timestamp + currentLotteryId + i) % 1000000) + 1000000;
+            require((thisTicketNumber >= 1000000) && (thisTicketNumber <= 1999999), "ANTLottery: Outside range");
 
             _numberTicketsPerLotteryId[currentLotteryId][1 + (thisTicketNumber % 10)]++;
             _numberTicketsPerLotteryId[currentLotteryId][11 + (thisTicketNumber % 100)]++;
@@ -479,24 +485,22 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
 
             _tickets[currentTicketId] = Ticket({number: thisTicketNumber, owner: _recipient});
 
-            antCoin.mint(address(this), amountANTForTransfer);
-
             // Increase lottery ticket number
             currentTicketId++;
         }
 
+        antCoin.mint(address(this), amountANTForTransfer);
         emit TicketsPurchase(_recipient, currentLotteryId, _quantity);
     }
 
     /**
      * @notice Draw the final number, calculate reward in AntCoin per group, and make lottery claimable
      * @param _lotteryId: lottery id
-     * @param _autoInjection: reinjects funds into next lottery (vs. withdrawing all)
      * @dev Callable by operator
      */
-    function drawFinalNumberAndMakeLotteryClaimable(uint256 _lotteryId, bool _autoInjection) external override onlyOperator nonReentrant {
-        require(_lotteries[_lotteryId].status == Status.Close, "Lottery not close");
-        require(_lotteryId == randomizer.viewLatestLotteryId(), "Numbers not drawn");
+    function drawFinalNumberAndMakeLotteryClaimable(uint256 _lotteryId) external override onlyOperator nonReentrant {
+        require(_lotteries[_lotteryId].status == Status.Close, "ANTLottery: Lottery not close");
+        require(_lotteryId == randomizer.viewLatestLotteryId(), "ANTLottery: Numbers not drawn");
 
         // Calculate the finalNumber based on the randomResult generated by ChainLink's fallback
         uint256 finalNumber = randomizer.viewRandomResult();
@@ -548,16 +552,8 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
         // Update internal statuses for lottery
         _lotteries[_lotteryId].finalNumber = finalNumber;
         _lotteries[_lotteryId].status = Status.Claimable;
-
-        if (_autoInjection) {
-            pendingInjectionNextLottery = amountToWithdrawToTreasury;
-            amountToWithdrawToTreasury = 0;
-        }
-
-        amountToWithdrawToTreasury += (_lotteries[_lotteryId].amountCollectedInAntCoin - amountToShareToWinners);
-
-        // Transfer AntCoin to treasury address
-        antCoin.burn(address(this), amountToWithdrawToTreasury);
+        pendingInjectionNextLottery = amountToWithdrawToTreasury.mul(injectionNextLotteryPercentage).div(100);
+        antCoin.burn(address(this), amountToWithdrawToTreasury.mul(burnPercentage).div(100));
 
         emit LotteryNumberDrawn(currentLotteryId, finalNumber, numberAddressesInPreviousBracket);
     }
@@ -572,7 +568,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     function changeRandomGenerator(address _randomGeneratorAddress) external onlyOwner {
         require(
             (currentLotteryId == 0) || (_lotteries[currentLotteryId].status == Status.Claimable),
-            "Lottery not in claimable"
+            "ANTLottery: Lottery not in claimable"
         );
 
         // Request a random number from the generator based on a seed
@@ -593,7 +589,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @dev Callable by owner or injector address
      */
     function injectFunds(uint256 _lotteryId, uint256 _amount) external override onlyOwnerOrInjector {
-        require(_lotteries[_lotteryId].status == Status.Open, "Lottery not open");
+        require(_lotteries[_lotteryId].status == Status.Open, "ANTLottery: Lottery not open");
 
         antCoin.transferFrom(address(msg.sender), address(this), _amount);
         _lotteries[_lotteryId].amountCollectedInAntCoin += _amount;
@@ -608,7 +604,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @dev Only callable by owner.
      */
     function recoverWrongTokens(address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
-        require(_tokenAddress != address(antCoin), "Cannot be ANT Coin token");
+        require(_tokenAddress != address(antCoin), "ANTLottery: Cannot be ANT Coin token");
 
         IERC20(_tokenAddress).transfer(address(msg.sender), _tokenAmount);
 
@@ -642,6 +638,19 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
 
     function setAntCoinAmountPerTicket(uint256 _antCoinAmountPerTicket) external onlyOwner {
         antCoinAmountPerTicket = _antCoinAmountPerTicket;
+    }
+
+    /**
+     * @notice Set injection and burn percentage
+     * @dev This function can only be called by the owner
+     * @param _injectionPercentage injection percentage, default = 60
+     * @param _burnPercentage burn percentage, default = 40
+     */
+
+    function setInjectionPercentage(uint256 _injectionPercentage, uint256 _burnPercentage) external onlyOwner {
+        require(_injectionPercentage + _burnPercentage == 100, "ANTLottery: the sum of these values should be 100");
+        injectionNextLotteryPercentage = _injectionPercentage;
+        burnPercentage = _burnPercentage;
     }
 
     /**

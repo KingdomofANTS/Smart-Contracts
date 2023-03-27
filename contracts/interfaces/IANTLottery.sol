@@ -72,10 +72,9 @@ interface IANTLottery {
     /**
      * @notice Draw the final number, calculate reward in CAKE per group, and make lottery claimable
      * @param _lotteryId: lottery id
-     * @param _autoInjection: reinjects funds into next lottery (vs. withdrawing all)
      * @dev Callable by operator
      */
-    function drawFinalNumberAndMakeLotteryClaimable(uint256 _lotteryId, bool _autoInjection) external;
+    function drawFinalNumberAndMakeLotteryClaimable(uint256 _lotteryId) external;
 
     /**
      * @notice Inject funds
