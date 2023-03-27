@@ -179,7 +179,7 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     /**
     * @notice Mint tokens to recipient address
     * @dev This function can only be called by the minter
-    * @param typeId typeId for setting the token info 0 => ANTFood, 1 => LevelingPotion, _typeID = 2 => Lottery Ticket ...
+    * @param typeId typeId for setting the token info 0 => ANTFood, 1 => LevelingPotion
     * @param quantity the number of tokens to mint
     * @param recipient recipient address for mint token
     */
@@ -194,7 +194,7 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     /**
     * @notice Burn a token
     * @dev This function can only be called by the minter
-    * @param typeId typeId for setting the token info 0 => ANTFood, 1 => LevelingPotion, _typeID = 2 => Lottery Ticket ...
+    * @param typeId typeId for setting the token info 0 => ANTFood, 1 => LevelingPotion
     * @param quantity the number of tokens to burn
     * @param burnFrom token owner address to burn
     */
@@ -207,7 +207,7 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     }
 
     /**
-    * @notice Set Token type info _typeId = 0 => ANTFood, _typeID = 1 => LevelingPotion, _typeID = 2 => Lottery Ticket ...
+    * @notice Set Token type info _typeId = 0 => ANTFood, _typeID = 1 => LevelingPotion
     * @dev This function can only be called by the minter
     * @param _typeId typeId for setting the token info
     * @param _baseURI tokenURI for token

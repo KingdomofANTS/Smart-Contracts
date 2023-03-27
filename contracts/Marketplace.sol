@@ -46,6 +46,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './interfaces/IANTShop.sol';
 import './interfaces/IPurse.sol';
+import './interfaces/IANTLottery.sol';
 
 contract Marketplace is Pausable, Ownable, ReentrancyGuard {
 
@@ -61,6 +62,8 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     IANTShop public ANTShop;
     // reference to the Purse
     IPurse public Purse;
+    // reference to the ANTLottery
+    IANTLottery public ANTLottery;
 
     // purse token mint method true => matic mint, false => custom token mint like usdt
     bool public purseMintMethod;
@@ -70,6 +73,16 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     address public purseMintTokenAddress;
     // token amount for purse minting
     uint256 public purseMintTokenAmount;
+    // lotteryTicket mint method true => matic mint, false => custom token mint like usdt
+    bool public lotteryTicketMintMethod;
+    // matic price for lotteryTicket minting
+    uint256 public lotteryTicketMintPrice;
+    // token address for lotteryTicket minting
+    address public lotteryTicketMintTokenAddress;
+    // token amount for lotteryTicket minting
+    uint256 public lotteryTicketMintTokenAmount;
+    // max number for buying the lottery tickets
+    uint256 public maxNumberTicketsPerBuy = 9999;
     // ANTShop tokens mint information
     mapping(uint256 => MintInfo) public mintInfo;
     
@@ -77,10 +90,13 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     event BuyANTShopToken(uint256 typeId, address recipient, uint256 quantity);
     // buy Purse tokens event
     event BuyPurseToken(address recipient, uint256 quantity);
+    // buy Lottery Tickets event
+    event BuyLotteryTickets(address recipient, uint256 quantity);
     
-    constructor(IANTShop _antShop, IPurse _purse) {
+    constructor(IANTShop _antShop, IPurse _purse, IANTLottery _antLottery) {
         ANTShop = _antShop;
         Purse = _purse;
+        ANTLottery = _antLottery;
     }
 
     /**
@@ -158,6 +174,26 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
+    * @notice Sell Lottery Tickets
+    * @param _recipient buy tickets recipient wallet address
+    * @param _quantity mint tokens number to see lottery tickets
+    */
+
+    function buyLotteryTickets(address _recipient, uint256 _quantity) external payable whenNotPaused nonReentrant {
+        if(lotteryTicketMintMethod){
+            require(msg.value >= lotteryTicketMintPrice * _quantity, "Marketplace: Insufficient Matic");
+        }
+        else {
+            require(lotteryTicketMintTokenAddress != address(0x0), "Marketplace: token address can't be null");
+            require(IERC20(lotteryTicketMintTokenAddress).balanceOf(_msgSender()) >= lotteryTicketMintTokenAmount * _quantity, "Marketplace: Insufficient Tokens");
+            require(IERC20(lotteryTicketMintTokenAddress).allowance(_msgSender(), address(this)) >= lotteryTicketMintTokenAmount * _quantity, "Marketplace: You should approve tokens for minting");
+            IERC20(lotteryTicketMintTokenAddress).transferFrom(_msgSender(), address(this), lotteryTicketMintTokenAmount * _quantity);
+        }
+        ANTLottery.buyTickets(_recipient, _quantity);
+        emit BuyLotteryTickets(_recipient, _quantity);
+    }
+
+    /**
     * @notice Return Mint information(mint price, token address and amount for mint)
     * @param _typeId type id for mint info 0 => ANTFood, 1 => Leveling Potion
     */
@@ -222,12 +258,38 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
+    * @notice Set Lottery Ticket mint info
+    * @dev This function can only be called by the owner
+    * @param _mintMethod mint method value true => matic mint, false => custom token mint like usdt
+    * @param _maticPrice  matic mint price
+    * @param _tokenAddress token address for minting
+    * @param _tokenAmount token amount for minting
+    */
+
+    function setLotteryTicketMintInfo(bool _mintMethod, uint256 _maticPrice, address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
+        lotteryTicketMintMethod = _mintMethod;
+        lotteryTicketMintPrice = _maticPrice;
+        lotteryTicketMintTokenAddress = _tokenAddress;
+        lotteryTicketMintTokenAmount = _tokenAmount;
+    }
+
+    /**
+    * @notice Set a new max number tickets per buy
+    * @dev This function can only be called by the owner
+    * @param _maxNumberTicketsPerBuy a max ticket numbers for buy
+    */
+
+    function setMaxNumberTicketsPerBuy(uint256 _maxNumberTicketsPerBuy) external onlyOwner {
+        maxNumberTicketsPerBuy = _maxNumberTicketsPerBuy;
+    }
+
+    /**
     * @notice Set a new Purse smart contract address
     * @dev This function can only be called by the owner
     * @param _purse Reference to Purse
     */
 
-    function setPurse(IPurse _purse) external onlyOwner {
+    function setPurseContract(IPurse _purse) external onlyOwner {
         require(address(_purse) != address(0x0), "Marketplace: Purse address can't be null address");
         Purse = _purse;
     }
@@ -238,9 +300,20 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _antShop Reference to ANTShop
     */
 
-    function setANTShop(IANTShop _antShop) external onlyOwner {
+    function setANTShopContract(IANTShop _antShop) external onlyOwner {
         require(address(_antShop) != address(0x0), "Marketplace: ANTShop address can't be null address");
         ANTShop = _antShop;
+    }
+
+    /**
+    * @notice Set a new ANTLottery smart contract address
+    * @dev This function can only be called by the owner
+    * @param _antLottery Reference to ANTLottery
+    */
+
+    function setANTLotteryContract(IANTLottery _antLottery) external onlyOwner {
+        require(address(_antLottery) != address(0x0), "Marketplace: ANTLottery address can't be null address");
+        ANTLottery = _antLottery;
     }
 
     /**

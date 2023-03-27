@@ -45,9 +45,10 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import 'erc721a/contracts/extensions/ERC721AQueryable.sol';
-import './interfaces/IANTShop.sol';
 import './interfaces/IRandomizer.sol';
+import './interfaces/IANTShop.sol';
 import './interfaces/IPurse.sol';
+import './interfaces/IANTLottery.sol';
 
 contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
 
@@ -57,6 +58,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     IANTShop public antShop;
     // Reference to Randomizer
     IRandomizer public randomizer;
+    // Reference to ANTLottery
+    IANTLottery public antLottery;
     // array of Purse Category 0 => Common, 1 => UnCommon, 2 => Rare, 3 => Ultra Rare, 4 => Lengendary
     PurseCategory[] public purseCategories;
 
@@ -68,8 +71,6 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     uint256 public antFoodTokenId = 0;
     // Leveling Potion token id of ANTShop
     uint256 public levelingPotionTokenId = 1;
-    // Lottery ticket token id of ANTShop
-    uint256 public lotteryTicketTokenId = 2;
     // total number of minted Premium ANT
     uint256 public minted = 0;
 
@@ -84,9 +85,10 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     // Purse category event
     event UsePurseToken(address owner, uint256 tokenId, string categoryName, uint256 rewardType, uint256 quantity);
 
-    constructor(IRandomizer _randomizer, IANTShop _antShop) ERC721A("Purse Token", "Purse") {
+    constructor(IRandomizer _randomizer, IANTShop _antShop, IANTLottery _antLottery) ERC721A("Purse Token", "Purse") {
         randomizer = _randomizer;
         antShop = _antShop;
+        antLottery = _antLottery;
     }
 
     /**
@@ -219,8 +221,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
             rewardTypeId = levelingPotionTokenId;
             quantity = purseCategory.levelingPotionRewardAmount;
         } else {
-            rewardTypeId = lotteryTicketTokenId;
-            quantity = purseCategory.lotteryTicketRewardAmount;
+            antLottery.buyTickets(_msgSender(), purseCategory.lotteryTicketRewardAmount);
         }
 
         antShop.mint(rewardTypeId, quantity, _msgSender());
@@ -332,16 +333,6 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Function to set the lottery ticket token id of ANTShop
-    * @dev This function can only be called by the owner
-    * @param _lotteryTicketTokenId the lottery ticket token id of ANTShop
-    */
-
-    function setLotteryTicketTokenId(uint256 _lotteryTicketTokenId) external onlyOwner {
-        lotteryTicketTokenId = _lotteryTicketTokenId;
-    }
-
-    /**
     * @notice Set randomizer contract address
     * @dev This function can only be called by the owner
     * @param _randomizer Randomizer contract address
@@ -349,6 +340,28 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
 
     function setRandomizerContract(IRandomizer _randomizer) external onlyOwner {
         randomizer = _randomizer;
+    }
+
+    /**
+    * @notice Set a new ANTShop smart contract address
+    * @dev This function can only be called by the owner
+    * @param _antShop Reference to ANTShop
+    */
+
+    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+        require(address(_antShop) != address(0x0), "Purse: ANTShop address can't be null address");
+        antShop = _antShop;
+    }
+
+    /**
+    * @notice Set a new ANTLottery smart contract address
+    * @dev This function can only be called by the owner
+    * @param _antLottery Reference to ANTLottery
+    */
+
+    function setANTLotteryContract(IANTLottery _antLottery) external onlyOwner {
+        require(address(_antLottery) != address(0x0), "Purse: ANTLottery address can't be null address");
+        antLottery = _antLottery;
     }
 
     /**
