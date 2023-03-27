@@ -129,12 +129,6 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
         _;
     }
 
-    modifier notContract() {
-        require(!_isContract(msg.sender), "Contract not allowed");
-        require(msg.sender == tx.origin, "Proxy contract not allowed");
-        _;
-    }
-
     modifier onlyOperator() {
         require(msg.sender == operatorAddress, "Not operator");
         _;
@@ -182,17 +176,6 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     * ██ ██   ████    ██
     * This section has internal only functions
     */
-
-    /**
-     * @notice Check if an address is a contract
-     */
-    function _isContract(address _addr) internal view returns (bool) {
-        uint256 size;
-        assembly {
-            size := extcodesize(_addr)
-        }
-        return size > 0;
-    }
 
     function reverseUint256(uint256 x) public pure returns (uint256) {
         uint256 result = 0;
@@ -265,7 +248,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _brackets: array of brackets for the ticket ids
      * @dev Callable by users only, not contract!
      */
-    function claimTickets(uint256 _lotteryId, uint256[] calldata _ticketIds, uint256[] calldata _brackets) external notContract nonReentrant {
+    function claimTickets(uint256 _lotteryId, uint256[] calldata _ticketIds, uint256[] calldata _brackets) external nonReentrant {
         require(_ticketIds.length == _brackets.length, "ANTLottery: Not same length");
         require(_ticketIds.length != 0, "ANTLottery: Length must be >0");
         require(_lotteries[_lotteryId].status == Status.Claimable, "ANTLottery: Lottery not claimable");
@@ -460,7 +443,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _recipient: recipient address 
      * @param _quantity: tickets quantity
      */
-    function buyTickets(address _recipient, uint256 _quantity) external override onlyMinter notContract nonReentrant {
+    function buyTickets(address _recipient, uint256 _quantity) external override onlyMinter nonReentrant {
         require(_quantity != 0, "No ticket specified");
         require(_lotteries[currentLotteryId].status == Status.Open, "ANTLottery: Lottery is not open");
         require(block.timestamp < _lotteries[currentLotteryId].endTime, "ANTLottery: Lottery is over");

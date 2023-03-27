@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat")
 
 describe("Marketplace", function () {
-    let ANTShop, ANTShopContract, Marketplace, MarketplaceContract, ANTCoin, ANTCoinContract, Randomizer, RandomizerContract, Purse, PurseContract;
+    let ANTShop, ANTShopContract, Marketplace, MarketplaceContract, ANTCoin, ANTCoinContract, Randomizer, RandomizerContract, MockRandomizer, MockRandomizerContract, Purse, PurseContract, ANTLottery, ANTLotteryContract;
 
     beforeEach(async function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
@@ -16,27 +16,37 @@ describe("Marketplace", function () {
         RandomizerContract = await Randomizer.deploy(keyHash, linkToken, vrfCordinator, vrfFee);
         await RandomizerContract.deployed();
 
-        // ANTShop smart contract deployment
-        ANTShop = await ethers.getContractFactory("ANTShop");
-        ANTShopContract = await ANTShop.deploy();
-        await ANTShopContract.deployed();
-        
-        // Purse smart contract deployment
-        Purse = await ethers.getContractFactory("Purse");
-        PurseContract = await Purse.deploy(RandomizerContract.address, ANTShopContract.address);
-        await PurseContract.deployed();
+        MockRandomizer = await ethers.getContractFactory("MockRandomizer");
+        MockRandomizerContract = await MockRandomizer.deploy();
+        await MockRandomizerContract.deployed();
 
-        // Marketplace smart contract deployment
-        Marketplace = await ethers.getContractFactory("Marketplace");
-        MarketplaceContract = await Marketplace.deploy(ANTShopContract.address, PurseContract.address);
-        await MarketplaceContract.deployed();
-
-        await ANTShopContract.addMinterRole(MarketplaceContract.address);
-        
         // ANTCoin smart contract deployment
         ANTCoin = await ethers.getContractFactory("ANTCoin");
         ANTCoinContract = await ANTCoin.deploy();
         await ANTCoinContract.deployed();
+
+        // ANTShop smart contract deployment
+        ANTShop = await ethers.getContractFactory("ANTShop");
+        ANTShopContract = await ANTShop.deploy();
+        await ANTShopContract.deployed();
+
+        // ANTLottery smart contract deployment
+        ANTLottery = await ethers.getContractFactory("ANTLottery");
+        ANTLotteryContract = await ANTLottery.deploy(RandomizerContract.address, ANTCoinContract.address);
+        await ANTLotteryContract.deployed();
+
+        // Purse smart contract deployment
+        Purse = await ethers.getContractFactory("Purse");
+        PurseContract = await Purse.deploy(RandomizerContract.address, ANTShopContract.address, ANTLotteryContract.address);
+        await PurseContract.deployed();
+
+        // Marketplace smart contract deployment
+        Marketplace = await ethers.getContractFactory("Marketplace");
+        MarketplaceContract = await Marketplace.deploy(ANTShopContract.address, PurseContract.address, ANTLotteryContract.address);
+        await MarketplaceContract.deployed();
+        await ANTShopContract.addMinterRole(MarketplaceContract.address);
+        await ANTCoinContract.addMinterRole(ANTLotteryContract.address);
+        await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
     });
 
     describe("Test Suite", function () {
