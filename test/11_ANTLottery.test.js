@@ -147,7 +147,7 @@ describe("ANTLottery", function () {
             console.log("Ticket Status: ", numberAndStatusInfo[1].toString());
         })
 
-        describe.skip("startLottery", async () => {
+        describe("startLottery", async () => {
 
             this.beforeEach(async () => {
                 await ANTLotteryContract.setOperatorAndTreasuryAndInjectorAddresses(user1.address, user2.address);
@@ -200,7 +200,7 @@ describe("ANTLottery", function () {
             })
         })
 
-        describe.skip("closeLottery", async () => {
+        describe("closeLottery", async () => {
             it("should fail if caller is not operator", async () => {
                 await expect(ANTLotteryContract.connect(badActor).closeLottery(1)).to.be.revertedWith("Not operator");
             })
@@ -246,7 +246,7 @@ describe("ANTLottery", function () {
             })
         })
 
-        describe.skip("buyTickets", async () => {
+        describe("buyTickets", async () => {
 
             it("should fail if caller is not the minter", async () => {
                 const provider = ANTLotteryContract.provider;
@@ -294,7 +294,7 @@ describe("ANTLottery", function () {
             })
         })
 
-        describe.skip("drawFinalNumberAndMakeLotteryClaimable", async () => {
+        describe("drawFinalNumberAndMakeLotteryClaimable", async () => {
             it("should fail if caller is not operator", async () => {
                 await expect(ANTLotteryContract.connect(badActor).drawFinalNumberAndMakeLotteryClaimable(1)).to.be.revertedWith("Not operator");
             })
@@ -377,7 +377,7 @@ describe("ANTLottery", function () {
             })
         })
 
-        describe.skip("claimTickets", async () => {
+        describe("claimTickets", async () => {
             it("should fail if param length is not equal", async () => {
                 await expect(ANTLotteryContract.connect(user1).claimTickets(1, ["2"], ["3", "4"])).to.be.revertedWith("ANTLottery: Not same length");
             });
