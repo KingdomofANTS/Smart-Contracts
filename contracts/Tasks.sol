@@ -76,7 +76,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     IPurse public purse;
     // Purse reward amount
     uint256[5] public rewardsAmount;
-    uint256[5][2] public rewardLevels;
+    uint256[2][5] public rewardLevels;
 
     // minters
     mapping(address => bool) private minters;
@@ -175,7 +175,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @notice Return the reward level numbers
     */
 
-    function getRewardLevels() external view returns(uint256[5][2] memory) {
+    function getRewardLevels() external view returns(uint256[2][5] memory) {
         return rewardLevels;
     }
 
@@ -358,7 +358,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _rewardAmount the array of purse reward amount
     */
 
-    function setRewardsAmount(uint256[5] calldata _rewardAmount) external onlyOwner {
+    function setRewardsAmount(uint256[5] memory _rewardAmount) external onlyOwner {
         rewardsAmount = _rewardAmount;
     }
 
@@ -368,8 +368,9 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _rewardLevels the array for reward levels
     */
 
-    function setRewardLevels(uint256[5][2] memory _rewardLevels) external onlyOwner {
+    function setRewardLevels(uint256[2][5] memory _rewardLevels) external onlyOwner {
         for(uint256 i = 0; i < 5; i++) {
+            require(_rewardLevels[i][0] <= _rewardLevels[i][1], "Tasks: index0 should be less than index1 value");
             rewardLevels[i][0] = _rewardLevels[i][0];
             rewardLevels[i][1] = _rewardLevels[i][1];
         } 
@@ -417,9 +418,37 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
         antCoin = _antCoin;
     }
 
+    /**
+    * @notice Set purse contract
+    * @dev This function can only be called by the owner
+    * @param _purse purse smart contract address
+    */
+
     function setPurseContract(IPurse _purse) external onlyOwner {
         require(address(_purse) != address(0x0), "Tasks: purse contract address can't be null");
         purse = _purse;
+    }
+
+    /**
+    * @notice Set Basic ANT contract
+    * @dev This function can only be called by the owner
+    * @param _basicANT Basic ANT smart contract address
+    */
+
+    function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+        require(address(_basicANT) != address(0x0), "Tasks: BasicANT contract address can't be null");
+        basicANT = _basicANT;
+    }
+
+    /**
+    * @notice Set Premium ANT contract
+    * @dev This function can only be called by the owner
+    * @param _premiumANT Premium ANT smart contract address
+    */
+
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+        require(address(_premiumANT) != address(0x0), "Tasks: PremiumANT contract address can't be null");
+        premiumANT = _premiumANT;
     }
 
     /**
