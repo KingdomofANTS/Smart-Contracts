@@ -443,6 +443,14 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * enables owner to pause / unpause contract
+    */
+    function setPaused(bool _paused) external onlyOwner {
+        if (_paused) _pause();
+        else _unpause();
+    }
+
+    /**
     * @notice Allows owner to withdraw ETH funds to an address
     * @dev wraps _user in payable to fix address -> address payable
     * @param to Address for ETH to be send to
