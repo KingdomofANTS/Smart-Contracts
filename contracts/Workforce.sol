@@ -97,6 +97,8 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     uint256 public batchIndexForExtraAPY = 0;
     // extra apy for work ants
     uint256 public extraAPY = 500; // 500 => 5.00 %
+    // antcoin stake limit amount for each ants
+    uint256 public limitAntCoinStakeAmount = 60000 ether;
 
     // Events
     // basic ant stake event
@@ -233,6 +235,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
 
     function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused {
         require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
+        require(_antCAmount <= limitAntCoinStakeAmount, "Workforce: ant coin stake amount exceed the limit amount");
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
         IPremiumANT.ANTInfo memory _premiumANTInfo = premiumANT.getANTInfo(_tokenId);
         premiumANTWorkforce[_tokenId] = StakeANT({
@@ -258,6 +261,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
 
     function stakeBasicANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused {
         require(basicANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
+        require(_antCAmount <= limitAntCoinStakeAmount, "Workforce: ant coin stake amount exceed the limit amount");
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
         IBasicANT.ANTInfo memory _basicANTInfo = basicANT.getANTInfo(_tokenId);
         basicANTWorkforce[_tokenId] = StakeANT({
@@ -408,6 +412,16 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
 
     function setBatchIndexForExtraAPY(uint256 _batchIndexForExtraAPY) external onlyOwner {
         batchIndexForExtraAPY = _batchIndexForExtraAPY;
+    }
+
+    /**
+    * @notice Set ant coin stake limit amount for each ants
+    * @dev This function can only be called by the owner
+    * @param _limitStakeAmount limit antcoin stake amount
+    */
+
+    function setLimitAntCoinStakeAmount(uint256 _limitStakeAmount) external onlyOwner {
+        limitAntCoinStakeAmount = _limitStakeAmount;
     }
 
     /**
