@@ -498,6 +498,45 @@ describe("Workforce", function () {
             await expect(WorkforceContract.connect(user1).stakePremiumANT(1, 1000)).to.be.revertedWith("Pausable: paused");
             await expect(WorkforceContract.connect(user1).unStakePremiumANT(1)).to.be.revertedWith("Pausable: paused");
         })
+
+        it("setLimitAntCoinStakeAmount: should fail if caller is not the owner", async () => {
+            await expect(WorkforceContract.connect(badActor).setLimitAntCoinStakeAmount(100)).to.be.revertedWith("Ownable: caller is not the owner")
+        })
+
+        it("setLimitAntCoinStakeAmount: shoudl work if caller is the owner", async () => {
+            await WorkforceContract.setLimitAntCoinStakeAmount(1000);
+            const expected = await WorkforceContract.limitAntCoinStakeAmount();
+            expect(expected).to.be.equal(1000)
+        })
+
+        it("stakeBasicANT: should fail if antcoin stake amount exceed the limit amount", async () => {
+            const maticMintPrice = 1000;
+            const tokenAmountForMint = 10000;
+            await BasicANTContract.setBatchInfo(0, "Worker ANT", "testBaseURI1", maticMintPrice, ANTCoinContract.address, tokenAmountForMint);
+            await BasicANTContract.setBatchInfo(1, "Wise ANT", "testBaseURI2", maticMintPrice, ANTCoinContract.address, tokenAmountForMint);
+            const antCoinTransferAmount = 100000000000;
+            // batch index 0 mint of basic ants
+            await BasicANTContract.connect(user1).mint(0, user1.address, 1, { value: maticMintPrice });
+            await ANTCoinContract.transfer(user1.address, antCoinTransferAmount)
+            await WorkforceContract.setLimitAntCoinStakeAmount(100);
+            const limitAntCoinStakeAmount = await WorkforceContract.limitAntCoinStakeAmount()
+            await expect(WorkforceContract.connect(user1).stakeBasicANT(1, limitAntCoinStakeAmount + 1)).to.be.revertedWith("Workforce: ant coin stake amount exceed the limit amount");
+            await expect(WorkforceContract.connect(user1).stakeBasicANT(1, limitAntCoinStakeAmount)).to.not.be.reverted
+        })
+
+        it("stakePremiumANT: should fail if antcoin stake amount exceed the limit amount", async () => {
+            const antCoinTransferAmount = 100000000000;
+            await ANTShopContract.mint(0, 10, user1.address);
+            await PremiumANTContract.setBatchInfo(0, "Worker ANT", "testBaseURI1", 1000, 1);
+            await PremiumANTContract.setBatchInfo(1, "Wise ANT", "testBaseURI2", 1000, 1);
+            // batch index 0 mint of premium ants
+            await PremiumANTContract.connect(user1).mint(0, user1.address, 1);
+            await ANTCoinContract.transfer(user1.address, antCoinTransferAmount)
+            await WorkforceContract.setLimitAntCoinStakeAmount(100);
+            const limitAntCoinStakeAmount = await WorkforceContract.limitAntCoinStakeAmount()
+            await expect(WorkforceContract.connect(user1).stakePremiumANT(1, limitAntCoinStakeAmount + 1)).to.be.revertedWith("Workforce: ant coin stake amount exceed the limit amount");
+            await expect(WorkforceContract.connect(user1).stakePremiumANT(1, limitAntCoinStakeAmount)).to.be.not.reverted;
+        })
     });
 });
 
