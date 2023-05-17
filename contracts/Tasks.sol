@@ -247,8 +247,8 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     */
 
     function stakePremiumANT(uint256 _tokenId) external whenNotPaused {
-        require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
-        require(antCoin.balanceOf(_msgSender()) >= antCStakeFee, 'Workforce: insufficient ant coin balance');
+        require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Tasks: you are not owner of this token');
+        require(antCoin.balanceOf(_msgSender()) >= antCStakeFee, 'Tasks: insufficient ant coin balance');
         uint256 _randomRewardIndex = getRewardIndexForNFT(_tokenId, true);
         premiumANTWorkforce[_tokenId] = StakeANT({
             tokenId: _tokenId,

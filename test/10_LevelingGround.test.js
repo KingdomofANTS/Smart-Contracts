@@ -1,7 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { network } = require("hardhat")
-const { utils } = ethers;
 
 describe("LevelingGround", function () {
     let ANTCoin, ANTCoinContract, BasicANT, BasicANTContract, PremiumANT, PremiumANTContract, LevelingGround, LevelingGroundContract, ANTShop, ANTShopContract;
