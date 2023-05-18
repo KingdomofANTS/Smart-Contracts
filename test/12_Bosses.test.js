@@ -193,7 +193,7 @@ describe("Bosses", function () {
             const user2AntCoinBalance1 = await ANTCoinContract.balanceOf(user2.address);
             expect(user2AntCoinBalance1).to.be.equal(0);
 
-            await increaseTime(60 * 60* 24 * 29); // 29 days
+            await increaseTime(60 * 60 * 24 * 29); // 29 days
 
             // early unStake --- User1 token Id: 1
             await BossesContract.connect(user1).unStakePremiumANT(1);
@@ -202,8 +202,10 @@ describe("Bosses", function () {
             const user1AntCoinBalance2 = await ANTCoinContract.balanceOf(user1.address);
             const expectedUser1ANTCoinBalance1 = antCoinTransferAmount * 0.8;
             expect(user1AntCoinBalance2).to.be.equal(expectedUser1ANTCoinBalance1);
+            const user1PremiumANTInfo = await PremiumANTContract.getANTInfo(2);
+            expect(user1PremiumANTInfo.level).to.be.equal(20)
 
-            await increaseTime(60 *  60 * 24 * 1);
+            await increaseTime(60 * 60 * 24 * 1);
             // normal unStake --- User2 token Id: 2
             await BossesContract.connect(user2).unStakePremiumANT(2);
             const user2StakedTokenIds2 = await BossesContract.getPremiumANTStakedByAddress(user2.address);
@@ -253,7 +255,7 @@ describe("Bosses", function () {
             const user2AntCoinBalance1 = await ANTCoinContract.balanceOf(user2.address);
             expect(user2AntCoinBalance1).to.be.equal(0);
 
-            await increaseTime(60 * 60* 24 * 29); // 29 days
+            await increaseTime(60 * 60 * 24 * 29); // 29 days
 
             // early unStake --- User1 token Id: 1
             await BossesContract.connect(user1).unStakeBasicANT(1);
@@ -262,8 +264,10 @@ describe("Bosses", function () {
             const user1AntCoinBalance2 = await ANTCoinContract.balanceOf(user1.address);
             const expectedUser1ANTCoinBalance1 = antCoinTransferAmount * 0.8;
             expect(user1AntCoinBalance2).to.be.equal(expectedUser1ANTCoinBalance1);
+            const user1BasicANTInfo = await BasicANTContract.getANTInfo(2);
+            expect(user1BasicANTInfo.level).to.be.equal(5)
 
-            await increaseTime(60 *  60 * 24 * 1);
+            await increaseTime(60 * 60 * 24 * 1);
             // normal unStake --- User2 token Id: 2
             await BossesContract.connect(user2).unStakeBasicANT(2);
             const user2StakedTokenIds2 = await BossesContract.getBasicANTStakedByAddress(user2.address);

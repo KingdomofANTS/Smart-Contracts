@@ -265,7 +265,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
 
         premiumANTStakedNFTs[_msgSender()].push(_tokenId);
         premiumANTStakedNFTsIndicies[_tokenId] = premiumANTStakedNFTs[_msgSender()].length - 1;
-        totalPremiumANTStaked += 1;
+        totalPremiumANTStaked++;
         premiumANT.transferFrom(_msgSender(), address(this), _tokenId);
         antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
 
@@ -296,7 +296,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         
         basicANTStakedNFTs[_msgSender()].push(_tokenId);
         basicANTStakedNFTsIndicies[_tokenId] = basicANTStakedNFTs[_msgSender()].length - 1;
-        totalBasicANTStaked += 1;
+        totalBasicANTStaked++;
         basicANT.transferFrom(_msgSender(), address(this), _tokenId);
         antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
         
@@ -333,7 +333,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTsIndicies[_tokenId]] = lastStakedNFTs;
         premiumANTStakedNFTsIndicies[premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1]] = premiumANTStakedNFTsIndicies[_tokenId];
         premiumANTStakedNFTs[_msgSender()].pop();
-        totalPremiumANTStaked -= 1;
+        totalPremiumANTStaked--;
         
         delete premiumANTStakedNFTsIndicies[_tokenId];
         delete premiumANTBosses[_tokenId];
@@ -371,7 +371,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         basicANTStakedNFTs[_msgSender()][basicANTStakedNFTsIndicies[_tokenId]] = lastStakedNFTs;
         basicANTStakedNFTsIndicies[basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1]] = basicANTStakedNFTsIndicies[_tokenId];
         basicANTStakedNFTs[_msgSender()].pop();
-        totalBasicANTStaked -= 1;
+        totalBasicANTStaked--;
         
         delete basicANTStakedNFTsIndicies[_tokenId];
         delete basicANTBosses[_tokenId];
