@@ -435,6 +435,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _name Premium Batch name of batch index
     * @param _baseURI Premium Batch baseURI of batch index
     * @param _maxSupply Premium Batch maxSupply of batch index default => 1000
+    * @param _antFoodAmountForMint ANTFood token amount to mint a Premium NFT
     */
 
     function setBatchInfo(uint256 _batchIndex, string calldata _name, string calldata _baseURI, uint256 _maxSupply, uint256 _antFoodAmountForMint) external onlyOwner {
