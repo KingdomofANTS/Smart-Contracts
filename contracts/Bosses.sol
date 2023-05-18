@@ -259,6 +259,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Bosses: you are not owner of this token');
         require(_antCAmount <= limitANTCoinStakeAmount, 'Bosses: ant coin stake amount exceed the limit amount');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Bosses: insufficient ant coin balance');
+        require(bossesPools.length > 0, "Bosses: bosses pools info has not been set yet");
 
         uint256 _randomRewardIndex = _getRandomIndexOfPoolsByLevel(_tokenId, true);
         premiumANTBosses[_tokenId] = StakeANT({
@@ -287,8 +288,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         require(basicANT.ownerOf(_tokenId) == _msgSender(), 'Bosses: you are not owner of this token');
         require(_antCAmount <= limitANTCoinStakeAmount, 'Bosses: ant coin stake amount exceed the limit amount');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Bosses: insufficient ant coin balance');
-        
-        uint256 _randomRewardIndex = _getRandomIndexOfPoolsByLevel(_tokenId, true);
+        require(bossesPools.length > 0, "Bosses: bosses pools info has not been set yet");
+
+        uint256 _randomRewardIndex = _getRandomIndexOfPoolsByLevel(_tokenId, false);
         basicANTBosses[_tokenId] = StakeANT({
             tokenId: _tokenId,
             owner: _msgSender(),
