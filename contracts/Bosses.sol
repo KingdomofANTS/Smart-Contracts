@@ -156,16 +156,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @notice Return the random index of pools by ant level
     */
 
-    function _getRandomIndexOfPoolsByLevel(uint256 _tokenId, bool _type) internal view returns(uint256) {
-        uint256 _antLevel = 0;
-        if(_type) {
-            IPremiumANT.ANTInfo memory _premiumANTInfo = premiumANT.getANTInfo(_tokenId);
-            _antLevel = _premiumANTInfo.level;    
-        }
-        else {
-            IBasicANT.ANTInfo memory _basicANTInfo = basicANT.getANTInfo(_tokenId);
-            _antLevel = _basicANTInfo.level;
-        }
+    function _getRandomIndexOfPoolsByLevel(uint256 _antLevel, uint256 _tokenId) internal view returns(uint256) {
 
         uint256 matchedCount = 0;
 
@@ -176,7 +167,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             }
         }
 
-        uint256 randomIndex = randomizer.randomToken(_tokenId) % matchedCount;
+        uint256 randomIndex = randomizer.randomToken(_tokenId * _antLevel) % matchedCount;
         return randomIndex;
     }
 
@@ -260,8 +251,10 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         require(_antCAmount <= limitANTCoinStakeAmount, 'Bosses: ant coin stake amount exceed the limit amount');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Bosses: insufficient ant coin balance');
         require(bossesPools.length > 0, "Bosses: bosses pools info has not been set yet");
+        IPremiumANT.ANTInfo memory _premiumANTInfo = premiumANT.getANTInfo(_tokenId);
+        require(_premiumANTInfo.level >= bossesPools[0].levelRequired, "Bosses: ant level must be greater than the minimum required pool level");
 
-        uint256 _randomRewardIndex = _getRandomIndexOfPoolsByLevel(_tokenId, true);
+        uint256 _randomRewardIndex = _getRandomIndexOfPoolsByLevel(_premiumANTInfo.level, _tokenId);
         premiumANTBosses[_tokenId] = StakeANT({
             tokenId: _tokenId,
             owner: _msgSender(),
@@ -289,8 +282,10 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         require(_antCAmount <= limitANTCoinStakeAmount, 'Bosses: ant coin stake amount exceed the limit amount');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Bosses: insufficient ant coin balance');
         require(bossesPools.length > 0, "Bosses: bosses pools info has not been set yet");
+        IBasicANT.ANTInfo memory _basicANTInfo = basicANT.getANTInfo(_tokenId);
+        require(_basicANTInfo.level >= bossesPools[0].levelRequired, "Bosses: ant level must be greater than the minimum required pool level");
 
-        uint256 _randomRewardIndex = _getRandomIndexOfPoolsByLevel(_tokenId, false);
+        uint256 _randomRewardIndex = _getRandomIndexOfPoolsByLevel(_basicANTInfo.level, _tokenId);
         basicANTBosses[_tokenId] = StakeANT({
             tokenId: _tokenId,
             owner: _msgSender(),
