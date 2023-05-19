@@ -24,13 +24,13 @@ describe("Workforce", function () {
 
         // Basic ANT smart contract deployment
         BasicANT = await ethers.getContractFactory('BasicANT');
-        BasicANTContract = await BasicANT.deploy(ANTShopContract.address);
+        BasicANTContract = await BasicANT.deploy(ANTCoinContract.address, ANTShopContract.address);
         await BasicANTContract.deployed();
         await ANTShopContract.addMinterRole(BasicANTContract.address);
 
         // Premium ANT smart contract deployment
         PremiumANT = await ethers.getContractFactory('PremiumANT');
-        PremiumANTContract = await PremiumANT.deploy(ANTShopContract.address);
+        PremiumANTContract = await PremiumANT.deploy(ANTCoinContract.address, ANTShopContract.address);
         await PremiumANTContract.deployed();
         await ANTShopContract.addMinterRole(PremiumANTContract.address);
 

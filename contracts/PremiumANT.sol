@@ -47,6 +47,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import 'erc721a/contracts/extensions/ERC721AQueryable.sol';
+import './interfaces/IANTCoin.sol';
 import './interfaces/IANTShop.sol';
 import './interfaces/IPremiumANT.sol';
 
@@ -55,6 +56,8 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     using Strings for uint256;
     using SafeMath for uint256;
 
+    // Reference to ANTCoin
+    IANTCoin public antCoin;
     // Reference to ANTShop
     IANTShop public antShop;
 
@@ -74,6 +77,8 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     uint256 public antFoodTokenId = 0;
     // Leveling Potion token id of ANTShop
     uint256 public levelingPotionTokenId = 1;
+    // ANT Coin fee when use Leveling Potion to upgrade the BaiscANT
+    uint256 public upgradeANTFee = 5 ether;
 
     // Upgrade ANT Event
     event UpgradeANT(uint256 tokenId, address owner, uint256 currentLevel);
@@ -86,7 +91,8 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
         _;
     }
 
-    constructor(IANTShop _antShop) ERC721A('Premium ANT', 'ANTP') {
+    constructor(IANTCoin _antCoin, IANTShop _antShop) ERC721A('Premium ANT', 'ANTP') {
+        antCoin = _antCoin;
         antShop = _antShop;
         minters[_msgSender()] = true;
     }
@@ -266,6 +272,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
         require(ownerOf(tokenId) == _msgSender(), "PremiumANT: you are not owner of this token");
         require(potionAmount > 0, "PremiumANT: leveling potion amount must be greater than zero");
         require(antShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "PremiumANT: you don't have enough potions for upgrading");
+        require(antCoin.balanceOf(_msgSender()) >= potionAmount * upgradeANTFee, "PremiumANT: insufficient ant coin fee for upgrading");
 
         ANTInfo storage antInfo = premiumANTs[tokenId];
         require(antInfo.level < maxLevel, "Premium ANT: ant can no longer be upgraded");
@@ -290,6 +297,8 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
         else {
             antShop.burn(levelingPotionTokenId, potionAmount, _msgSender());
         }
+
+        antCoin.burn(_msgSender(), potionAmount * upgradeANTFee); // burn the ant coin fee
 
         emit UpgradeANT(tokenId, _msgSender(), level);
     }
@@ -379,16 +388,6 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     /**
-    * @notice Function to set ant shop contract addres
-    * @dev This function can only be called by the owner
-    * @param _antShop ant shop contract address
-    */
-
-    function setANTShopContract(IANTShop _antShop) external onlyOwner {
-        antShop = _antShop;
-    }
-
-    /**
     * @notice Function to set the start level of Premium ANT
     * @dev This function can only be called by the owner
     * @param _startLevel start level value
@@ -444,6 +443,37 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
         premiumBatches[_batchIndex].maxSupply = _maxSupply;
         premiumBatches[_batchIndex].mintPrice = _antFoodAmountForMint;
     }
+
+    /**
+    * @notice Function to set the ant coin fee when upgrading the BasicANT
+    * @dev This function can only be called by the owner
+    * @param _upgradeANTFee ant coin fee
+    */
+
+    function setUpgradeFee(uint256 _upgradeANTFee) external onlyOwner {
+        upgradeANTFee = _upgradeANTFee;
+    }
+
+    /**
+    * @notice Function to set the ant coin smart contract address
+    * @dev This function can only be called by the owner
+    * @param _antCoin ant coin smart contract address
+    */
+
+    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+        antCoin = _antCoin;
+    }
+
+    /**
+    * @notice Function to set the ant shop smart contract address
+    * @dev This function can only be called by the owner
+    * @param _antShop ant shop smart contract address
+    */
+
+    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+        antShop = _antShop;
+    }
+
 
     /**
     * enables owner to pause / unpause contract

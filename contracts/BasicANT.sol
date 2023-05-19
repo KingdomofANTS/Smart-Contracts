@@ -47,6 +47,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import 'erc721a/contracts/extensions/ERC721AQueryable.sol';
+import './interfaces/IANTCoin.sol';
 import './interfaces/IANTShop.sol';
 import './interfaces/IBasicANT.sol';
 
@@ -55,8 +56,10 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     using Strings for uint256;
     using SafeMath for uint256;
 
+    // Reference to ANTCoin
+    IANTCoin public antCoin;
     // Reference to ANTShop
-    IANTShop public ANTShop;
+    IANTShop public antShop;
 
     // minters
     mapping(address => bool) private minters;
@@ -74,6 +77,8 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     uint256 public antFoodTokenId = 0;
     // Leveling Potion token id of ANTShop
     uint256 public levelingPotionTokenId = 1;
+    // ANT Coin fee when use Leveling Potion to upgrade the BaiscANT
+    uint256 public upgradeANTFee = 5 ether;
 
     // Upgrade ANT Event
     event UpgradeANT(uint256 tokenId, address owner, uint256 currentLevel);
@@ -86,8 +91,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
         _;
     }
 
-    constructor(IANTShop _antShop) ERC721A('Basic ANT', 'ANTB') {
-        ANTShop = _antShop;
+    constructor(IANTCoin _antCoin, IANTShop _antShop) ERC721A('Basic ANT', 'ANTB') {
+        antCoin = _antCoin;
+        antShop = _antShop;
         minters[_msgSender()] = true;
     }
 
@@ -270,7 +276,8 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     function upgradeBasicANT(uint256 tokenId, uint256 potionAmount) external whenNotPaused {
         require(ownerOf(tokenId) == _msgSender(), "BasicANT: you are not owner of this token");
         require(potionAmount > 0, "BasicANT: leveling potion amount must be greater than zero");
-        require(ANTShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "BasicANT: you don't have enough potions for upgrading");
+        require(antShop.balanceOf(_msgSender(), levelingPotionTokenId) >= potionAmount, "BasicANT: you don't have enough potions for upgrading");
+        require(antCoin.balanceOf(_msgSender()) >= potionAmount * upgradeANTFee, "BasicANT: insufficient ant coin fee for upgrading");
 
         ANTInfo storage antInfo = basicANTs[tokenId];
         require(antInfo.level < maxLevel, "BasicANT: ant can no longer be upgraded");
@@ -289,12 +296,14 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
         antInfo.remainPotions = remainPotions;
 
         if(level >= maxLevel) {
-            ANTShop.burn(levelingPotionTokenId, potionAmount.sub(remainPotions), _msgSender());
+            antShop.burn(levelingPotionTokenId, potionAmount.sub(remainPotions), _msgSender());
             antInfo.remainPotions = 0;
         }
         else {
-            ANTShop.burn(levelingPotionTokenId, potionAmount, _msgSender());
+            antShop.burn(levelingPotionTokenId, potionAmount, _msgSender());
         }
+
+        antCoin.burn(_msgSender(), potionAmount * upgradeANTFee); // burn the ant coin fee
 
         emit UpgradeANT(tokenId, _msgSender(), level);
     }
@@ -450,6 +459,36 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
         basicBatches[_batchIndex].tokenAddressForMint = _tokenAddressFroMint;
         basicBatches[_batchIndex].tokenAmountForMint = _tokenAmountForMint;
         basicBatches[_batchIndex].mintMethod = true;
+    }
+
+    /**
+    * @notice Function to set the ant coin fee when upgrading the BasicANT
+    * @dev This function can only be called by the owner
+    * @param _upgradeANTFee ant coin fee
+    */
+
+    function setUpgradeFee(uint256 _upgradeANTFee) external onlyOwner {
+        upgradeANTFee = _upgradeANTFee;
+    }
+
+    /**
+    * @notice Function to set the ant coin smart contract address
+    * @dev This function can only be called by the owner
+    * @param _antCoin ant coin smart contract address
+    */
+
+    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+        antCoin = _antCoin;
+    }
+
+    /**
+    * @notice Function to set the ant shop smart contract address
+    * @dev This function can only be called by the owner
+    * @param _antShop ant shop smart contract address
+    */
+
+    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+        antShop = _antShop;
     }
 
     /**
