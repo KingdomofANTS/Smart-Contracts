@@ -81,9 +81,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     uint256 public upgradeANTFee = 5 ether;
 
     // Upgrade ANT Event
-    event UpgradeANT(uint256 tokenId, address owner, uint256 currentLevel);
+    event UpgradeBasicANT(uint256 tokenId, address owner, uint256 currentLevel);
     // Mint event
-    event Mint(address owner, uint256 quantity);
+    event MintBasicANT(address owner, uint256 quantity);
 
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
@@ -264,7 +264,8 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
         basicBatches[batchIndex].minted += quantity;
         minted += quantity;
         _mint(recipient, quantity);
-        emit Mint(recipient, quantity);
+        
+        emit MintBasicANT(recipient, quantity);
     }
 
     /**
@@ -305,7 +306,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
 
         antCoin.burn(_msgSender(), potionAmount * upgradeANTFee); // burn the ant coin fee
 
-        emit UpgradeANT(tokenId, _msgSender(), level);
+        emit UpgradeBasicANT(tokenId, _msgSender(), level);
     }
 
     /**
@@ -347,7 +348,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
             antInfo.remainPotions = 0;
         }
 
-        emit UpgradeANT(tokenId, _msgSender(), level);
+        emit UpgradeBasicANT(tokenId, _msgSender(), level);
     }
 
     /**
@@ -376,6 +377,8 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
         batchInfo.minted = endMinted;
         minted = minted + quantity;
         _mint(recipient, quantity);
+        
+        emit MintBasicANT(recipient, quantity);
     }
 
     /**

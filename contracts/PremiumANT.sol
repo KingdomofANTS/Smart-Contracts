@@ -81,9 +81,9 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     uint256 public upgradeANTFee = 5 ether;
 
     // Upgrade ANT Event
-    event UpgradeANT(uint256 tokenId, address owner, uint256 currentLevel);
+    event UpgradePremiumANT(uint256 tokenId, address owner, uint256 currentLevel);
     // Mint event
-    event Mint(address owner, uint256 quantity);
+    event MintPremiumANT(address owner, uint256 quantity);
 
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
@@ -259,7 +259,8 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
         minted += quantity;
         antShop.burn(antFoodTokenId, batchInfo.mintPrice * quantity, _msgSender());
         _mint(recipient, quantity);
-        emit Mint(recipient, quantity);
+        
+        emit MintPremiumANT(recipient, quantity);
     }
 
     /**
@@ -300,7 +301,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
 
         antCoin.burn(_msgSender(), potionAmount * upgradeANTFee); // burn the ant coin fee
 
-        emit UpgradeANT(tokenId, _msgSender(), level);
+        emit UpgradePremiumANT(tokenId, _msgSender(), level);
     }
 
     /**
@@ -342,7 +343,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
             antInfo.remainPotions = 0;
         }
 
-        emit UpgradeANT(tokenId, _msgSender(), level);
+        emit UpgradePremiumANT(tokenId, _msgSender(), level);
     }
 
     /**
@@ -373,6 +374,8 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
         batchInfo.minted = endMinted;
         minted = minted + quantity;
         _mint(recipient, quantity);
+
+        emit MintPremiumANT(recipient, quantity);
     }
 
     /**
