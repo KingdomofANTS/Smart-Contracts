@@ -102,13 +102,13 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
 
     // Events
     // basic ant stake event
-    event StakeBasicANT(uint256 id, address owner);
+    event WorkforceStakeBasicANT(uint256 id, address owner);
     // basic ant unstake event
-    event UnStakeBasicANT(uint256 id, address owner);
+    event WorkforceUnStakeBasicANT(uint256 id, address owner);
     // premium ant stake event
-    event StakePremiumANT(uint256 id, address owner);
+    event WorkforceStakePremiumANT(uint256 id, address owner);
     // premium ant unstake event
-    event UnStakePremiumANT(uint256 id, address owner);
+    event WorkforceUnStakePremiumANT(uint256 id, address owner);
 
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
@@ -250,7 +250,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         totalPremiumANTStaked += 1;
         premiumANT.transferFrom(_msgSender(), address(this), _tokenId);
         antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
-        emit StakePremiumANT(_tokenId, _msgSender());
+        emit WorkforceStakePremiumANT(_tokenId, _msgSender());
     }
 
     /**
@@ -276,7 +276,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         totalBasicANTStaked += 1;
         basicANT.transferFrom(_msgSender(), address(this), _tokenId);
         antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
-        emit StakeBasicANT(_tokenId, _msgSender());
+        emit WorkforceStakeBasicANT(_tokenId, _msgSender());
     }
 
     /**
@@ -299,7 +299,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         totalPremiumANTStaked -= 1;
         delete premiumANTStakedNFTsIndicies[_tokenId];
         delete premiumANTWorkforce[_tokenId];
-        emit UnStakePremiumANT(_tokenId, _msgSender());
+        emit WorkforceUnStakePremiumANT(_tokenId, _msgSender());
     }
 
     /**
@@ -322,7 +322,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         totalBasicANTStaked -= 1;
         delete basicANTStakedNFTsIndicies[_tokenId];
         delete basicANTWorkforce[_tokenId];
-        emit UnStakeBasicANT(_tokenId, _msgSender());
+        emit WorkforceUnStakeBasicANT(_tokenId, _msgSender());
     }
 
     /**
