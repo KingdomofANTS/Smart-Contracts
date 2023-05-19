@@ -248,7 +248,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _brackets: array of brackets for the ticket ids
      * @dev Callable by users only, not contract!
      */
-    function claimTickets(uint256 _lotteryId, uint256[] calldata _ticketIds, uint256[] calldata _brackets) external nonReentrant {
+    function claimTickets(uint256 _lotteryId, uint256[] calldata _ticketIds, uint256[] calldata _brackets) external nonReentrant whenNotPaused {
         require(_ticketIds.length == _brackets.length, "ANTLottery: Not same length");
         require(_ticketIds.length != 0, "ANTLottery: Length must be >0");
         require(_lotteries[_lotteryId].status == Status.Claimable, "ANTLottery: Lottery not claimable");
@@ -443,7 +443,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _recipient: recipient address 
      * @param _quantity: tickets quantity
      */
-    function buyTickets(address _recipient, uint256 _quantity) external override onlyMinter nonReentrant {
+    function buyTickets(address _recipient, uint256 _quantity) external override onlyMinter nonReentrant whenNotPaused {
         require(_quantity != 0, "No ticket specified");
         require(_lotteries[currentLotteryId].status == Status.Open, "ANTLottery: Lottery is not open");
         require(block.timestamp < _lotteries[currentLotteryId].endTime, "ANTLottery: Lottery is over");
@@ -650,5 +650,49 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
+    }
+
+    /**
+    * @notice Transfer ETH and return the success status.
+    * @dev This function only forwards 30,000 gas to the callee.
+    * @param to Address for ETH to be send to
+    * @param value Amount of ETH to send
+    */
+    function _safeTransferETH(address to, uint256 value) internal returns (bool) {
+        (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
+        return success;
+    }
+
+    /**
+    * @notice Allows owner to withdraw ETH funds to an address
+    * @dev wraps _user in payable to fix address -> address payable
+    * @param to Address for ETH to be send to
+    * @param amount Amount of ETH to send
+    */
+    function withdraw(address payable to, uint256 amount) public onlyOwner {
+        require(_safeTransferETH(to, amount));
+    }
+
+    /**
+    * @notice Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract Address for the token
+    * @param to Address for token to be send to
+    * @param amount Amount of token to send
+    */
+    function withdrawToken(
+        address _tokenContract,
+        address to,
+        uint256 amount
+    ) public onlyOwner {
+        IERC20 tokenContract = IERC20(_tokenContract);
+        tokenContract.transfer(to, amount);
+    }
+
+    /**
+    * enables owner to pause / unpause contract
+    */
+    function setPaused(bool _paused) external onlyOwner {
+        if (_paused) _pause();
+        else _unpause();
     }
 }
