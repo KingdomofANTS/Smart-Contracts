@@ -206,7 +206,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param tokenId purse token id to get reward
     */
 
-    function usePurseToken(uint256 tokenId) external {
+    function usePurseToken(uint256 tokenId) external whenNotPaused {
         require(ownerOf(tokenId) == _msgSender(), "Purse: you are not owner of this token");
 
         PurseCategory storage purseCategory = purseCategories[purseInfo[tokenId]];
@@ -380,6 +380,14 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
+    }
+
+    /**
+    * enables owner to pause / unpause contract
+    */
+    function setPaused(bool _paused) external onlyOwner {
+        if (_paused) _pause();
+        else _unpause();
     }
 
     /**

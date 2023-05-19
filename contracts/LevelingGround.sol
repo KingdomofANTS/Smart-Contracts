@@ -96,13 +96,13 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
 
     // Events
     // basic ant stake event
-    event StakeBasicANT(uint256 id, address owner);
+    event LevelingGroundStakeBasicANT(uint256 id, address owner);
     // basic ant unstake event
-    event UnStakeBasicANT(uint256 id, address owner);
+    event LevelingGroundUnStakeBasicANT(uint256 id, address owner);
     // premium ant stake event
-    event StakePremiumANT(uint256 id, address owner);
+    event LevelingGroundStakePremiumANT(uint256 id, address owner);
     // premium ant unstake event
-    event UnStakePremiumANT(uint256 id, address owner);
+    event LevelingGroundUnStakePremiumANT(uint256 id, address owner);
 
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
@@ -244,7 +244,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         totalPremiumANTStaked += 1;
         premiumANT.transferFrom(_msgSender(), address(this), tokenId);
         antCoin.burn(_msgSender(), stakeFeeAmount);
-        emit StakePremiumANT(tokenId, _msgSender());
+        emit LevelingGroundStakePremiumANT(tokenId, _msgSender());
     }
 
     /**
@@ -269,7 +269,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         totalBasicANTStaked += 1;
         basicANT.transferFrom(_msgSender(), address(this), tokenId);
         antCoin.burn(_msgSender(), stakeFeeAmount);
-        emit StakeBasicANT(tokenId, _msgSender());
+        emit LevelingGroundStakeBasicANT(tokenId, _msgSender());
     }
 
     /**
@@ -290,7 +290,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         totalPremiumANTStaked -= 1;
         delete premiumANTStakedNFTsIndicies[tokenId];
         delete premiumANTGround[tokenId];
-        emit UnStakePremiumANT(tokenId, _msgSender());
+        emit LevelingGroundUnStakePremiumANT(tokenId, _msgSender());
     }
 
     /**
@@ -311,7 +311,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         totalBasicANTStaked -= 1;
         delete basicANTStakedNFTsIndicies[tokenId];
         delete basicANTGround[tokenId];
-        emit UnStakePremiumANT(tokenId, _msgSender());
+        emit LevelingGroundUnStakeBasicANT(tokenId, _msgSender());
     }
 
     /**

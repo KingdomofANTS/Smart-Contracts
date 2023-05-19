@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { network } = require("hardhat")
+const { network } = require("hardhat") 
 
 describe("LevelingGround", function () {
     let ANTCoin, ANTCoinContract, BasicANT, BasicANTContract, PremiumANT, PremiumANTContract, LevelingGround, LevelingGroundContract, ANTShop, ANTShopContract;
@@ -24,13 +24,13 @@ describe("LevelingGround", function () {
 
         // Basic ANT smart contract deployment
         BasicANT = await ethers.getContractFactory('BasicANT');
-        BasicANTContract = await BasicANT.deploy(ANTShopContract.address);
+        BasicANTContract = await BasicANT.deploy(ANTCoinContract.address, ANTShopContract.address);
         await BasicANTContract.deployed();
         await ANTShopContract.addMinterRole(BasicANTContract.address);
 
         // Premium ANT smart contract deployment
         PremiumANT = await ethers.getContractFactory('PremiumANT');
-        PremiumANTContract = await PremiumANT.deploy(ANTShopContract.address);
+        PremiumANTContract = await PremiumANT.deploy(ANTCoinContract.address, ANTShopContract.address);
         await PremiumANTContract.deployed();
         await ANTShopContract.addMinterRole(PremiumANTContract.address);
 
