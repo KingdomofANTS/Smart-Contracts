@@ -177,6 +177,17 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     * This section has internal only functions
     */
 
+    /**
+    * @notice Transfer ETH and return the success status.
+    * @dev This function only forwards 30,000 gas to the callee.
+    * @param to Address for ETH to be send to
+    * @param value Amount of ETH to send
+    */
+    function _safeTransferETH(address to, uint256 value) internal returns (bool) {
+        (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
+        return success;
+    }
+
     function reverseUint256(uint256 x) public pure returns (uint256) {
         uint256 result = 0;
         while (x > 0) {
@@ -650,17 +661,6 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
-    }
-
-    /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
-    */
-    function _safeTransferETH(address to, uint256 value) internal returns (bool) {
-        (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
-        return success;
     }
 
     /**
