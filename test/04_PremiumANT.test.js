@@ -1,12 +1,17 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat")
-const { BigNumber } = require("ethers")
+const { BigNumber, utils } = require("ethers")
 
 describe("PremiumANT", function () {
-    let ANTShop, ANTShopContract, PremiumANT, PremiumANTContract;
+    let ANTShop, ANTShopContract, PremiumANT, PremiumANTContract,  ANTCoin, ANTCoinContract;
 
     beforeEach(async function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
+
+        // ANTCoin smart contract deployment
+        ANTCoin = await ethers.getContractFactory("ANTCoin");
+        ANTCoinContract = await ANTCoin.deploy();
+        await ANTCoinContract.deployed();
 
         // ANTShop smart contract deployment
         ANTShop = await ethers.getContractFactory("ANTShop");
@@ -19,9 +24,11 @@ describe("PremiumANT", function () {
 
         // Premium ANT smart contract deployment
         PremiumANT = await ethers.getContractFactory('PremiumANT');
-        PremiumANTContract = await PremiumANT.deploy(ANTShopContract.address);
+        PremiumANTContract = await PremiumANT.deploy(ANTCoinContract.address, ANTShopContract.address);
         await PremiumANTContract.deployed();
+
         await ANTShopContract.addMinterRole(PremiumANTContract.address);
+        await ANTCoinContract.addMinterRole(PremiumANTContract.address)
     });
 
     describe("Test Suite", function () {
@@ -139,7 +146,7 @@ describe("PremiumANT", function () {
 
             it("should fail if user don't have enough ANTFood balance to mint", async () => {
                 await PremiumANTContract.setBatchInfo(0, "name1", "testBaseURI1", 10, 2);
-                await expect(PremiumANTContract.connect(user1).mint(0, user1.address, 1)).to.be.revertedWith("PremiumANT: insufficient balance")
+                await expect(PremiumANTContract.connect(user2).mint(0, user2.address, 1)).to.be.revertedWith("PremiumANT: insufficient balance")
             })
 
             it("should work if all conditions are correct", async () => {
@@ -208,11 +215,15 @@ describe("PremiumANT", function () {
             beforeEach(async () => {
                 // ANT Food
                 await ANTShopContract.mint(0, 2, user1.address);
+                await ANTShopContract.mint(0, 2, user2.address);
                 // Leveling Potions
                 await ANTShopContract.mint(1, 100, user1.address);
+                await ANTShopContract.mint(1, 100, user2.address);
                 await PremiumANTContract.setBatchInfo(0, "name1", "testBaseURI1", 100, 2);
                 await PremiumANTContract.setBatchInfo(1, "name2", "testBaseURI2", 100, 1);
                 await PremiumANTContract.connect(user1).mint(0, user1.address, 1);
+                await PremiumANTContract.connect(user2).mint(0, user2.address, 1);
+                await ANTCoinContract.transfer(user1.address, utils.parseEther("1000"))
             })
 
             it("should fail if caller is not owner of token for upgrading", async () => {
@@ -257,6 +268,31 @@ describe("PremiumANT", function () {
                 expect(antInfo4.toString()).to.be.equal("25,0,0,1");
                 expect(levelPotionsBalance2).to.be.equal(levelPotionsBalance1.sub(24));
             })
+
+            it("setUpgradeFee: should fail if caller is not the owner", async () => {
+                await expect(PremiumANTContract.connect(badActor).setUpgradeFee(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            })
+
+            it("setUpgradeFee: should work if caller is the owner", async () => {
+                await expect(PremiumANTContract.setUpgradeFee(100)).to.be.not.reverted;
+                const upgradeFee = await PremiumANTContract.upgradeANTFee();
+                expect(upgradeFee).to.be.equal(100)
+            })
+
+            it("should fail if user don't have enough ant coin stake fee", async () => {
+               await expect(PremiumANTContract.connect(user2).upgradePremiumANT(2, 10)).to.be.revertedWith("PremiumANT: insufficient ant coin fee for upgrading") 
+            })
+
+            it("should burn the ant coin fee when upgrading the ANT", async () => {
+                await ANTCoinContract.transfer(user2.address, 1000000000);
+                await PremiumANTContract.setUpgradeFee(100);
+                const userANTCoinBalance1 = await ANTCoinContract.balanceOf(user2.address);
+                expect(userANTCoinBalance1).to.be.equal(1000000000)
+                await PremiumANTContract.connect(user2).upgradePremiumANT(2, 10);
+                const expectedANTCoinBalance = userANTCoinBalance1 - 100 * 10;
+                const userANTCoinBalance2 = await ANTCoinContract.balanceOf(user2.address);
+                expect(userANTCoinBalance2).to.be.equal(expectedANTCoinBalance);
+            })
         })
 
         it("tokenURI: should fail if token doesn't exist", async () => {
@@ -287,6 +323,8 @@ describe("PremiumANT", function () {
         it("getANTExperience: should return the experience in token", async () => {
             // ANT Food
             await ANTShopContract.mint(0, 12, user1.address);
+            await ANTCoinContract.transfer(user1.address, utils.parseEther("1000"))
+
             // Leveling Potions
             await ANTShopContract.mint(1, 100, user1.address);
             await PremiumANTContract.setBatchInfo(0, "name1", "https://ipfs.io/ipfs/testBaseURI1/", 100, 2);
