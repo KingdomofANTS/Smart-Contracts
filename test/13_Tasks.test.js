@@ -201,7 +201,7 @@ describe("Tasks", function () {
                 await PremiumANTContract.connect(user1).mint(0, user1.address, 10);
                 await ANTCoinContract.transfer(user1.address, antcoinInitAmount);
                 const tx = await TasksContract.connect(user1).stakePremiumANT(1);
-                expect(tx).to.emit(TasksContract, "StakePremiumANT").withArgs(1, user1.address);
+                expect(tx).to.emit(TasksContract, "TasksStakePremiumANT").withArgs(1, user1.address);
                 const totalPremiumANTStaked = await TasksContract.totalPremiumANTStaked();
                 expect(totalPremiumANTStaked).to.be.equal(1);
                 const expectedANTCoinBalance = await ANTCoinContract.balanceOf(user1.address);
@@ -256,7 +256,7 @@ describe("Tasks", function () {
                 await ANTCoinContract.transfer(user1.address, antcoinInitAmount);
                 await BasicANTContract.downgradeLevel(1, 8);
                 const tx = await TasksContract.connect(user1).stakeBasicANT(1);
-                expect(tx).to.emit(TasksContract, "StakeBasicANT").withArgs(1, user1.address);
+                expect(tx).to.emit(TasksContract, "TasksStakeBasicANT").withArgs(1, user1.address);
                 const totalBasicANTStaked = await TasksContract.totalBasicANTStaked();
                 expect(totalBasicANTStaked).to.be.equal(1);
                 const expectedANTCoinBalance = await ANTCoinContract.balanceOf(user1.address);
