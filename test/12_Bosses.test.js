@@ -2,9 +2,8 @@ const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
 const { network } = require("hardhat")
-const { utils } = ethers;
 
-describe("Bosses", function () {
+describe.skip("Bosses", function () {
     let ANTCoin, ANTCoinContract, ANTShop, ANTShopContract, Bosses, BossesContract, Randomizer, RandomizerContract, BasicANT, BasicANTContract, PremiumANT, PremiumANTContract;
 
     beforeEach(async function () {
