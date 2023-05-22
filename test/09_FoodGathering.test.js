@@ -4,10 +4,15 @@ const { network } = require("hardhat")
 const { utils } = ethers;
 
 describe("Workforce", function () {
-    let ANTCoin, ANTCoinContract, ANTShop, ANTShopContract, FoodGathering, FoodGatheringContract;
+    let ANTCoin, ANTCoinContract, ANTShop, ANTShopContract, FoodGathering, FoodGatheringContract, Randomizer, RandomizerContract;
 
     beforeEach(async function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
+
+        // Randomizer smart contract deployment
+        Randomizer = await ethers.getContractFactory("MockRandomizer");
+        RandomizerContract = await Randomizer.deploy();
+        await RandomizerContract.deployed();
 
         // ANTCoin smart contract deployment
         ANTCoin = await ethers.getContractFactory("ANTCoin");
