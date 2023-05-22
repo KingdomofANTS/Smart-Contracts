@@ -110,13 +110,13 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
 
     // Events
     // basic ant stake event
-    event StakeBasicANT(uint256 id, address owner);
+    event TasksStakeBasicANT(uint256 id, address owner);
     // basic ant unstake event
-    event UnStakeBasicANT(uint256 id, address owner);
+    event TasksUnStakeBasicANT(uint256 id, address owner);
     // premium ant stake event
-    event StakePremiumANT(uint256 id, address owner);
+    event TasksStakePremiumANT(uint256 id, address owner);
     // premium ant unstake event
-    event UnStakePremiumANT(uint256 id, address owner);
+    event TasksUnStakePremiumANT(uint256 id, address owner);
 
     constructor(IRandomizer _randomizer, IANTCoin _antCoin, IPremiumANT _premiumANT, IBasicANT _basicANT, IPurse _purse) {
         randomizer = _randomizer;
@@ -260,7 +260,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
         premiumANT.transferFrom(_msgSender(), address(this), _tokenId);
         antCoin.burn(_msgSender(), antCStakeFee);
         
-        emit StakePremiumANT(_tokenId, _msgSender());
+        emit TasksStakePremiumANT(_tokenId, _msgSender());
     }
 
     /**
@@ -289,7 +289,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
         basicANT.transferFrom(_msgSender(), address(this), _tokenId);
         antCoin.burn(_msgSender(), antCStakeFee);
         
-        emit StakeBasicANT(_tokenId, _msgSender());
+        emit TasksStakeBasicANT(_tokenId, _msgSender());
     }
 
     /**
@@ -316,7 +316,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
         purse.mint(_msgSender(), _rewardAmount);
         premiumANT.transferFrom(address(this), _msgSender(), _tokenId);
         
-        emit UnStakePremiumANT(_tokenId, _msgSender());
+        emit TasksUnStakePremiumANT(_tokenId, _msgSender());
     }
 
     /**
@@ -343,7 +343,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
         basicANT.transferFrom(address(this), _msgSender(), _tokenId);
         purse.mint(_msgSender(), _rewardAmount);
 
-        emit UnStakeBasicANT(_tokenId, _msgSender());
+        emit TasksUnStakeBasicANT(_tokenId, _msgSender());
     }
 
     /**
