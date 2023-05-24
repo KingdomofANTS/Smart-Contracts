@@ -46,6 +46,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './interfaces/IANTCoin.sol';
+import 'hardhat/console.sol';
 
 contract Vesting is Pausable, ReentrancyGuard, Ownable {
 
@@ -66,18 +67,27 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
 
     // Reference to ANTCoin
     IANTCoin public antCoin;
-    
+    // array of vesting pools
     VestingPool[] public vestingPools;
-    
+    // mapping of user wallet addresses for receving the tokens from vesting pools
     mapping(uint256 => address[]) public userAddresses;
-
+    // one time release timestamp
     uint256 public releaseCycle = 30 days;
-
+    // make sure vesting pool info and pool index is correct
     modifier isValidPool(uint256 _poolIndex) {
       require(vestingPools.length > 0, "Vesting: vesting pool info isn't exist");
       require(_poolIndex < vestingPools.length, "Vesting: invalid vesting pool index");
       _;
     }
+
+    // Event for adding vesting pool info
+    event AddVestingPoolInfo(uint256 poolIndex, string poolName);
+    // Event for revoking vesting pool info
+    event RevokeVestingPoolInfo(uint256 poolIndex);
+    // Event for launching the vesting pool
+    event LaunchVestingPool(uint256 poolIndex, string poolName, uint256 initDistributionAmount);
+    // Event for releasing the vesting pool
+    event ReleaseVestingPool(uint256 poolIndex, string poolName, uint256 releasedAmount);
 
 
     constructor(IANTCoin _antCoin) {
@@ -118,7 +128,6 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _poolIndex vesting pool index
     */
 
-
     function getVestingPoolInfo(uint256 _poolIndex) external view isValidPool(_poolIndex) returns(VestingPool memory) {
       return vestingPools[_poolIndex];
     }
@@ -138,7 +147,6 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _poolIndex vesting pool index
     */
 
-
     function launchVestingPool(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
       VestingPool memory _poolInfo = vestingPools[_poolIndex];
       uint256 initReleaseAmount = _poolInfo.tokenAmount * _poolInfo.initReleaseRate / 100;
@@ -151,6 +159,8 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
       vestingPools[_poolIndex].initReleasedTokenAmount = initReleaseAmount;
       vestingPools[_poolIndex].lastReleaseTime = block.timestamp;
       vestingPools[_poolIndex].isLaunched = true;
+
+      emit LaunchVestingPool(_poolIndex, _poolInfo.poolName, initReleaseAmount);
     }
 
     /**
@@ -180,6 +190,8 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
         for(uint256 i = 0; i < userAddresses[_poolIndex].length; i++) {
             antCoin.transferFrom(address(this), userAddresses[_poolIndex][i], _distributionAmount);
         }
+
+        emit LaunchVestingPool(_poolIndex, _poolInfo.poolName, _rewardAmount);
     }
 
     /**
@@ -229,6 +241,8 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
         isLaunched: false,
         initReleasedTokenAmount: 0
       }));
+
+      emit AddVestingPoolInfo(vestingPools.length - 1, _poolName);
     }
 
     /**
@@ -238,13 +252,17 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     */
 
     function revokeVestingPoolInfo(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
-      VestingPool memory _vestingPool = vestingPools[vestingPools.length - 1];
+      uint256 lastPoolIndex = vestingPools.length - 1;
+      address[] storage poolAddresses = userAddresses[lastPoolIndex];
+
+      VestingPool memory _vestingPool = vestingPools[lastPoolIndex];
       vestingPools[_poolIndex] = _vestingPool;
       vestingPools.pop();
-
-      address[] storage poolAddresses = userAddresses[vestingPools.length - 1];
-      delete userAddresses[vestingPools.length - 1];
       userAddresses[_poolIndex] = poolAddresses;
+
+      delete userAddresses[lastPoolIndex];
+
+      emit RevokeVestingPoolInfo(_poolIndex);
     }
 
     /**
