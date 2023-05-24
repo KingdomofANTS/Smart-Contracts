@@ -157,7 +157,10 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     */
 
     function launchVestingPool(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
-      VestingPool memory _poolInfo = vestingPools[_poolIndex];      
+      VestingPool memory _poolInfo = vestingPools[_poolIndex];
+      require(!_poolInfo.isLaunched, "Vesting: already launched");
+      require(userAddresses[_poolIndex].length > 0, "Vesting: empty array detected");
+      
       uint256 initReleaseAmount = _poolInfo.tokenAmount * _poolInfo.initReleaseRate / 100;
       uint256 distributionAmount = initReleaseAmount / userAddresses[_poolIndex].length;
 
@@ -182,6 +185,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
         VestingPool storage _poolInfo = vestingPools[_poolIndex];
 
         require(_poolInfo.currentReleasedCount < _poolInfo.maxReleaseCount, "Vesting: can't release any coins anymore from vesting pool");
+        require(_poolInfo.isLaunched, "Vesting: the pool is not launched yet");
 
         uint256 _periodCount = (block.timestamp - _poolInfo.lastReleaseTime) / releaseCycle;
 
@@ -197,10 +201,10 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
         uint256 _distributionAmount = _rewardAmount / userAddresses[_poolIndex].length;
 
         for(uint256 i = 0; i < userAddresses[_poolIndex].length; i++) {
-            antCoin.transferFrom(address(this), userAddresses[_poolIndex][i], _distributionAmount);
+            antCoin.transfer(userAddresses[_poolIndex][i], _distributionAmount);
         }
 
-        emit LaunchVestingPool(_poolIndex, _poolInfo.poolName, _rewardAmount);
+        emit ReleaseVestingPool(_poolIndex, _poolInfo.poolName, _rewardAmount);
     }
 
     /**
