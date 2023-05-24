@@ -133,6 +133,15 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     }
 
     /**
+    * @notice Return the filled user wallet addresses by pool index
+    * @param _poolIndex vesting pool index
+    */
+
+    function getUserAddressesByPoolIndex(uint256 _poolIndex) external view isValidPool(_poolIndex) returns(address[] memory) {
+      return userAddresses[_poolIndex];
+    }
+
+    /**
     *   ██████  ██     ██ ███    ██ ███████ ██████
     *  ██    ██ ██     ██ ████   ██ ██      ██   ██
     *  ██    ██ ██  █  ██ ██ ██  ██ █████   ██████
@@ -148,12 +157,12 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     */
 
     function launchVestingPool(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
-      VestingPool memory _poolInfo = vestingPools[_poolIndex];
+      VestingPool memory _poolInfo = vestingPools[_poolIndex];      
       uint256 initReleaseAmount = _poolInfo.tokenAmount * _poolInfo.initReleaseRate / 100;
       uint256 distributionAmount = initReleaseAmount / userAddresses[_poolIndex].length;
 
       for(uint256 i = 0; i < userAddresses[_poolIndex].length; i++) {
-        antCoin.transferFrom(address(this), userAddresses[_poolIndex][i], distributionAmount);
+        antCoin.transfer(userAddresses[_poolIndex][i], distributionAmount);
       }
 
       vestingPools[_poolIndex].initReleasedTokenAmount = initReleaseAmount;
@@ -218,7 +227,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     function withdrawANTCoinFromVestingPool(uint256 _poolIndex, uint256 _tokenAmount) external onlyOwner isValidPool(_poolIndex) {
         require(vestingPools[_poolIndex].tokenAmount >= _tokenAmount, "Vesting: insufficient ant coin balance for withdrawing tokens");
         require(!vestingPools[_poolIndex].isLaunched, "Vesting: can't withdraw anymore after lauching the vesting pool");
-        antCoin.transferFrom(address(this), _msgSender(), _tokenAmount);
+        antCoin.transfer(_msgSender(), _tokenAmount);
         vestingPools[_poolIndex].tokenAmount -= _tokenAmount;
     }
 
@@ -283,21 +292,10 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @notice remove user wallet addresses
     * @dev This function can only be called by the owner
     * @param _poolIndex vesting pool index
-    * @param _userAddresses array of user wallet addresses
     */
 
-    function revokeUserAddressesByPool(uint256 _poolIndex, address[] memory _userAddresses) external onlyOwner isValidPool(_poolIndex) {
-      address[] storage poolAddresses = userAddresses[_poolIndex];
-      for(uint256 i = 0; i < poolAddresses.length; i++) {
-        for(uint256 j = 0; j < _userAddresses.length; j++) {
-          if(poolAddresses[i] == _userAddresses[j]) {
-            poolAddresses[i] = poolAddresses[poolAddresses.length - 1];
-            poolAddresses.pop();
-            i--;
-            break;
-          }
-        }
-      }
+    function revokeUserAddressesFromPool(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
+      delete userAddresses[_poolIndex];
     }
 
     /**
