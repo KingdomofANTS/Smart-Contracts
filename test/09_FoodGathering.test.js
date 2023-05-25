@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { network } = require("hardhat")
 const { utils } = ethers;
 
-describe("Workforce", function () {
+describe("FoodGathering", function () {
     let ANTCoin, ANTCoinContract, ANTShop, ANTShopContract, FoodGathering, FoodGatheringContract, Randomizer, RandomizerContract;
 
     beforeEach(async function () {
