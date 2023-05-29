@@ -47,6 +47,7 @@ describe("Bosses", function () {
         // Bosses smart contract deployment
         Bosses = await ethers.getContractFactory('Bosses');
         BossesContract = await Bosses.deploy(RandomizerContract.address, ANTCoinContract.address, PremiumANTContract.address, BasicANTContract.address);
+        await BossesContract.deployed()
 
         // give a minterRole to Booses contract
         await ANTCoinContract.addMinterRole(BossesContract.address);
