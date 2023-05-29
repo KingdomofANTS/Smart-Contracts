@@ -132,18 +132,6 @@ describe("FoodGathering", function () {
             expect(expected).to.be.equal(1);
         })
 
-        it("setBurnAddress: should fail if caller is not owner", async () => {
-            await expect(FoodGatheringContract.connect(badActor).setBurnAddress(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
-        })
-
-        it("setBurnAddress: should work if caller is owner", async () => {
-            const burnAddress = await FoodGatheringContract.burnAddress();
-            expect(burnAddress).to.be.equal("0x000000000000000000000000000000000000dEaD");
-            await FoodGatheringContract.setBurnAddress(user1.address);
-            const expected = await FoodGatheringContract.burnAddress();
-            expect(expected).to.be.equal(user1.address);
-        })
-
         it("stake: should fail if user don't have enough ant coin balance for staking", async () => {
             await expect(FoodGatheringContract.connect(user1).stake(1000)).to.be.revertedWith("FoodGathering: you don't have enough ant coin balance for staking")
         })

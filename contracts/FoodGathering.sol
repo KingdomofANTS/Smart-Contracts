@@ -75,8 +75,6 @@ contract FoodGathering is Ownable, Pausable {
     uint256 public cycleStakedAmount = 30000 * 10**18; // 30k ANT Coin
     // one cycle time stamp
     uint256 public cycleTimestamp = 24 hours;
-    // recipient address to send the staking fee when user unstake
-    address public burnAddress = 0x000000000000000000000000000000000000dEaD;
     
     constructor(IANTCoin _antCoin, IANTShop _antShop) {
         antCoin = _antCoin;
@@ -240,16 +238,6 @@ contract FoodGathering is Ownable, Pausable {
     */
     function setCycleTimestamp(uint256 _cycleTimestamp) external onlyOwner {
         cycleTimestamp = _cycleTimestamp;
-    }
-
-    /**
-    * @notice Function to set the burn address
-    * @dev This function can only be called by the owner
-    * @param _burnAddrss burn addresss
-    */
-
-    function setBurnAddress(address _burnAddrss) external onlyOwner {
-        burnAddress = _burnAddrss;
     }
 
     /**
