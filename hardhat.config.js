@@ -1,5 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("dotenv");
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -19,12 +19,12 @@ module.exports = {
   networks: {
     mumbai: {
       chainId: 80001,
-      url: "https://polygon-mumbai.g.alchemy.com/v2/yiqhYdMo90O5WLE0CgoJ1IOBE2Ns4lGo",
-      accounts: ["your-private-key"]
+      url: "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY_TESTNET,
+      accounts: [process.env.PRIVATE_KEY]
         // process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     }
   },
   etherscan: {
-    apiKey: "BMMDEFMCYRYXZ53YJ9KNJP8QXHZESCSKA7",
+    apiKey: process.env.POLYGON_API_KEY,
   },
 };
