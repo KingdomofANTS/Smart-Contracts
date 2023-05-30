@@ -179,6 +179,11 @@ async function main() {
     });
 
     await hre.run("verify:verify", {
+      address: WorkforceContract.address,
+      constructorArguments: [ANTCoinContract.address, PremiumANTContract.address, BasicANTContract.address],
+    });
+
+    await hre.run("verify:verify", {
       address: RandomizerContract.address,
       constructorArguments: [polyKeyHash, polyVrfCoordinator, polyLinkToken, vrFee],
     });
