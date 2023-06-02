@@ -1,8 +1,6 @@
 const { expect } = require("chai");
-const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
 const { network } = require("hardhat")
-const _ = require("lodash");
 
 describe("ANTLottery", function () {
     let ANTCoin, ANTCoinContract, Randomizer, RandomizerContract, ANTLottery, ANTLotteryContract, Marketplace, MarketplaceContract, ANTShop, ANTShopContract, Purse, PurseContract;

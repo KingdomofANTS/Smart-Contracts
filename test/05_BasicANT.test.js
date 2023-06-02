@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat")
+const { utils } = require("ethers")
 
 describe("BasicANT", function () {
     let ANTShop, ANTShopContract, BasicANT, BasicANTContract, ANTCoin, ANTCoinContract;
@@ -23,9 +24,12 @@ describe("BasicANT", function () {
 
         // Basic ANT smart contract deployment
         BasicANT = await ethers.getContractFactory('BasicANT');
-        BasicANTContract = await BasicANT.deploy(ANTShopContract.address);
+        BasicANTContract = await BasicANT.deploy(ANTCoinContract.address, ANTShopContract.address);
         await BasicANTContract.deployed();
-        await ANTShopContract.addMinterRole(BasicANTContract.address);
+
+        await ANTShopContract.addMinterRole(BasicANTContract.address); 
+        await ANTCoinContract.addMinterRole(BasicANTContract.address)
+        await ANTCoinContract.transfer(user1.address, utils.parseEther("1000"))
     });
 
     describe("Test Suite", function () {
@@ -139,9 +143,9 @@ describe("BasicANT", function () {
             it("should fail if user don't have enough token for mint", async () => {
                 await BasicANTContract.setBatchInfo(0, "name1", "testBaseURI1", 1000, ANTCoinContract.address, 10000);
                 await BasicANTContract.setMintMethod(0, false);
-                await expect(BasicANTContract.connect(user1).mint(0, user1.address, 2)).to.be.revertedWith("BasicANT: insufficient Tokens");
-                await ANTCoinContract.transfer(user1.address, 10000 * 2);
-                await expect(BasicANTContract.connect(user1).mint(0, user1.address, 2)).to.be.revertedWith("BasicANT: You should approve tokens for minting");
+                await expect(BasicANTContract.connect(user2).mint(0, user2.address, 2)).to.be.revertedWith("BasicANT: insufficient Tokens");
+                await ANTCoinContract.transfer(user2.address, 10000 * 2);
+                await expect(BasicANTContract.connect(user2).mint(0, user2.address, 2)).to.be.revertedWith("BasicANT: You should approve tokens for minting");
             })
 
             it("should work if all conditions are correct", async () => {
@@ -176,9 +180,11 @@ describe("BasicANT", function () {
                 await ANTCoinContract.transfer(user1.address, 100000000)
                 // Leveling Potions
                 await ANTShopContract.mint(1, 100, user1.address);
+                await ANTShopContract.mint(1, 100, user2.address);
                 await BasicANTContract.setBatchInfo(0, "name1", "testBaseURI1", maticMintPrice, ANTCoinContract.address, tokenAmountForMint);
                 await BasicANTContract.setBatchInfo(1, "name2", "testBaseURI2", maticMintPrice, ANTCoinContract.address, tokenAmountForMint);
                 await BasicANTContract.connect(user1).mint(0, user1.address, 1, { value: maticMintPrice });
+                await BasicANTContract.connect(user2).mint(0, user2.address, 1, { value: maticMintPrice });
             })
 
             it("should fail if caller is not owner of token for upgrading", async () => {
@@ -222,6 +228,32 @@ describe("BasicANT", function () {
                 // current level 1
                 const tx = await BasicANTContract.connect(user1).upgradeBasicANT(1, 6);
                 expect(tx).to.emit(BasicANTContract, "UpgradeANT").withArgs("1", user1.address, "3")
+            })
+
+            
+            it("setUpgradeFee: should fail if caller is not the owner", async () => {
+                await expect(BasicANTContract.connect(badActor).setUpgradeFee(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            })
+
+            it("setUpgradeFee: should work if caller is the owner", async () => {
+                await expect(BasicANTContract.setUpgradeFee(100)).to.be.not.reverted;
+                const upgradeFee = await BasicANTContract.upgradeANTFee();
+                expect(upgradeFee).to.be.equal(100)
+            })
+
+            it("should fail if user don't have enough ant coin stake fee", async () => {
+               await expect(BasicANTContract.connect(user2).upgradeBasicANT(2, 10)).to.be.revertedWith("BasicANT: insufficient ant coin fee for upgrading") 
+            })
+
+            it("should burn the ant coin fee when upgrading the ANT", async () => {
+                await ANTCoinContract.transfer(user2.address, 1000000000);
+                await BasicANTContract.setUpgradeFee(100);
+                const userANTCoinBalance1 = await ANTCoinContract.balanceOf(user2.address);
+                expect(userANTCoinBalance1).to.be.equal(1000000000)
+                await BasicANTContract.connect(user2).upgradeBasicANT(2, 10);
+                const expectedANTCoinBalance = userANTCoinBalance1 - 100 * 10;
+                const userANTCoinBalance2 = await ANTCoinContract.balanceOf(user2.address);
+                expect(userANTCoinBalance2).to.be.equal(expectedANTCoinBalance);
             })
         })
 

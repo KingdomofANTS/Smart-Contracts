@@ -3,11 +3,16 @@ const { ethers } = require("hardhat");
 const { network } = require("hardhat")
 const { utils } = ethers;
 
-describe("Workforce", function () {
-    let ANTCoin, ANTCoinContract, ANTShop, ANTShopContract, FoodGathering, FoodGatheringContract;
+describe("FoodGathering", function () {
+    let ANTCoin, ANTCoinContract, ANTShop, ANTShopContract, FoodGathering, FoodGatheringContract, Randomizer, RandomizerContract;
 
     beforeEach(async function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
+
+        // Randomizer smart contract deployment
+        Randomizer = await ethers.getContractFactory("MockRandomizer");
+        RandomizerContract = await Randomizer.deploy();
+        await RandomizerContract.deployed();
 
         // ANTCoin smart contract deployment
         ANTCoin = await ethers.getContractFactory("ANTCoin");
@@ -125,18 +130,6 @@ describe("Workforce", function () {
             await FoodGatheringContract.setCycleTimestamp(1);
             const expected = await FoodGatheringContract.cycleTimestamp();
             expect(expected).to.be.equal(1);
-        })
-
-        it("setBurnAddress: should fail if caller is not owner", async () => {
-            await expect(FoodGatheringContract.connect(badActor).setBurnAddress(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
-        })
-
-        it("setBurnAddress: should work if caller is owner", async () => {
-            const burnAddress = await FoodGatheringContract.burnAddress();
-            expect(burnAddress).to.be.equal("0x000000000000000000000000000000000000dEaD");
-            await FoodGatheringContract.setBurnAddress(user1.address);
-            const expected = await FoodGatheringContract.burnAddress();
-            expect(expected).to.be.equal(user1.address);
         })
 
         it("stake: should fail if user don't have enough ant coin balance for staking", async () => {

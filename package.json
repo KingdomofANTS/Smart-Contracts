@@ -14,6 +14,15 @@
     "hardhat-gas-reporter": "^1.0.9",
     "solidity-coverage": "^0.8.2"
   },
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:local": "npx hardhat run scrtips/deploy.js",
+    "deploy:testnet": "npx hardhat run scrtips/deploy.js --network testnet",
+    "deploy:mainnet": "npx hardhat run scrtips/deploy.js --network mainnet"
+  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.1",
     "erc721a": "^4.2.3",

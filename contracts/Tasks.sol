@@ -40,16 +40,19 @@ W: https://kingdomofants.io
 
 pragma solidity ^0.8.13;
 
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import './interfaces/IANTCoin.sol';
+import './interfaces/IRandomizer.sol';
 import './interfaces/IPremiumANT.sol';
 import './interfaces/IBasicANT.sol';
-import './interfaces/IANTCoin.sol';
+import './interfaces/IPurse.sol';
 
-contract Workforce is Ownable, Pausable, ReentrancyGuard {
+contract Tasks is Ownable, Pausable, ReentrancyGuard {
 
     using SafeMath for uint256;
 
@@ -57,24 +60,31 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     struct StakeANT {
         uint256 tokenId; // ant token id
         address owner; // owner of staked ant
-        uint256 batchIndex; // batch index of ants
-        uint256 antCStakeAmount; // ant coin amount
         uint256 originTimestamp; // staked timestamp
+        uint256 rewardIndex; // reward Index 0 = Common, 1 = Uncommon, 2 = Rare, 3 = Ultra rare, 4 => Legendary
     }
 
+    // Reference to randomizer
+    IRandomizer public randomizer;
     // Reference to ANTCoin
     IANTCoin public antCoin;
-    // Reference to Basic ANT
-    IBasicANT public basicANT;
     // Reference to PremiumANT
     IPremiumANT public premiumANT;
+    // Reference to BasicANT
+    IBasicANT public basicANT;
+    // Reference to Purse
+    IPurse public purse;
+    // Purse reward amount
+    uint256[5] public rewardsAmount;
+    uint256[2][5] public rewardLevels;
 
     // minters
     mapping(address => bool) private minters;
-    // Workforce for Basic ANT
-    mapping(uint256 => StakeANT) public basicANTWorkforce;
-    // Workforce for Premium ANT
-    mapping(uint256 => StakeANT) public premiumANTWorkforce;
+
+    // Tasks for Basic ANT
+    mapping(uint256 => StakeANT) public basicANTTasks;
+    // Tasks for Premium ANT
+    mapping(uint256 => StakeANT) public premiumANTTasks;
     // staked token id array for Basic ANT
     mapping(address => uint256[]) public basicANTStakedNFTs;
     // staked token id array for Premium ANT
@@ -83,43 +93,37 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     mapping(uint256 => uint256) public basicANTStakedNFTsIndicies;
     // array indices of each token id for Premium ANT
     mapping(uint256 => uint256) public premiumANTStakedNFTsIndicies;
-    // maximum stake period
-    uint256 public maxStakePeriod = 3 * 365 days; // 3 years
-    // a cycle for reward
-    uint256 public cycleStakePeriod = 1 * 365 days; // 1 year
-    // total number of staked Basic ANTs
-    uint256 public totalBasicANTStaked;
-    // total number of staked Premium ANTs
-    uint256 public totalPremiumANTStaked;
-    // initialize level after unstaking ant
-    uint256 public initLevelAfterUnstake = 1;
-    // premium or basic ant batch index for getting extra apy
-    uint256 public batchIndexForExtraAPY = 0;
-    // extra apy for work ants
-    uint256 public extraAPY = 500; // 500 => 5.00 %
-    // antcoin stake limit amount for each ants
-    uint256 public limitAntCoinStakeAmount = 60000 ether;
 
-    // Events
-    // basic ant stake event
-    event WorkforceStakeBasicANT(uint256 id, address owner);
-    // basic ant unstake event
-    event WorkforceUnStakeBasicANT(uint256 id, address owner);
-    // premium ant stake event
-    event WorkforceStakePremiumANT(uint256 id, address owner);
-    // premium ant unstake event
-    event WorkforceUnStakePremiumANT(uint256 id, address owner);
+    uint256 public stakePeriod = 30 days;
 
+    // ant coin stake fee
+    uint256 public antCStakeFee = 1000 ether; // 1000 ant coin for stake fee
+    uint256 public totalPremiumANTStaked = 0;
+    uint256 public totalBasicANTStaked = 0;
+    uint256 public minimumLevelForStake = 5;
+    
     // modifier to check _msgSender has minter role
     modifier onlyMinter() {
-        require(minters[_msgSender()], 'Workforce: Caller is not the minter');
+        require(minters[_msgSender()], "Tasks: Caller is not the minter");
         _;
     }
 
-    constructor(IANTCoin _antCoin, IPremiumANT _premiumANT, IBasicANT _basicANT) {
+    // Events
+    // basic ant stake event
+    event TasksStakeBasicANT(uint256 id, address owner);
+    // basic ant unstake event
+    event TasksUnStakeBasicANT(uint256 id, address owner);
+    // premium ant stake event
+    event TasksStakePremiumANT(uint256 id, address owner);
+    // premium ant unstake event
+    event TasksUnStakePremiumANT(uint256 id, address owner);
+
+    constructor(IRandomizer _randomizer, IANTCoin _antCoin, IPremiumANT _premiumANT, IBasicANT _basicANT, IPurse _purse) {
+        randomizer = _randomizer;
         antCoin = _antCoin;
         premiumANT = _premiumANT;
         basicANT = _basicANT;
+        purse = _purse;
     }
 
     /**
@@ -160,11 +164,27 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return the purses rewards amount of each pools
+    */
+    
+    function getRewardsAmount() external view returns(uint256[5] memory) {
+        return rewardsAmount;
+    }
+
+    /**
+    * @notice Return the reward level numbers
+    */
+
+    function getRewardLevels() external view returns(uint256[2][5] memory) {
+        return rewardLevels;
+    }
+
+    /**
     * @notice Return Premium ANT Stake information
     */
 
     function getPremiumANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
-        return premiumANTWorkforce[_tokenId];
+        return premiumANTTasks[_tokenId];
     }
 
     /**
@@ -172,7 +192,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     */
 
     function getBasicANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
-        return basicANTWorkforce[_tokenId];
+        return basicANTTasks[_tokenId];
     }
 
     /**
@@ -194,135 +214,136 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Basic ANT Stake information
+    * @notice Return a random reward index
+    * @param _tokenId ant token id for stake
+    * @param _antLevel level number of ant
     */
 
-    function pendingRewardOfBasicToken(uint256 _tokenId) public view returns(uint256 pendingAmount) {
-        StakeANT memory _stakeANTInfo = basicANTWorkforce[_tokenId];
-        uint256 antExperience = basicANT.getANTExperience(_tokenId); // 3000 => 30.00%
-        uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
-        uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
-        if(stakePeriod > maxStakePeriod) {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod.mul(10 ** 4));
+    function _getRewardIndexForNFT(uint256 _tokenId, uint256 _antLevel) internal view returns(uint256) {
+        uint256[] memory _availableIndex = new uint256[](5);
+        uint256 count = 0;
+
+        for(uint256 i = 0; i < 5; i++) {
+            if(_antLevel >= rewardLevels[i][0] && _antLevel <= rewardLevels[i][1]) {
+                _availableIndex[count] = i;
+                count++;
+            }
         }
-        else {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod.mul(10 ** 4));
-        }
+        
+        uint256 random = randomizer.randomToken(_tokenId * _antLevel) % count;
+        return _availableIndex[random];
     }
 
     /**
-    * @notice Return Premium ANT Stake information
-    */
-
-    function pendingRewardOfPremiumToken(uint256 _tokenId) public view returns(uint256 pendingAmount) {
-        StakeANT memory _stakeANTInfo = premiumANTWorkforce[_tokenId];
-        uint256 antExperience = premiumANT.getANTExperience(_tokenId); // 3000 => 30.00%
-        uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
-        uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
-        if(stakePeriod > maxStakePeriod) {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod).div(10 ** 4);
-        }
-        else {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod).div(10 ** 4);
-        }
-    }
-
-    /**
-    * @notice Stake PremiumANT into Workforce with ANTCoin
+    * @notice Stake PremiumANT into Tasks Pool with ANTCoin fee
     * @param _tokenId premium ant token id for stake
-    * @param _antCAmount ant coin stake amount
     */
 
-    function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused {
-        require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
-        require(_antCAmount <= limitAntCoinStakeAmount, "Workforce: ant coin stake amount exceed the limit amount");
-        require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
+    function stakePremiumANT(uint256 _tokenId) external whenNotPaused nonReentrant {
+        require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Tasks: you are not owner of this token');
+        require(antCoin.balanceOf(_msgSender()) >= antCStakeFee, 'Tasks: insufficient ant coin balance');
         IPremiumANT.ANTInfo memory _premiumANTInfo = premiumANT.getANTInfo(_tokenId);
-        premiumANTWorkforce[_tokenId] = StakeANT({
+        require(_premiumANTInfo.level >= minimumLevelForStake, 'Tasks: premium ant level must be greater than minimum ant level requirement');
+
+        uint256 _randomRewardIndex = _getRewardIndexForNFT(_tokenId, _premiumANTInfo.level);
+        premiumANTTasks[_tokenId] = StakeANT({
             tokenId: _tokenId,
             owner: _msgSender(),
-            antCStakeAmount: _antCAmount,
-            batchIndex: _premiumANTInfo.batchIndex,
-            originTimestamp: block.timestamp
+            originTimestamp: block.timestamp,
+            rewardIndex: _randomRewardIndex
         });
+        
         premiumANTStakedNFTs[_msgSender()].push(_tokenId);
         premiumANTStakedNFTsIndicies[_tokenId] = premiumANTStakedNFTs[_msgSender()].length - 1;
-        totalPremiumANTStaked += 1;
+        totalPremiumANTStaked++;
+        
         premiumANT.transferFrom(_msgSender(), address(this), _tokenId);
-        antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
-        emit WorkforceStakePremiumANT(_tokenId, _msgSender());
+        antCoin.burn(_msgSender(), antCStakeFee);
+        
+        emit TasksStakePremiumANT(_tokenId, _msgSender());
     }
 
     /**
-    * @notice Stake BasicANT into Workforce with ANTCoin
+    * @notice Stake BasicANT into Tasks Pool with ANTCoin fee
     * @param _tokenId basic ant token id for stake
-    * @param _antCAmount ant coin stake amount
     */
 
-    function stakeBasicANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused {
-        require(basicANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
-        require(_antCAmount <= limitAntCoinStakeAmount, "Workforce: ant coin stake amount exceed the limit amount");
-        require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
+    function stakeBasicANT(uint256 _tokenId) external whenNotPaused nonReentrant {
+        require(basicANT.ownerOf(_tokenId) == _msgSender(), 'Tasks: you are not owner of this token');
+        require(antCoin.balanceOf(_msgSender()) >= antCStakeFee, 'Tasks: insufficient ant coin balance');
         IBasicANT.ANTInfo memory _basicANTInfo = basicANT.getANTInfo(_tokenId);
-        basicANTWorkforce[_tokenId] = StakeANT({
+        require(_basicANTInfo.level >= minimumLevelForStake, 'Tasks: basic ant level must be greater than minimum ant level requirement');
+
+        uint256 _randomRewardIndex = _getRewardIndexForNFT(_tokenId, _basicANTInfo.level);
+        basicANTTasks[_tokenId] = StakeANT({
             tokenId: _tokenId,
             owner: _msgSender(),
-            antCStakeAmount: _antCAmount,
-            batchIndex: _basicANTInfo.batchIndex,
-            originTimestamp: block.timestamp
+            originTimestamp: block.timestamp,
+            rewardIndex: _randomRewardIndex
         });
+
         basicANTStakedNFTs[_msgSender()].push(_tokenId);
         basicANTStakedNFTsIndicies[_tokenId] = basicANTStakedNFTs[_msgSender()].length - 1;
-        totalBasicANTStaked += 1;
+        totalBasicANTStaked++;
+        
         basicANT.transferFrom(_msgSender(), address(this), _tokenId);
-        antCoin.transferFrom(_msgSender(), address(this), _antCAmount);
-        emit WorkforceStakeBasicANT(_tokenId, _msgSender());
+        antCoin.burn(_msgSender(), antCStakeFee);
+        
+        emit TasksStakeBasicANT(_tokenId, _msgSender());
     }
 
     /**
-    * @notice UnStake Premium ANT from Workforce with reward
-    * @param _tokenId Premium ant token id for unstake
+    * @notice Unstake PremiumANT from Tasks pool and get the reward as purses token
+    * @param _tokenId premium ant token id for unStake
     */
 
-    function unStakePremiumANT(uint256 _tokenId) external whenNotPaused {
-        StakeANT memory _stakeANTInfo = premiumANTWorkforce[_tokenId];
-        require(_stakeANTInfo.owner == _msgSender(), 'Workforce: you are not owner of this premium ant');
-        uint256 rewardAmount = pendingRewardOfPremiumToken(_tokenId);
-        premiumANT.downgradeLevel(_tokenId, initLevelAfterUnstake);
-        premiumANT.transferFrom(address(this), _msgSender(), _tokenId);
-        antCoin.transfer(_msgSender(), _stakeANTInfo.antCStakeAmount);
-        antCoin.mint(_msgSender(), rewardAmount);
+    function unStakePremiumANT(uint256 _tokenId) external whenNotPaused nonReentrant {
+        StakeANT memory _stakeANTInfo = premiumANTTasks[_tokenId];
+        uint256 _stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
+
+        require(_stakeANTInfo.owner == _msgSender(), 'Tasks: you are not owner of this premium ant');
+        require(_stakedPeriod >= stakePeriod, "Tasks: you can not unstake the ANT early");
+        
+        uint256 _rewardAmount = rewardsAmount[_stakeANTInfo.rewardIndex];
         uint256 lastStakedNFTs = premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1];
         premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTsIndicies[_tokenId]] = lastStakedNFTs;
         premiumANTStakedNFTsIndicies[premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1]] = premiumANTStakedNFTsIndicies[_tokenId];
         premiumANTStakedNFTs[_msgSender()].pop();
-        totalPremiumANTStaked -= 1;
+        totalPremiumANTStaked--;
         delete premiumANTStakedNFTsIndicies[_tokenId];
-        delete premiumANTWorkforce[_tokenId];
-        emit WorkforceUnStakePremiumANT(_tokenId, _msgSender());
+        delete premiumANTTasks[_tokenId];
+        
+        purse.mint(_msgSender(), _rewardAmount);
+        premiumANT.transferFrom(address(this), _msgSender(), _tokenId);
+        
+        emit TasksUnStakePremiumANT(_tokenId, _msgSender());
     }
 
     /**
-    * @notice UnStake Basic ANT from Workforce with reward
-    * @param _tokenId Basic ant token id for unstake
+    * @notice Unstake BasicANT from Tasks pool and get the reward as purses token
+    * @param _tokenId basic ant token id for unStake
     */
 
-    function unStakeBasicANT(uint256 _tokenId) external whenNotPaused {
-        StakeANT memory _stakeANTInfo = basicANTWorkforce[_tokenId];
-        require(_stakeANTInfo.owner == _msgSender(), 'Workforce: you are not owner of this basic ant');
-        uint256 rewardAmount = pendingRewardOfBasicToken(_tokenId);
-        basicANT.downgradeLevel(_tokenId, initLevelAfterUnstake);
-        basicANT.transferFrom(address(this), _msgSender(), _tokenId);
-        antCoin.transfer(_msgSender(), _stakeANTInfo.antCStakeAmount);
-        antCoin.mint(_msgSender(), rewardAmount);
+    function unStakeBasicANT(uint256 _tokenId) external whenNotPaused nonReentrant {
+        StakeANT memory _stakeANTInfo = basicANTTasks[_tokenId];
+        uint256 _stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
+
+        require(_stakeANTInfo.owner == _msgSender(), 'Tasks: you are not owner of this basic ant');
+        require(_stakedPeriod >= stakePeriod, "Tasks: you can not unstake the ANT early");
+        
+        uint256 _rewardAmount = rewardsAmount[_stakeANTInfo.rewardIndex];
         uint256 lastStakedNFTs = basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1];
         basicANTStakedNFTs[_msgSender()][basicANTStakedNFTsIndicies[_tokenId]] = lastStakedNFTs;
         basicANTStakedNFTsIndicies[basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1]] = basicANTStakedNFTsIndicies[_tokenId];
         basicANTStakedNFTs[_msgSender()].pop();
-        totalBasicANTStaked -= 1;
+        totalBasicANTStaked--;
         delete basicANTStakedNFTsIndicies[_tokenId];
-        delete basicANTWorkforce[_tokenId];
-        emit WorkforceUnStakeBasicANT(_tokenId, _msgSender());
+        delete basicANTTasks[_tokenId];
+        
+        basicANT.transferFrom(address(this), _msgSender(), _tokenId);
+        purse.mint(_msgSender(), _rewardAmount);
+
+        emit TasksUnStakeBasicANT(_tokenId, _msgSender());
     }
 
     /**
@@ -335,93 +356,112 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     */
 
     /**
-    * @notice Set ANTCoin contract address
+    * @notice Set tasks pool stake period timestamp
     * @dev This function can only be called by the owner
-    * @param _antCoin ANTCoin contract address
+    * @param _stakePeriod stake period timestamp
+    */
+
+    function setStakePeriod(uint256 _stakePeriod) external onlyOwner {
+        stakePeriod = _stakePeriod;
+    }
+
+    /**
+    * @notice Set purse rewards amouont Common, Uncommon, Rare, Ultra rare, Lengendery
+    * @dev This function can only be called by the owner
+    * @param _rewardAmount the array of purse reward amount
+    */
+
+    function setRewardsAmount(uint256[5] memory _rewardAmount) external onlyOwner {
+        rewardsAmount = _rewardAmount;
+    }
+
+    /**
+    * @notice Set reward level numbers, e.g. Commong: 5-19, Uncommon: 10-25....
+    * @dev This function can only be called by the owner
+    * @param _rewardLevels the array for reward levels
+    */
+
+    function setRewardLevels(uint256[2][5] memory _rewardLevels) external onlyOwner {
+        for(uint256 i = 0; i < 5; i++) {
+            require(_rewardLevels[i][0] <= _rewardLevels[i][1], "Tasks: index0 should be less than index1 value");
+            rewardLevels[i][0] = _rewardLevels[i][0];
+            rewardLevels[i][1] = _rewardLevels[i][1];
+        } 
+    }
+
+    /**
+    * @notice Set ant coin stake fee
+    * @dev This function can only be called by the owner
+    * @param _antCStakeFee ant coin stake fee amount
+    */
+
+    function setANTCStakeFee(uint256 _antCStakeFee) external onlyOwner {
+        antCStakeFee = _antCStakeFee;
+    }
+
+    /**
+    * @notice Set minimum level number for stake
+    * @dev This function can only be called by the owner
+    * @param _minimumLevelForStake minimum level number
+    */
+
+    function setMinimumLevelForStake(uint256 _minimumLevelForStake) external onlyOwner {
+        minimumLevelForStake = _minimumLevelForStake;
+    }
+
+    /**
+    * @notice Set a randomizer contract address
+    * @dev This function can only be called by the owner
+    * @param _randomizer the randomizer address
+    */
+
+    function setRandomizerContract(IRandomizer _randomizer) external onlyOwner {
+        require(address(_randomizer) != address(0x0), "Tasks: randomizer contract address can't be null");
+        randomizer = _randomizer;
+    }
+
+    /**
+    * @notice Set ant coin contract
+    * @dev This function can only be called by the owner
+    * @param _antCoin ant coin smart contract address
     */
 
     function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+        require(address(_antCoin) != address(0x0), "Tasks: antcoin contract address can't be null");
         antCoin = _antCoin;
     }
 
     /**
-    * @notice Set premium ant contract address
+    * @notice Set purse contract
     * @dev This function can only be called by the owner
-    * @param _premiumANT Premium ANT contract address
+    * @param _purse purse smart contract address
     */
 
-    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
-        premiumANT = _premiumANT;
+    function setPurseContract(IPurse _purse) external onlyOwner {
+        require(address(_purse) != address(0x0), "Tasks: purse contract address can't be null");
+        purse = _purse;
     }
 
     /**
-    * @notice Set basic ant contract address
+    * @notice Set Basic ANT contract
     * @dev This function can only be called by the owner
-    * @param _basicANT Basic ANT contract address
+    * @param _basicANT Basic ANT smart contract address
     */
 
     function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+        require(address(_basicANT) != address(0x0), "Tasks: BasicANT contract address can't be null");
         basicANT = _basicANT;
     }
 
     /**
-    * @notice Set max stake period by timestamp
+    * @notice Set Premium ANT contract
     * @dev This function can only be called by the owner
-    * @param _maxStakePeriod max stake period timestamp
+    * @param _premiumANT Premium ANT smart contract address
     */
 
-    function setMaxStakePeriod(uint256 _maxStakePeriod) external onlyOwner {
-        maxStakePeriod = _maxStakePeriod;
-    }
-
-    /**
-    * @notice Set cycle stake period by timestamp
-    * @dev This function can only be called by the owner
-    * @param _cycleStakePeriod one reward cycle period timestamp
-    */
-
-    function setCycleStakePeriod(uint256 _cycleStakePeriod) external onlyOwner {
-        cycleStakePeriod = _cycleStakePeriod;
-    }
-
-    /**
-    * @notice Set init level after unstake ant
-    * @dev This function can only be called by the owner
-    * @param _level init level value
-    */
-
-    function setInitLevelAfterUnstake(uint256 _level) external onlyOwner {
-        initLevelAfterUnstake = _level;
-    }
-
-    /**
-    * @notice Set extra apy percentage
-    * @dev This function can only be called by the owner
-    * @param _extraAPY extra apy percentage e.g. 500 = 5.00 %
-    */
-
-    function setExtraAPY(uint256 _extraAPY) external onlyOwner {
-        extraAPY = _extraAPY;
-    }
-
-    /**
-    * @notice Set batch index for extra apy
-    * @dev This function can only be called by the owner
-    * @param _batchIndexForExtraAPY batch index value for extra apy
-    */
-
-    function setBatchIndexForExtraAPY(uint256 _batchIndexForExtraAPY) external onlyOwner {
-        batchIndexForExtraAPY = _batchIndexForExtraAPY;
-    }
-
-    /**
-    * @notice Set ant coin stake limit amount for each ants
-    * @dev This function can only be called by the owner
-    * @param _limitStakeAmount limit antcoin stake amount
-    */
-
-    function setLimitAntCoinStakeAmount(uint256 _limitStakeAmount) external onlyOwner {
-        limitAntCoinStakeAmount = _limitStakeAmount;
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+        require(address(_premiumANT) != address(0x0), "Tasks: PremiumANT contract address can't be null");
+        premiumANT = _premiumANT;
     }
 
     /**
@@ -429,6 +469,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @dev This function can only be called by the owner
     * @param _address address to get minter role
     */
+
     function addMinterRole(address _address) external onlyOwner {
         minters[_address] = true;
     }
@@ -438,6 +479,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @dev This function can only be called by the owner
     * @param _address address to revoke minter role
     */
+
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
     }
