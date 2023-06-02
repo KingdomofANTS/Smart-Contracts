@@ -134,7 +134,9 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         uint256 amountForSwap = _distributeAmount / _activeAssets.length;
 
         for(uint256 i; i < _activeAssets.length; i++) {
-            _swapExactETHforTokens(amountForSwap, _activeAssets[i].asset);
+            if(_activeAssets[i].asset != _wETH){
+                _swapExactETHforTokens(amountForSwap, _activeAssets[i].asset);
+            }
         }
     }
 
@@ -167,7 +169,7 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         address[] memory path = new address[](2);
         path[0] = uniswapV2Router.WETH();
         path[1] = _tokenAddress;
-        amounts = uniswapV2Router.swapExactETHForTokens(_amount, path, address(this), block.timestamp + 300);
+        amounts = uniswapV2Router.swapExactETHForTokens{value: _amount}(_amount, path, address(this), block.timestamp + 300);
     }
 
     /**
@@ -475,7 +477,6 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
 
     function depositFundsETH() external payable onlyOwner {
         require(msg.value > 0, "Treasury: deposit ETH can not be zero");
-        IWETH(_wETH).deposit{value: msg.value}();
         uint256 depositAmount = msg.value;
         _depositToANTCTreasury(depositAmount * 20 / 100);
         _addLiquidity(depositAmount * 20 / 100);
