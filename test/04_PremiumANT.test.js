@@ -19,8 +19,8 @@ describe("PremiumANT", function () {
         await ANTShopContract.deployed();
 
         // set ANTFood and LevelingPotions contract
-        await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-        await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
+        await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
+        await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI2");
 
         // Premium ANT smart contract deployment
         PremiumANT = await ethers.getContractFactory('PremiumANT');

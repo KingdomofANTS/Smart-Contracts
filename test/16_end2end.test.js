@@ -17,8 +17,8 @@ describe("End2End", function () {
         ANTShopContract = await ANTShop.deploy();
         await ANTShopContract.deployed();
 
-        await ANTShopContract.connect(deployer).setTokenTypeInfo(0, "antshop uri")
-        await ANTShopContract.connect(deployer).setTokenTypeInfo(1, "leveling potion uri")
+        await ANTShopContract.connect(deployer).setTokenTypeInfo(0, "ANTFood", "ant food uri")
+        await ANTShopContract.connect(deployer).setTokenTypeInfo(1, "Leveling Potion", "leveling potion uri")
 
         // basic ant
         BasicANT = await hre.ethers.getContractFactory("BasicANT");
@@ -165,6 +165,50 @@ describe("End2End", function () {
                 await ANTCoinContract.mint(user1.address, utils.parseEther("101"));
                 const totalCirculatingSupply = await ANTCoinContract.totalCirculatingSupply();
                 expect(totalCirculatingSupply).to.be.equal(utils.parseEther(String(100000000 - 100 + 101)))
+            })
+        })
+
+        describe("ANTShop", async () => {
+            it("setTokenTypeInfo: should be set the token type info properly by owner", async () => {
+                await ANTShopContract.setTokenTypeInfo(0, "test token 1", "test token 1 base uri");
+                await ANTShopContract.setTokenTypeInfo(1, "test token 2", "test token 2 base uri");
+
+                const token1TypeInfo = await ANTShopContract.getInfoForType(0);
+                const token2TypeInfo = await ANTShopContract.getInfoForType(1);
+
+                expect(token1TypeInfo.toString()).to.be.equal("0,0,true,test token 1 base uri,test token 1");
+                expect(token2TypeInfo.toString()).to.be.equal("0,0,true,test token 2 base uri,test token 2");
+            })
+
+            it("mint & burn: ant shop ERC1155 tokens could be minted & burned by minter", async () => {
+                await ANTShopContract.addMinterRole(user1.address);
+                await ANTShopContract.connect(user1).mint(0, 10, user2.address);
+                await ANTShopContract.connect(user1).mint(1, 5, user3.address);
+                await ANTShopContract.connect(user1).burn(0, 2, user2.address);
+                await ANTShopContract.connect(user1).burn(1, 3, user3.address);
+
+                const token1Info = await ANTShopContract.getInfoForType(0);
+                const token2Info = await ANTShopContract.getInfoForType(1);
+
+                const user2Balance = await ANTShopContract.balanceOf(user2.address, 0);
+                const user3Balance = await ANTShopContract.balanceOf(user3.address, 1);
+
+                expect(token1Info.toString()).to.be.equal("10,2,true,ant food uri,ANTFood");
+                expect(token2Info.toString()).to.be.equal("5,3,true,leveling potion uri,Leveling Potion");
+
+                expect(user2Balance).to.be.equal(8);
+                expect(user3Balance).to.be.equal(2);
+            })
+
+            it("isApprovedForAll: auto approve for minters", async () => {
+                await ANTShopContract.addMinterRole(user1.address);
+                await ANTShopContract.connect(user1).mint(0, 10, user2.address);
+                await ANTShopContract.connect(user1).mint(0, 10, user1.address);
+                await expect(ANTShopContract.connect(user3).safeTransferFrom(user2.address, user3.address, 0, 2, ethers.constants.HashZero)).to.be.revertedWith("ANTShop: Caller is not owner nor approved")
+                await expect(ANTShopContract.connect(badActor).safeTransferFrom(user2.address, user1.address, 0, 2, ethers.constants.HashZero)).to.be.revertedWith("ANTShop: Caller is not owner nor approved");
+                await expect(ANTShopContract.connect(badActor).safeTransferFrom(user1.address, user2.address, 0, 2, ethers.constants.HashZero)).to.be.revertedWith("ANTShop: Caller is not owner nor approved");
+                await expect(ANTShopContract.connect(user1).safeTransferFrom(user2.address, user3.address, 0, 3, ethers.constants.HashZero)).to.be.not.reverted;
+                await expect(ANTShopContract.connect(user1).safeTransferFrom(user2.address, ANTShopContract.address, 0, 3, ethers.constants.HashZero)).to.be.not.reverted;
             })
         })
     });

@@ -61,8 +61,8 @@ describe("Tasks", function () {
         await BasicANTContract.addMinterRole(TasksContract.address);
 
         await ANTShopContract.addMinterRole(PurseContract.address);
-        await ANTShopContract.setTokenTypeInfo(0, "ANTFoodURI");
-        await ANTShopContract.setTokenTypeInfo(1, "LevelingPotionsURI");
+        await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "ANTFoodURI");
+        await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "LevelingPotionsURI");
         await ANTShopContract.addMinterRole(PremiumANTContract.address)
         await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
         await ANTLotteryContract.addMinterRole(PurseContract.address);

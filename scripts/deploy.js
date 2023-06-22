@@ -19,8 +19,8 @@ async function main() {
     const ANTShopContract = await ANTShop.deploy();
     await ANTShopContract.deployed();
 
-    await ANTShopContract.connect(deployer).setTokenTypeInfo(0, "antshop uri")
-    await ANTShopContract.connect(deployer).setTokenTypeInfo(1, "leveling potion uri")
+    await ANTShopContract.connect(deployer).setTokenTypeInfo(0, "ANTFood", "antshop uri")
+    await ANTShopContract.connect(deployer).setTokenTypeInfo(1, "Leveling Potions", "leveling potion uri")
 
     // basic ant
     const BasicANT = await hre.ethers.getContractFactory("BasicANT");

@@ -41,12 +41,13 @@ W: https://kingdomofants.io
 pragma solidity ^0.8.13;
 
 import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import '@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import "./interfaces/IANTShop.sol";
 
-contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
+contract ANTShop is ERC1155, ERC1155Holder, IANTShop, Ownable, Pausable {
 
     // minters
     mapping(address => bool) private minters;
@@ -107,22 +108,29 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
       return super.balanceOf(account, id);
     }
 
-    /**
-    * @dev See {IERC1155-isApprovedForAll}.
-    */
-    function isApprovedForAll(address account, address operator) public view virtual override returns (bool) {
-        if(minters[account] || minters[operator]){
-          return true;
-        }
-        return super.isApprovedForAll(account, operator);
-    }
+    // /**
+    // * @dev See {IERC1155-isApprovedForAll}.
+    // */
+    // function isApprovedForAll(address account, address operator) public view virtual override returns (bool) {
+    //     if(minters[account] || minters[operator]){
+    //       return true;
+    //     }
+    //     return super.isApprovedForAll(account, operator);
+    // }
 
     /**
     * @notice Override `safeTransferFrom` function of ERC1155
     */
 
     function safeTransferFrom(address from, address to , uint256 id, uint256 amount, bytes memory data) public override(ERC1155, IANTShop) {
-      super.safeTransferFrom(from, to, id, amount, data);
+      // allow controller contracts to be send without approval
+      if (!minters[_msgSender()]) {
+        require(
+          from == _msgSender() || isApprovedForAll(from, _msgSender()),
+          'ANTShop: Caller is not owner nor approved'
+        );
+      }
+      _safeTransferFrom(from, to, id, amount, data);
     }
 
     /**
@@ -213,7 +221,8 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     * @param _baseURI tokenURI for token
     */
 
-    function setTokenTypeInfo(uint256 _typeId, string memory _baseURI) external onlyOwner {
+    function setTokenTypeInfo(uint256 _typeId, string memory _name, string memory _baseURI) external onlyOwner {
+        typeInfo[_typeId].name = _name;
         typeInfo[_typeId].baseURI = _baseURI;
         typeInfo[_typeId].isSet = true;
     }
@@ -224,6 +233,10 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     function setPaused(bool _paused) external onlyOwner {
         if (_paused) _pause();
         else _unpause();
+    }
+
+    receive() external payable {
+        // handle incoming Ether here
     }
 
     /**
@@ -249,5 +262,10 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     ) public onlyOwner {
         IERC20 tokenContract = IERC20(_tokenContract);
         tokenContract.transfer(to, amount);
+    }
+
+    /// @inheritdoc	ERC165
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, ERC1155Receiver) returns (bool) {
+      return super.supportsInterface(interfaceId);
     }
 }

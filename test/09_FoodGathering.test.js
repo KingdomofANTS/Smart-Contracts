@@ -25,8 +25,8 @@ describe("FoodGathering", function () {
         await ANTShopContract.deployed();
 
         // set ANTFood and LevelingPotions contract
-        await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-        await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
+        await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
+        await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI2");
 
         FoodGathering = await ethers.getContractFactory("FoodGathering")
         FoodGatheringContract = await FoodGathering.deploy(ANTCoinContract.address, ANTShopContract.address);

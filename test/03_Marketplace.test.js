@@ -102,20 +102,20 @@ describe("Marketplace", function () {
             })
 
             it("should fail if mint info not set yet in Marketplace", async () => {
-                await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
+                await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
                 await expect(MarketplaceContract.connect(user1).buyTokens(0, 1, user1.address)).to.be.revertedWith("Marketplace: mint info not set");
             })
 
             it("should fail if matic payment is not enough", async () => {
                 const maticMintAmount = 1000000000000;
-                await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+                await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
                 await MarketplaceContract.setMintInfo(0, maticMintAmount, ANTCoinContract.address, 1000000);
                 await expect(MarketplaceContract.connect(user1).buyTokens(0, 1, user1.address, { value: maticMintAmount - 1 })).to.be.revertedWith("Marketplace: Insufficient Matic")
             })
 
             it("should fail if caller don't have enough token amount for mint", async () => {
                 const maticMintAmount = 1000000000000;
-                await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+                await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
                 await MarketplaceContract.setMintInfo(0, maticMintAmount, ANTCoinContract.address, 1000000);
                 await MarketplaceContract.setMintMethod(0, false);
                 await expect(MarketplaceContract.connect(user1).buyTokens(0, 1, user1.address)).to.be.revertedWith("Marketplace: Insufficient Tokens");
@@ -131,7 +131,7 @@ describe("Marketplace", function () {
 
                 // matic mint
                 const maticMintAmount = 1000000000000;
-                await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+                await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
                 await MarketplaceContract.setMintInfo(0, maticMintAmount, ANTCoinContract.address, 1000000);
                 await MarketplaceContract.connect(user1).buyTokens(0, 1, user1.address, { value: maticMintAmount});
                 const userBalance1 = await ANTShopContract.balanceOf(user1.address, 0);
@@ -149,7 +149,7 @@ describe("Marketplace", function () {
 
                 /* -------------- Leveling Potions --------------- */
                 // matic mint
-                await ANTShopContract.setTokenTypeInfo(1, "testBaseURI");
+                await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI");
                 await MarketplaceContract.setMintInfo(1, maticMintAmount, ANTCoinContract.address, 1000000);
                 await MarketplaceContract.connect(user1).buyTokens(1, 1, user1.address, { value: maticMintAmount});
                 const userBalance3 = await ANTShopContract.balanceOf(user1.address, 1);
@@ -173,7 +173,7 @@ describe("Marketplace", function () {
 
         it("setPaused: should work if caller is owner", async () => {
             const maticMintAmount = 1000000000000;
-            await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+            await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
             await MarketplaceContract.setMintInfo(0, maticMintAmount, ANTCoinContract.address, 1000000);
             await MarketplaceContract.setPaused(true);
             await expect(MarketplaceContract.connect(user1).buyTokens(0, 1, user1.address, { value: maticMintAmount})).to.be.revertedWith("Pausable: paused");
@@ -190,7 +190,7 @@ describe("Marketplace", function () {
         it("withdraw: should work if caller is owner", async () => {
             const initialBalanceOfUser = await MarketplaceContract.provider.getBalance(user3.address);
             const maticMintAmount = 1000000000000;
-            await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+            await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
             await MarketplaceContract.setMintInfo(0, maticMintAmount, ANTCoinContract.address, 1000000);
             await MarketplaceContract.connect(user1).buyTokens(0, 1, user1.address, { value: maticMintAmount});
             const contractBalance = await MarketplaceContract.provider.getBalance(MarketplaceContract.address);
@@ -208,7 +208,7 @@ describe("Marketplace", function () {
             const maticMintAmount = 1000000000000;
             const tokenAmount = 1000000;
             await MarketplaceContract.setMintInfo(0, maticMintAmount, ANTCoinContract.address, tokenAmount);
-            await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+            await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
             await MarketplaceContract.setMintMethod(0, false);
             await ANTCoinContract.transfer(user1.address, tokenAmount);
             const user1Balance = await ANTCoinContract.balanceOf(user1.address);
