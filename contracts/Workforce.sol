@@ -235,6 +235,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
 
     function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused {
         require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
+        require(_antCAmount > 0, "Workforce: ant coin stake amount should be > 0");
         require(_antCAmount <= limitAntCoinStakeAmount, "Workforce: ant coin stake amount exceed the limit amount");
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
         IPremiumANT.ANTInfo memory _premiumANTInfo = premiumANT.getANTInfo(_tokenId);
@@ -261,6 +262,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
 
     function stakeBasicANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused {
         require(basicANT.ownerOf(_tokenId) == _msgSender(), 'Workforce: you are not owner of this token');
+        require(_antCAmount > 0, "Workforce: ant coin stake amount should be > 0");
         require(_antCAmount <= limitAntCoinStakeAmount, "Workforce: ant coin stake amount exceed the limit amount");
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Workforce: insufficient ant coin balance');
         IBasicANT.ANTInfo memory _basicANTInfo = basicANT.getANTInfo(_tokenId);
