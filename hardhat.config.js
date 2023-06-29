@@ -21,7 +21,11 @@ module.exports = {
       chainId: 80001,
       url: "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY_TESTNET,
       accounts: [process.env.PRIVATE_KEY]
-        // process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    mainnet: {
+      chainId: 137,
+      url: "https://polygon-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY_MAINNET,
+      accounts: [process.env.PRIVATE_KEY]
     }
   },
   etherscan: {

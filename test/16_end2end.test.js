@@ -72,6 +72,8 @@ describe("End2End", function () {
         await MarketplaceContract.deployed();
         await ANTShopContract.addMinterRole(MarketplaceContract.address);
         await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
+        await ANTCoinContract.addMinterRole(ANTLotteryContract.address);
+        await PurseContract.addMinterRole(MarketplaceContract.address);
         await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0]);
 
         // bosses
@@ -209,6 +211,100 @@ describe("End2End", function () {
                 await expect(ANTShopContract.connect(badActor).safeTransferFrom(user1.address, user2.address, 0, 2, ethers.constants.HashZero)).to.be.revertedWith("ANTShop: Caller is not owner nor approved");
                 await expect(ANTShopContract.connect(user1).safeTransferFrom(user2.address, user3.address, 0, 3, ethers.constants.HashZero)).to.be.not.reverted;
                 await expect(ANTShopContract.connect(user1).safeTransferFrom(user2.address, ANTShopContract.address, 0, 3, ethers.constants.HashZero)).to.be.not.reverted;
+            })
+        })
+
+        describe("Marketplace", async () => {
+            it("setMintInfo: should work properly by owner", async () => {
+                await expect(MarketplaceContract.connect(badActor).setMintInfo(0, 0, ANTCoinContract.address, 100)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(MarketplaceContract.setMintInfo(0, 0, ethers.constants.AddressZero, 0)).to.be.revertedWith("Marketplace: token address can't be a null address");
+                await MarketplaceContract.setMintInfo(0, ethers.utils.parseEther("0.1"), ANTCoinContract.address, 100);
+                await expect(MarketplaceContract.getMintInfo(1)).to.be.revertedWith("Marketplace: Mint information not set yet");
+                const mintInfo1 = await MarketplaceContract.getMintInfo(0);
+                expect(mintInfo1.toString()).to.be.equal(`true,true,100000000000000000,100,${ANTCoinContract.address}`);
+                await MarketplaceContract.setMintMethod(0, false);
+                const mintInfo2 = await MarketplaceContract.getMintInfo(0);
+                expect(mintInfo2.toString()).to.be.equal(`false,true,100000000000000000,100,${ANTCoinContract.address}`);
+            });
+
+            it("setPurseMintInfo & setLotteryTicketMintInfo: should set mint info by owner", async () => {
+                await expect(MarketplaceContract.connect(badActor).setPurseMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 100)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(MarketplaceContract.connect(badActor).setLotteryTicketMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 100)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(MarketplaceContract.setPurseMintInfo(true, utils.parseEther("0.1"), ethers.constants.AddressZero, 100)).to.be.revertedWith("Marketplace: Purse token address can't be zero address");
+                await expect(MarketplaceContract.setLotteryTicketMintInfo(true, utils.parseEther("0.1"), ethers.constants.AddressZero, 100)).to.be.revertedWith("Marketplace: Lottery token address can't be zero address");
+
+                await MarketplaceContract.setPurseMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 100);
+                await MarketplaceContract.setLotteryTicketMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 100);
+
+                const purseMintMethod = await MarketplaceContract.purseMintMethod();
+                const purseMintPrice = await MarketplaceContract.purseMintPrice();
+                const purseMintTokenAddress = await MarketplaceContract.purseMintTokenAddress();
+                const purseMintTokenAmount = await MarketplaceContract.purseMintTokenAmount();
+                const lotteryTicketMintMethod = await MarketplaceContract.lotteryTicketMintMethod();
+                const lotteryTicketMintPrice = await MarketplaceContract.lotteryTicketMintPrice();
+                const lotteryTicketMintTokenAddress = await MarketplaceContract.lotteryTicketMintTokenAddress();
+                const lotteryTicketMintTokenAmount = await MarketplaceContract.lotteryTicketMintTokenAmount();
+
+                expect(purseMintMethod).to.be.equal(lotteryTicketMintMethod).to.be.equal(true);
+                expect(purseMintPrice).to.be.equal(lotteryTicketMintPrice).to.be.equal(utils.parseEther("0.1"));
+                expect(purseMintTokenAddress).to.be.equal(lotteryTicketMintTokenAddress).to.be.equal(ANTCoinContract.address);
+                expect(purseMintTokenAmount).to.be.equal(lotteryTicketMintTokenAmount).to.be.equal(100);
+            })
+
+            it("buyTokens: should mint the ant shop tokens regarding the antshop mint info", async () => {
+                await expect(MarketplaceContract.connect(user1).buyTokens(0, 1, user1.address)).to.be.revertedWith("Marketplace: mint info not set");
+                await MarketplaceContract.setMintInfo(0, ethers.utils.parseEther("0.01"), ANTCoinContract.address, 100); // ant food
+                await MarketplaceContract.setMintInfo(1, ethers.utils.parseEther("0.1"), ANTCoinContract.address, 1000); // leveling potions
+                await MarketplaceContract.connect(user1).buyTokens(0, 10, user1.address, { value: utils.parseEther("0.1") });
+                await MarketplaceContract.connect(user1).buyTokens(1, 10, user1.address, { value: utils.parseEther("1") });
+
+                const user1balance1 = await ANTShopContract.balanceOf(user1.address, 0);
+                const user1balance2 = await ANTShopContract.balanceOf(user1.address, 1);
+
+                expect(user1balance1).to.be.equal(10)
+                expect(user1balance2).to.be.equal(10)
+
+                await MarketplaceContract.setMintMethod(0, false);
+                await MarketplaceContract.setMintMethod(1, false);
+
+                await expect(MarketplaceContract.connect(user1).buyTokens(0, 10, user1.address)).to.be.revertedWith("Marketplace: Insufficient Tokens");
+                await expect(MarketplaceContract.connect(user1).buyTokens(1, 10, user1.address)).to.be.revertedWith("Marketplace: Insufficient Tokens");
+
+                await ANTCoinContract.transfer(user1.address, 100 * 10 + 1000 * 10);
+                await ANTCoinContract.connect(user1).approve(MarketplaceContract.address, 100 * 10 + 1000 * 10);
+
+                await MarketplaceContract.connect(user1).buyTokens(0, 10, user1.address);
+                await MarketplaceContract.connect(user1).buyTokens(1, 10, user1.address);
+
+                const user1balance3 = await ANTShopContract.balanceOf(user1.address, 0);
+                const user1balance4 = await ANTShopContract.balanceOf(user1.address, 1);
+
+                expect(user1balance3).to.be.equal(20)
+                expect(user1balance4).to.be.equal(20)
+
+                await expect(MarketplaceContract.connect(user1).buyTokens(0, 10, user1.address)).to.be.revertedWith("Marketplace: Insufficient Tokens");
+                await expect(MarketplaceContract.connect(user1).buyTokens(1, 10, user1.address)).to.be.revertedWith("Marketplace: Insufficient Tokens");
+            })
+
+            it("buyPurseToken & buyLotteryTickets: should mint the purse token regarding the purse mint info", async () => {
+                await MarketplaceContract.setPurseMintInfo(true, utils.parseEther("0.01"), ANTCoinContract.address, 100);
+                await MarketplaceContract.setLotteryTicketMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 1000);
+                await expect(MarketplaceContract.connect(user1).buyPurseTokens(user1.address, 10)).to.be.revertedWith("Marketplace: Insufficient Matic");
+                await expect(MarketplaceContract.connect(user1).buyLotteryTickets(user1.address, 10)).to.be.revertedWith("Marketplace: Insufficient Matic");
+                await MarketplaceContract.connect(user1).buyPurseTokens(user1.address, 10, { value: utils.parseEther("0.1") });
+                const provider = ANTLotteryContract.provider;
+                const blockNumber = await provider.getBlockNumber();
+                const block = await provider.getBlock(blockNumber);
+                const blockTimestamp = block.timestamp;
+                const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
+                await ANTLotteryContract.setOperatorAndTreasuryAndInjectorAddresses(deployer.address, deployer.address)
+                await ANTLotteryContract.startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
+                await MarketplaceContract.connect(user1).buyLotteryTickets(user1.address, 10, { value: utils.parseEther("1") });
+                const purseBalance1 = await PurseContract.balanceOf(user1.address);
+                expect(purseBalance1).to.be.equal(10)
+                const currentLotteryId = await ANTLotteryContract.currentLotteryId()
+                const lotteryBalance1 = await ANTLotteryContract.viewUserInfoForLotteryId(user1.address, currentLotteryId, 0, 100);
+                expect(lotteryBalance1[0].length).to.be.equal(10)
             })
         })
     });
