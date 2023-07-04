@@ -307,5 +307,44 @@ describe("End2End", function () {
                 expect(lotteryBalance1[0].length).to.be.equal(10)
             })
         })
+
+        describe("PremiumANT", async () => {
+            it("setBatchInfo: should be set the correct batch info", async () => {
+                await expect(PremiumANTContract.connect(badActor).setBatchInfo(0, "Worker ANT", "Worker ANT Base URI", 100, 2)).to.be.revertedWith("Ownable: caller is not the owner");
+                await PremiumANTContract.setBatchInfo(0, "Worker ANT", "https://ipfs.io/ipfs/", 100, 2);
+                const workerBatchInfo = await PremiumANTContract.getBatchInfo(0)
+                expect(workerBatchInfo.toString()).to.be.equal("Worker ANT,https://ipfs.io/ipfs/,0,100,2");
+            })
+
+            it("mint: should mint the premium ants according to the exact logic", async () => {
+                await expect(PremiumANTContract.connect(user1).mint(0, user2.address, 1)).to.be.revertedWith("PremiumANT: caller is not minter")
+                await expect(PremiumANTContract.connect(user1).mint(0, user1.address, 1)).to.be.revertedWith("PremiumANT: insufficient balance")
+                await ANTShopContract.mint(0, 10, user1.address);
+                await PremiumANTContract.connect(user1).mint(0, user1.address, 2);
+                await PremiumANTContract.connect(user1).mint(1, user1.address, 2);
+                await PremiumANTContract.connect(user1).mint(2, user1.address, 2);
+                const userBalance1 = await PremiumANTContract.balanceOf(user1.address);
+                expect(userBalance1).to.be.equal(6);
+                const batchInfo1 = await PremiumANTContract.getBatchInfo(0);
+                const batchInfo2 = await PremiumANTContract.getBatchInfo(1);
+                const batchInfo3 = await PremiumANTContract.getBatchInfo(2);
+                expect(batchInfo1.minted).to.be.equal(batchInfo2.minted).to.be.equal(batchInfo3.minted)
+                const antFoodBalance1 = await ANTShopContract.balanceOf(user1.address, 0);
+                expect(antFoodBalance1).to.be.equal(4)
+                
+                // owner mint
+                await PremiumANTContract.ownerMint(0, user2.address, 5);
+                const batchInfo4 = await PremiumANTContract.getBatchInfo(0);
+                expect(batchInfo4.minted).to.be.equal(7)
+                const totalMinted = await PremiumANTContract.minted();
+                expect(totalMinted).to.be.equal(11)
+                const antOwner1 = await PremiumANTContract.ownerOf(7);
+                expect(antOwner1).to.be.equal(user2.address)
+            })
+
+            it("upgradePremiumANT: should be upgraded properly according to the exact upgrade logic", async () => {
+                
+            })
+        })
     });
 });

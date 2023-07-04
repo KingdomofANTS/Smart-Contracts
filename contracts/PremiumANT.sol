@@ -234,7 +234,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param quantity the number of tokens to mint
     */
 
-    function mint(uint256 batchIndex, address recipient, uint256 quantity) external whenNotPaused {
+    function mint(uint256 batchIndex, address recipient, uint256 quantity) external whenNotPaused nonReentrant {
         BatchInfo storage batchInfo = premiumBatches[batchIndex];
         require(recipient == tx.origin, 'PremiumANT: caller is not minter');
         require(batchInfo.maxSupply > 0, "PremiumANT: batch information has not yet been set");
