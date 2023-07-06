@@ -331,7 +331,7 @@ describe("End2End", function () {
                 expect(batchInfo1.minted).to.be.equal(batchInfo2.minted).to.be.equal(batchInfo3.minted)
                 const antFoodBalance1 = await ANTShopContract.balanceOf(user1.address, 0);
                 expect(antFoodBalance1).to.be.equal(4)
-                
+
                 // owner mint
                 await PremiumANTContract.ownerMint(0, user2.address, 5);
                 const batchInfo4 = await PremiumANTContract.getBatchInfo(0);
@@ -343,7 +343,48 @@ describe("End2End", function () {
             })
 
             it("upgradePremiumANT: should be upgraded properly according to the exact upgrade logic", async () => {
-                
+                await ANTShopContract.mint(0, 10, user1.address);
+                await ANTShopContract.mint(1, 100, user1.address);
+                await PremiumANTContract.connect(user1).mint(0, user1.address, 2);
+                await expect(PremiumANTContract.connect(user2).upgradePremiumANT(1, 5)).to.be.revertedWith("PremiumANT: you are not owner of this token");
+                await expect(PremiumANTContract.connect(user1).upgradePremiumANT(1, 0)).to.be.revertedWith("PremiumANT: leveling potion amount must be greater than zero");
+                await expect(PremiumANTContract.connect(user1).upgradePremiumANT(1, 101)).to.be.revertedWith("PremiumANT: you don't have enough potions for upgrading");
+                await expect(PremiumANTContract.connect(user1).upgradePremiumANT(1, 10)).to.be.revertedWith("PremiumANT: insufficient ant coin fee for upgrading");
+                const upgradeANTFeePerPotion = await PremiumANTContract.upgradeANTFee();
+                await ANTCoinContract.transfer(user1.address, upgradeANTFeePerPotion.mul(100));
+                await PremiumANTContract.connect(user1).upgradePremiumANT(1, 10)
+                const antInfo1 = await PremiumANTContract.getANTInfo(1)
+                expect(antInfo1.level).to.be.equal(20);
+                expect(antInfo1.remainPotions).to.be.equal(10);
+                await PremiumANTContract.connect(user1).upgradePremiumANT(1, 11);
+                const antInfo2 = await PremiumANTContract.getANTInfo(1)
+                expect(antInfo2.level).to.be.equal(21);
+                expect(antInfo2.remainPotions).to.be.equal(0);
+                await PremiumANTContract.connect(user1).upgradePremiumANT(1, 24);
+                const antInfo3 = await PremiumANTContract.getANTInfo(1)
+                expect(antInfo3.level).to.be.equal(22);
+                expect(antInfo3.remainPotions).to.be.equal(2);
+
+                const user1ANTCoinBalance1 = await ANTCoinContract.balanceOf(user1.address);
+                expect(user1ANTCoinBalance1).to.be.equal(upgradeANTFeePerPotion.mul(100 - (10 + 11 + 24)))
+
+                await PremiumANTContract.setMaxLevel(23);
+                await PremiumANTContract.connect(user1).upgradePremiumANT(1, 30);
+                const user1ANTFoodBalance = await ANTShopContract.balanceOf(user1.address, 1)
+                expect(user1ANTFoodBalance).to.be.equal(100 - 10 - 11 - 24 - 21) // 
+                const antInfo4 = await PremiumANTContract.getANTInfo(1)
+                expect(antInfo4.level).to.be.equal(23)
+                expect(antInfo4.remainPotions).to.be.equal(0)
+            })
+
+            it("ownerANTUpgrade: should be upgraded by owner", async () => {
+                await ANTShopContract.mint(0, 10, user1.address);
+                await PremiumANTContract.connect(user1).mint(0, user1.address, 2);
+                await expect(PremiumANTContract.connect(badActor).ownerANTUpgrade(1, 25)).to.be.revertedWith("PremiumANT: Caller is not the minter")
+                await PremiumANTContract.ownerANTUpgrade(1, 25);
+                const antInfo1 = await PremiumANTContract.getANTInfo(1)
+                expect(antInfo1.level).to.be.equal(21);
+                expect(antInfo1.remainPotions).to.be.equal(4);
             })
         })
     });

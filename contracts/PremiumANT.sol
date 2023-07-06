@@ -166,6 +166,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     function getANTExperience(uint256 tokenId) external view override returns(uint256) {
+        require(_exists(tokenId), "PremiumANT: token is not exist");
         ANTInfo memory ant = premiumANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
         uint256 remainderPotions = ant.remainPotions;
@@ -212,6 +213,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     function getANTInfo(uint256 tokenId) public view override returns(ANTInfo memory) {
+        require(_exists(tokenId), "PremiumANT: token is not exist");
         return premiumANTs[tokenId];
     }
 
@@ -321,6 +323,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinter {
+        require(_exists(tokenId), "PremiumANT: token is not exist");
         ANTInfo storage antInfo = premiumANTs[tokenId];
         if(antInfo.level >= maxLevel) {
             return;

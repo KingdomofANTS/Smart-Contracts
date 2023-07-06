@@ -166,6 +166,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     */
 
     function getANTExperience(uint256 tokenId) external view override returns(uint256) {
+        require(_exists(tokenId), "BasicANT: token is not exist");
         ANTInfo memory ant = basicANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
         uint256 remainderPotions = ant.remainPotions;
@@ -204,6 +205,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     */
 
     function getANTInfo(uint256 tokenId) public view override returns(ANTInfo memory) {
+        require(_exists(tokenId), "BasicANT: token is not exist");
         return basicANTs[tokenId];
     }
 
@@ -326,6 +328,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     */
 
     function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinter {
+        require(_exists(tokenId), "BasicANT: token is not exist");
         ANTInfo storage antInfo = basicANTs[tokenId];
         if(antInfo.level >= maxLevel) {
             return;
