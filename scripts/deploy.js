@@ -33,9 +33,9 @@ async function main() {
     const basicANTMaticMintPrice = ethers.utils.parseEther("0.001")
     const baiscANTANTCoinMintAmount = ethers.utils.parseEther("1000");
 
-    await BasicANTContract.setBatchInfo(0, "Worker ANT", "testBaseURI1", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
-    await BasicANTContract.setBatchInfo(1, "Wise ANT", "testBaseURI2", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
-    await BasicANTContract.setBatchInfo(2, "Fighter ANT", "testBaseURI3", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
+    await BasicANTContract.setBatchInfo(0, "Worker ANT", "https://ipfs.moralis.io:2053/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
+    await BasicANTContract.setBatchInfo(1, "Wise ANT", "https://ipfs.moralis.io:2053/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
+    await BasicANTContract.setBatchInfo(2, "Fighter ANT", "https://ipfs.moralis.io:2053/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
 
     // premium ant
     const PremiumANT = await hre.ethers.getContractFactory("PremiumANT");
@@ -45,9 +45,9 @@ async function main() {
     await ANTShopContract.addMinterRole(PremiumANTContract.address);
     await ANTCoinContract.addMinterRole(PremiumANTContract.address);
 
-    await PremiumANTContract.setBatchInfo(0, "Worker ANT", "testBaseURI1", 100, 1);
-    await PremiumANTContract.setBatchInfo(1, "Wise ANT", "testBaseURI2", 100, 1);
-    await PremiumANTContract.setBatchInfo(2, "Fighter ANT", "testBaseURI2", 100, 1);
+    await PremiumANTContract.setBatchInfo(0, "Worker ANT", "https://ipfs.moralis.io:2053/ipfs/Qmdq1EUL2cwRXhVHAQ7KNBcfcYW6LKTm7Z1HBNkhaU1Bna/", 100, 1);
+    await PremiumANTContract.setBatchInfo(1, "Wise ANT", "https://ipfs.moralis.io:2053/ipfs/Qmdq1EUL2cwRXhVHAQ7KNBcfcYW6LKTm7Z1HBNkhaU1Bna/", 100, 1);
+    await PremiumANTContract.setBatchInfo(2, "Fighter ANT", "https://ipfs.moralis.io:2053/ipfs/Qmdq1EUL2cwRXhVHAQ7KNBcfcYW6LKTm7Z1HBNkhaU1Bna/", 100, 1);
 
     // ramdomizer
     const polyKeyHash = "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
@@ -74,6 +74,8 @@ async function main() {
     await MarketplaceContract.deployed();
     await ANTShopContract.addMinterRole(MarketplaceContract.address);
     await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
+    await ANTCoinContract.addMinterRole(ANTLotteryContract.address);
+    await PurseContract.addMinterRole(MarketplaceContract.address);
     await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0]);
 
     // bosses

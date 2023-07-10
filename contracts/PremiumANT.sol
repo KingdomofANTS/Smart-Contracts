@@ -218,6 +218,25 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     }
 
     /**
+    * @notice Return Premium ANT information array including level, mintedNums, batchIndex, ...
+    * @param tokenIds tokenIds to get Premium ANT information
+    */
+
+    function getANTMultiInfo(uint256[] calldata tokenIds) public view returns(ANTInfo[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new ANTInfo[](0);
+        }
+
+        ANTInfo[] memory _tokenInfos = new ANTInfo[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            require(_exists(tokenIds[i]), "PremiumANT: token does not exist");
+            _tokenInfos[i] = premiumANTs[tokenIds[i]];
+        }
+        return _tokenInfos;
+    }
+
+    /**
     * @notice Override `tokenURI` function of ERC721A
     * @param tokenId tokenId to get Premium ANT metadata
     */

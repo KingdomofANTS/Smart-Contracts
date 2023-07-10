@@ -210,6 +210,25 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
+    * @notice Return Basic ANT information array including level, mintedNums, batchIndex, ...
+    * @param tokenIds tokenIds to get Basic ANT information
+    */
+
+    function getANTMultiInfo(uint256[] calldata tokenIds) public view returns(ANTInfo[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new ANTInfo[](0);
+        }
+
+        ANTInfo[] memory _tokenInfos = new ANTInfo[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            require(_exists(tokenIds[i]), "BasicANT: token does not exist");
+            _tokenInfos[i] = basicANTs[tokenIds[i]];
+        }
+        return _tokenInfos;
+    }
+
+    /**
     * @notice Return max level of basic ant
     */
 
