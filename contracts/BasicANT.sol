@@ -255,7 +255,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param quantity the number of tokens to mint
     */
 
-    function mint(uint256 batchIndex, address recipient, uint256 quantity) external payable whenNotPaused {
+    function mint(uint256 batchIndex, address recipient, uint256 quantity) external payable nonReentrant whenNotPaused {
         BatchInfo storage batchInfo = basicBatches[batchIndex];
         require(recipient == tx.origin, 'BasicANT: caller is not minter');
         if(batchInfo.mintMethod){
