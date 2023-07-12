@@ -64,6 +64,15 @@ async function main() {
     await ANTLotteryContract.deployed();
     await ANTLotteryContract.setOperatorAndTreasuryAndInjectorAddresses(deployer.address, deployer.address);
 
+
+    /*------------------It needs to be confirmed while testing ----------------- */
+    const provider = ANTLotteryContract.provider;
+    const blockNumber = await provider.getBlockNumber();
+    const block = await provider.getBlock(blockNumber);
+    const blockTimestamp = block.timestamp;
+    const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
+    await ANTLotteryContract.startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
+
     // purse
     const Purse = await ethers.getContractFactory("Purse");
     const PurseContract = await Purse.deploy(RandomizerContract.address, ANTShopContract.address, ANTLotteryContract.address);
@@ -74,6 +83,8 @@ async function main() {
     await MarketplaceContract.deployed();
     await ANTShopContract.addMinterRole(MarketplaceContract.address);
     await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
+    await ANTShopContract.addMinterRole(PurseContract.address);
+    await ANTLotteryContract.addMinterRole(PurseContract.address);
     await ANTCoinContract.addMinterRole(ANTLotteryContract.address);
     await PurseContract.addMinterRole(MarketplaceContract.address);
     await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0]);

@@ -5,6 +5,9 @@ const { ethers } = require("hardhat")
 describe("End2End", function () {
     let ANTCoin, ANTCoinContract, ANTShop, ANTShopContract, BasicANT, BasicANTContract, PremiumANT, PremiumANTContract, ANTLottery, ANTLotteryContract, Purse, PurseContract, Marketplace, MarketplaceContract, Bosses, BossesContract, FoodGathering, FoodGatheringContract, LevelingGround, LevelingGroundContract, Tasks, TasksContract, Workforce, WorkforceContract, Vesting, VestingContract, Randomizer, RandomizerContract;
 
+    const basicANTMaticMintPrice = ethers.utils.parseEther("0.001")
+    const baiscANTANTCoinMintAmount = ethers.utils.parseEther("1000");
+
     beforeEach(async function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
 
@@ -27,9 +30,6 @@ describe("End2End", function () {
 
         await ANTShopContract.addMinterRole(BasicANTContract.address);
         await ANTCoinContract.addMinterRole(BasicANTContract.address);
-
-        const basicANTMaticMintPrice = ethers.utils.parseEther("0.001")
-        const baiscANTANTCoinMintAmount = ethers.utils.parseEther("1000");
 
         await BasicANTContract.setBatchInfo(0, "Worker ANT", "testBaseURI1", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
         await BasicANTContract.setBatchInfo(1, "Wise ANT", "testBaseURI2", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
@@ -61,6 +61,12 @@ describe("End2End", function () {
         ANTLotteryContract = await ANTLottery.deploy(RandomizerContract.address, ANTCoinContract.address);
         await ANTLotteryContract.deployed();
         await ANTLotteryContract.setOperatorAndTreasuryAndInjectorAddresses(deployer.address, deployer.address);
+        const provider = ANTLotteryContract.provider;
+        const blockNumber = await provider.getBlockNumber();
+        const block = await provider.getBlock(blockNumber);
+        const blockTimestamp = block.timestamp;
+        const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
+        await ANTLotteryContract.startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
 
         // purse
         Purse = await ethers.getContractFactory("Purse");
@@ -71,7 +77,9 @@ describe("End2End", function () {
         MarketplaceContract = await Marketplace.deploy(ANTShopContract.address, PurseContract.address, ANTLotteryContract.address);
         await MarketplaceContract.deployed();
         await ANTShopContract.addMinterRole(MarketplaceContract.address);
+        await ANTShopContract.addMinterRole(PurseContract.address);
         await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
+        await ANTLotteryContract.addMinterRole(PurseContract.address);
         await ANTCoinContract.addMinterRole(ANTLotteryContract.address);
         await PurseContract.addMinterRole(MarketplaceContract.address);
         await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0]);
@@ -385,6 +393,112 @@ describe("End2End", function () {
                 const antInfo1 = await PremiumANTContract.getANTInfo(1)
                 expect(antInfo1.level).to.be.equal(21);
                 expect(antInfo1.remainPotions).to.be.equal(4);
+            })
+        })
+
+        describe("BasicANT", async () => {
+            it("setBatchInfo: should be set the correct batch info", async () => {
+                await expect(BasicANTContract.connect(badActor).setBatchInfo(0, "Worker ANT", "Worker ANT Base URI", 100, ANTCoinContract.address, 1000)).to.be.revertedWith("Ownable: caller is not the owner");
+                await BasicANTContract.setBatchInfo(0, "Worker ANT", "Worker ANT Base URI", 100, ANTCoinContract.address, 1000);
+                const workerBatchInfo = await BasicANTContract.getBatchInfo(0)
+                expect(workerBatchInfo.toString()).to.be.equal(`Worker ANT,Worker ANT Base URI,0,100,${ANTCoinContract.address},1000,true`);
+            })
+
+            it("mint: should mint the basic ants according to the exact logic", async () => {
+                await expect(BasicANTContract.connect(user1).mint(0, user2.address, 1)).to.be.revertedWith("BasicANT: caller is not minter")
+                await expect(BasicANTContract.connect(user1).mint(0, user1.address, 1)).to.be.revertedWith("BasicANT: insufficient Matic")
+                await BasicANTContract.connect(user1).mint(0, user1.address, 2, { value: basicANTMaticMintPrice.mul(2) });
+                await BasicANTContract.connect(user1).mint(1, user1.address, 2, { value: basicANTMaticMintPrice.mul(2) });
+                await BasicANTContract.connect(user1).mint(2, user1.address, 2, { value: basicANTMaticMintPrice.mul(2) });
+                const userBalance1 = await BasicANTContract.balanceOf(user1.address);
+                expect(userBalance1).to.be.equal(6);
+                const batchInfo1 = await BasicANTContract.getBatchInfo(0);
+                const batchInfo2 = await BasicANTContract.getBatchInfo(1);
+                const batchInfo3 = await BasicANTContract.getBatchInfo(2);
+                expect(batchInfo1.minted).to.be.equal(batchInfo2.minted).to.be.equal(batchInfo3.minted)
+
+                // owner mint
+                await BasicANTContract.ownerMint(0, user2.address, 5);
+                const batchInfo4 = await BasicANTContract.getBatchInfo(0);
+                expect(batchInfo4.minted).to.be.equal(7)
+                const totalMinted = await BasicANTContract.minted();
+                expect(totalMinted).to.be.equal(11)
+                const antOwner1 = await BasicANTContract.ownerOf(7);
+                expect(antOwner1).to.be.equal(user2.address)
+            })
+
+            it("upgradeBasicANT: should be upgraded properly according to the exact upgrade logic", async () => {
+                await ANTShopContract.mint(1, 100, user1.address);
+                await BasicANTContract.connect(user1).mint(0, user1.address, 2, { value: basicANTMaticMintPrice.mul(2) });
+                await expect(BasicANTContract.connect(user2).upgradeBasicANT(1, 5)).to.be.revertedWith("BasicANT: you are not owner of this token");
+                await expect(BasicANTContract.connect(user1).upgradeBasicANT(1, 0)).to.be.revertedWith("BasicANT: leveling potion amount must be greater than zero");
+                await expect(BasicANTContract.connect(user1).upgradeBasicANT(1, 101)).to.be.revertedWith("BasicANT: you don't have enough potions for upgrading");
+                await expect(BasicANTContract.connect(user1).upgradeBasicANT(1, 10)).to.be.revertedWith("BasicANT: insufficient ant coin fee for upgrading");
+                const upgradeANTFeePerPotion = await BasicANTContract.upgradeANTFee();
+                await ANTCoinContract.transfer(user1.address, upgradeANTFeePerPotion.mul(100));
+                await BasicANTContract.connect(user1).upgradeBasicANT(1, 3)
+                const antInfo1 = await BasicANTContract.getANTInfo(1)
+                expect(antInfo1.level).to.be.equal(2);
+                expect(antInfo1.remainPotions).to.be.equal(1);
+                await BasicANTContract.connect(user1).upgradeBasicANT(1, 5);
+                const antInfo2 = await BasicANTContract.getANTInfo(1)
+                expect(antInfo2.level).to.be.equal(3);
+                expect(antInfo2.remainPotions).to.be.equal(3);
+
+                const user1ANTCoinBalance1 = await ANTCoinContract.balanceOf(user1.address);
+                expect(user1ANTCoinBalance1).to.be.equal(upgradeANTFeePerPotion.mul(100 - (3 + 5)))
+
+                await BasicANTContract.setMaxLevel(4);
+                await BasicANTContract.connect(user1).upgradeBasicANT(1, 10);
+                const user1ANTFoodBalance = await ANTShopContract.balanceOf(user1.address, 1)
+                expect(user1ANTFoodBalance).to.be.equal(100 - 3 - 5 - 1) // 
+                const antInfo4 = await BasicANTContract.getANTInfo(1)
+                expect(antInfo4.level).to.be.equal(4)
+                expect(antInfo4.remainPotions).to.be.equal(0)
+            })
+
+            it("ownerANTUpgrade: should be upgraded by owner", async () => {
+                await BasicANTContract.connect(user1).mint(0, user1.address, 2, { value: basicANTMaticMintPrice.mul(2) });
+                await expect(BasicANTContract.connect(badActor).ownerANTUpgrade(1, 25)).to.be.revertedWith("BasicANT: Caller is not the minter")
+                await BasicANTContract.ownerANTUpgrade(1, 6);
+                const antInfo1 = await BasicANTContract.getANTInfo(1)
+                expect(antInfo1.level).to.be.equal(3);
+                expect(antInfo1.remainPotions).to.be.equal(1);
+            })
+        })
+
+        describe("Purse", async () => {
+            it("addMultiPurseCategories: should add the purse category infos properly", async () => {
+                await expect(PurseContract.connect(badActor).addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])).to.be.revertedWith("Purse: invalid purse category data");
+                await expect(PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [46, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])).to.be.revertedWith("Purse: invalid purse category data");
+                await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])
+                const purseCategoryInfo = await PurseContract.getPurseCategoryInfo(0);
+                expect(purseCategoryInfo.toString()).to.be.equal("Common,45,0,20,5,75,5,1,10");
+                const purseCategoryInfo1 = await PurseContract.getPurseCategoryInfo(2);
+                expect(purseCategoryInfo1.toString()).to.be.equal("Rare,20,0,25,25,50,10,1,30");
+                await expect(PurseContract.getPurseCategoryInfo(5)).to.be.revertedWith("Purse: category info doesn't exist")
+                const multiInfo1 = await PurseContract.getPurseCategoryMultiInfo([0, 1, 2, 3, 4])
+                expect(multiInfo1[1].categoryName).to.be.equal("UnCommon")
+            })
+
+            it("mint: should be minted randomly", async () => {
+                await PurseContract.mint(user1.address, 10);
+                const tokenInfos = await PurseContract.getPurseCategoryInfoOfMultiToken([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+                console.log("category names of minted purse tokens:", tokenInfos.toString());
+            })
+
+            it("usePurseToken: user have to earn the correct reward when use a purse token", async () => {
+                await PurseContract.mint(user1.address, 5);
+                await PurseContract.connect(user1).usePurseToken(1);
+                await PurseContract.connect(user1).usePurseToken(2);
+                await PurseContract.connect(user1).usePurseToken(3);
+
+                await expect(PurseContract.ownerOf(1)).to.be.reverted
+
+                const usedTokenIds = await PurseContract.getUsedPurseTokenIdsByAddress(user1.address);
+                const multiUserInfos = await PurseContract.getPurseMultiTokenRewardInfo(usedTokenIds);
+                expect(usedTokenIds.length).to.be.equal(multiUserInfos.length).to.be.equal(3)
             })
         })
     });
