@@ -73,7 +73,7 @@ describe("FoodGathering", function () {
         });
 
         it("setAntFoodTokenId: should fail if caller is not owner", async () => {
-            await expect(FoodGatheringContract.connect(badActor).setANTFoodTokenId(2)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(FoodGatheringContract.connect(badActor).setANTFoodTokenId(2)).to.be.revertedWith("FoodGathering: Caller is not the owner or minter");
         })
 
         it("setAntFoodTokenId: should work if caller is owner", async () => {
@@ -85,7 +85,7 @@ describe("FoodGathering", function () {
         })
 
         it("setStakeFeeAmount: should fail if caller is not owner", async () => {
-            await expect(FoodGatheringContract.connect(badActor).setStakeFeeAmount(2)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(FoodGatheringContract.connect(badActor).setStakeFeeAmount(2)).to.be.revertedWith("FoodGathering: Caller is not the owner or minter");
         })
 
         it("setStakeFeeAmount: should work if caller is owner", async () => {
@@ -97,7 +97,7 @@ describe("FoodGathering", function () {
         })
 
         it("setMaxAmountForStake: should fail if caller is not owner", async () => {
-            await expect(FoodGatheringContract.connect(badActor).setMaxAmountForStake(2)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(FoodGatheringContract.connect(badActor).setMaxAmountForStake(2)).to.be.revertedWith("FoodGathering: Caller is not the owner or minter");
         })
 
         it("setMaxAmountForStake: should work if caller is owner", async () => {
@@ -109,7 +109,7 @@ describe("FoodGathering", function () {
         })
 
         it("setCycleStakedAmount: should fail if caller is not owner", async () => {
-            await expect(FoodGatheringContract.connect(badActor).setCycleTimestamp(2)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(FoodGatheringContract.connect(badActor).setCycleTimestamp(2)).to.be.revertedWith("FoodGathering: Caller is not the owner or minter");
         })
 
         it("setCycleStakedAmount: should work if caller is owner", async () => {
@@ -121,7 +121,7 @@ describe("FoodGathering", function () {
         })
 
         it("setCycleTimestamp: should fail if caller is not owner", async () => {
-            await expect(FoodGatheringContract.connect(badActor).setCycleTimestamp(2)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(FoodGatheringContract.connect(badActor).setCycleTimestamp(2)).to.be.revertedWith("FoodGathering: Caller is not the owner or minter");
         })
 
         it("setCycleTimestamp: should work if caller is owner", async () => {

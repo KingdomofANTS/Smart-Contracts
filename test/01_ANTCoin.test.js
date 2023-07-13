@@ -44,7 +44,7 @@ describe("ANTCoin", function () {
         })
 
         it("mint: should fail if caller is not minter", async () => {
-            await expect(ANTCoinContract.connect(badActor).mint(user1.address, 10000)).to.be.revertedWith("ANTCoin: Caller is not the minter");
+            await expect(ANTCoinContract.connect(badActor).mint(user1.address, 10000)).to.be.revertedWith("ANTCoin: Caller is not the owner or minter");
         })
         
         it("mint: should fail if mint amount exceed the max circulation supply", async () => {
@@ -59,7 +59,7 @@ describe("ANTCoin", function () {
         })
 
         it("burn: should fail if caller is not minter", async () => {
-            await expect(ANTCoinContract.connect(badActor).burn(user1.address, 10000)).to.be.revertedWith("ANTCoin: Caller is not the minter");
+            await expect(ANTCoinContract.connect(badActor).burn(user1.address, 10000)).to.be.revertedWith("ANTCoin: Caller is not the owner or minter");
         })
 
         it("burn: burn function should work", async () => {

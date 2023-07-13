@@ -123,9 +123,8 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     // Keep track of user ticket ids for a given lotteryId
     mapping(address => mapping(uint256 => uint256[])) private _userTicketIdsPerLotteryId;
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], "ANTLottery: Caller is not the minter");
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "ANTLottery: Caller is not the owner or minter");
         _;
     }
 
@@ -454,7 +453,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _recipient: recipient address 
      * @param _quantity: tickets quantity
      */
-    function buyTickets(address _recipient, uint256 _quantity) external override onlyMinter nonReentrant whenNotPaused {
+    function buyTickets(address _recipient, uint256 _quantity) external override onlyMinterOrOwner nonReentrant whenNotPaused {
         require(_quantity != 0, "No ticket specified");
         require(_lotteries[currentLotteryId].status == Status.Open, "ANTLottery: Lottery is not open");
         require(block.timestamp < _lotteries[currentLotteryId].endTime, "ANTLottery: Lottery is over");
@@ -559,7 +558,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * Callable only by the contract owner
      * @param _randomGeneratorAddress: address of the random generator
      */
-    function changeRandomGenerator(address _randomGeneratorAddress) external onlyOwner {
+    function changeRandomGenerator(address _randomGeneratorAddress) external onlyMinterOrOwner {
         require(
             (currentLotteryId == 0) || (_lotteries[currentLotteryId].status == Status.Claimable),
             "ANTLottery: Lottery not in claimable"
@@ -597,7 +596,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _tokenAmount: the number of token amount to withdraw
      * @dev Only callable by owner.
      */
-    function recoverWrongTokens(address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
+    function recoverWrongTokens(address _tokenAddress, uint256 _tokenAmount) external onlyMinterOrOwner {
         require(_tokenAddress != address(antCoin), "ANTLottery: Cannot be ANT Coin token");
 
         IERC20(_tokenAddress).transfer(address(msg.sender), _tokenAmount);
@@ -614,7 +613,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     function setOperatorAndTreasuryAndInjectorAddresses(
         address _operatorAddress,
         address _injectorAddress
-    ) external onlyOwner {
+    ) external onlyMinterOrOwner {
         require(_operatorAddress != address(0), "Cannot be zero address");
         require(_injectorAddress != address(0), "Cannot be zero address");
 
@@ -630,7 +629,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _antCoinAmountPerTicket ant coin amount
      */
 
-    function setAntCoinAmountPerTicket(uint256 _antCoinAmountPerTicket) external onlyOwner {
+    function setAntCoinAmountPerTicket(uint256 _antCoinAmountPerTicket) external onlyMinterOrOwner {
         antCoinAmountPerTicket = _antCoinAmountPerTicket;
     }
 
@@ -641,7 +640,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _burnPercentage burn percentage, default = 40
      */
 
-    function setInjectionPercentage(uint256 _injectionPercentage, uint256 _burnPercentage) external onlyOwner {
+    function setInjectionPercentage(uint256 _injectionPercentage, uint256 _burnPercentage) external onlyMinterOrOwner {
         require(_injectionPercentage + _burnPercentage == 100, "ANTLottery: the sum of these values should be 100");
         injectionNextLotteryPercentage = _injectionPercentage;
         burnPercentage = _burnPercentage;

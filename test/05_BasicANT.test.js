@@ -62,7 +62,7 @@ describe("BasicANT", function () {
         })
 
         it("setLevelingPotionTokenId: should fail if caller is not the owner", async () => {
-            await expect(BasicANTContract.connect(badActor).setLevelingPotionTokenId(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BasicANTContract.connect(badActor).setLevelingPotionTokenId(1)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("setLevelingPotionTokenId: should work if caller is the owner", async () => {
@@ -72,7 +72,7 @@ describe("BasicANT", function () {
         })
 
         it("setAntFoodTokenId: should fail if caller is not the owner", async () => {
-            await expect(BasicANTContract.connect(badActor).setAntFoodTokenId(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BasicANTContract.connect(badActor).setAntFoodTokenId(1)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("setAntFoodTokenId: should work if caller is owner", async () => {
@@ -82,7 +82,7 @@ describe("BasicANT", function () {
         })
 
         it("setBatchInfo: should fail if caller is not the owner", async () => {
-            await expect(BasicANTContract.connect(badActor).setBatchInfo(0, "name1", "testBaseURI1", 1000, ANTCoinContract.address, 10000)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BasicANTContract.connect(badActor).setBatchInfo(0, "name1", "testBaseURI1", 1000, ANTCoinContract.address, 10000)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("setBatchInfo: should work if caller is the owner", async () => {
@@ -95,7 +95,7 @@ describe("BasicANT", function () {
         })
 
         it("setStartLevel: should fail if caller is not the owner", async () => {
-            await expect(BasicANTContract.connect(badActor).setStartLevel(0)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BasicANTContract.connect(badActor).setStartLevel(0)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("setStartLevel: should work if caller is the owner", async () => {
@@ -104,8 +104,8 @@ describe("BasicANT", function () {
             expect(expected).to.be.equal(10);
         })
 
-        it("downgradeLevel: should fail if caller is not the minter", async () => {
-            await expect(BasicANTContract.connect(badActor).downgradeLevel(0, 1)).to.be.revertedWith("BasicANT: Caller is not the minter");
+        it("downgradeLevel: should fail if Caller is not the owner or minter", async () => {
+            await expect(BasicANTContract.connect(badActor).downgradeLevel(0, 1)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("downgradeLevel: should work if caller has a minter role", async () => {
@@ -118,8 +118,8 @@ describe("BasicANT", function () {
             expect(antInfo.toString()).to.be.equal("0,0,0,1")
         })
 
-        it("ownerMint: should fail if caller is not the minter", async () => {
-            await expect(BasicANTContract.connect(badActor).ownerMint(0, user1.address, 1)).to.be.revertedWith("BasicANT: Caller is not the minter");
+        it("ownerMint: should fail if Caller is not the owner or minter", async () => {
+            await expect(BasicANTContract.connect(badActor).ownerMint(0, user1.address, 1)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("ownerMint: should work if caller has a minter role", async () => {
@@ -232,7 +232,7 @@ describe("BasicANT", function () {
 
             
             it("setUpgradeFee: should fail if caller is not the owner", async () => {
-                await expect(BasicANTContract.connect(badActor).setUpgradeFee(100)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(BasicANTContract.connect(badActor).setUpgradeFee(100)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
             })
 
             it("setUpgradeFee: should work if caller is the owner", async () => {

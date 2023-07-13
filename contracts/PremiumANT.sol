@@ -85,9 +85,8 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     // Mint event
     event MintPremiumANT(address owner, uint256 quantity);
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'PremiumANT: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "PremiumANT: Caller is not the owner or minter");
         _;
     }
 
@@ -341,7 +340,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param potionAmount potion amount for upgrading
     */
 
-    function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinter {
+    function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinterOrOwner {
         require(_exists(tokenId), "PremiumANT: token is not exist");
         ANTInfo storage antInfo = premiumANTs[tokenId];
         if(antInfo.level >= maxLevel) {
@@ -376,7 +375,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param quantity the number of tokens to mint
     */
 
-    function ownerMint(uint256 _batchIndex, address recipient, uint256 quantity) external onlyMinter {
+    function ownerMint(uint256 _batchIndex, address recipient, uint256 quantity) external onlyMinterOrOwner {
         BatchInfo storage batchInfo = premiumBatches[_batchIndex];
         require(batchInfo.maxSupply > 0, "PremiumANT: batch information has not yet been set");
         require(batchInfo.minted + quantity <= batchInfo.maxSupply, "PremiumANT: mint amount exceeds the maximum supply for this batch");
@@ -407,7 +406,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param newLevel the number of new level
     */
 
-    function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinter {
+    function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinterOrOwner {
         premiumANTs[tokenId].level = newLevel;
         premiumANTs[tokenId].remainPotions = 0;
     }
@@ -418,7 +417,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _startLevel start level value
     */
 
-    function setStartLevel(uint256 _startLevel) external onlyOwner {
+    function setStartLevel(uint256 _startLevel) external onlyMinterOrOwner {
         startLevel = _startLevel;
     }
 
@@ -428,7 +427,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _maxLevel max level value
     */
 
-    function setMaxLevel(uint256 _maxLevel) external onlyOwner {
+    function setMaxLevel(uint256 _maxLevel) external onlyMinterOrOwner {
         maxLevel = _maxLevel;
     }
 
@@ -438,7 +437,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _antFoodTokenId the ANT Food token id of ANTShop
     */
 
-    function setAntFoodTokenId(uint256 _antFoodTokenId) external onlyOwner {
+    function setAntFoodTokenId(uint256 _antFoodTokenId) external onlyMinterOrOwner {
         antFoodTokenId = _antFoodTokenId;
     }
 
@@ -448,7 +447,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _levelingPotionTokenId the leveling potion token id of ANTShop
     */
 
-    function setLevelingPotionTokenId(uint256 _levelingPotionTokenId) external onlyOwner {
+    function setLevelingPotionTokenId(uint256 _levelingPotionTokenId) external onlyMinterOrOwner {
         levelingPotionTokenId = _levelingPotionTokenId;
     }
 
@@ -462,7 +461,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _antFoodAmountForMint ANTFood token amount to mint a Premium NFT
     */
 
-    function setBatchInfo(uint256 _batchIndex, string calldata _name, string calldata _baseURI, uint256 _maxSupply, uint256 _antFoodAmountForMint) external onlyOwner {
+    function setBatchInfo(uint256 _batchIndex, string calldata _name, string calldata _baseURI, uint256 _maxSupply, uint256 _antFoodAmountForMint) external onlyMinterOrOwner {
         premiumBatches[_batchIndex].name = _name;
         premiumBatches[_batchIndex].baseURI = _baseURI;
         premiumBatches[_batchIndex].maxSupply = _maxSupply;
@@ -475,7 +474,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _upgradeANTFee ant coin fee
     */
 
-    function setUpgradeFee(uint256 _upgradeANTFee) external onlyOwner {
+    function setUpgradeFee(uint256 _upgradeANTFee) external onlyMinterOrOwner {
         upgradeANTFee = _upgradeANTFee;
     }
 
@@ -485,7 +484,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _antCoin ant coin smart contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
@@ -495,7 +494,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param _antShop ant shop smart contract address
     */
 
-    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+    function setANTShopContract(IANTShop _antShop) external onlyMinterOrOwner {
         antShop = _antShop;
     }
 

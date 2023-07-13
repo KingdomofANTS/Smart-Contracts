@@ -224,7 +224,7 @@ describe("End2End", function () {
 
         describe("Marketplace", async () => {
             it("setMintInfo: should work properly by owner", async () => {
-                await expect(MarketplaceContract.connect(badActor).setMintInfo(0, 0, ANTCoinContract.address, 100)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(MarketplaceContract.connect(badActor).setMintInfo(0, 0, ANTCoinContract.address, 100)).to.be.revertedWith("Marketplace: Caller is not the owner or minter");
                 await expect(MarketplaceContract.setMintInfo(0, 0, ethers.constants.AddressZero, 0)).to.be.revertedWith("Marketplace: token address can't be a null address");
                 await MarketplaceContract.setMintInfo(0, ethers.utils.parseEther("0.1"), ANTCoinContract.address, 100);
                 await expect(MarketplaceContract.getMintInfo(1)).to.be.revertedWith("Marketplace: Mint information not set yet");
@@ -236,8 +236,8 @@ describe("End2End", function () {
             });
 
             it("setPurseMintInfo & setLotteryTicketMintInfo: should set mint info by owner", async () => {
-                await expect(MarketplaceContract.connect(badActor).setPurseMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 100)).to.be.revertedWith("Ownable: caller is not the owner");
-                await expect(MarketplaceContract.connect(badActor).setLotteryTicketMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 100)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(MarketplaceContract.connect(badActor).setPurseMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 100)).to.be.revertedWith("Marketplace: Caller is not the owner or minter");
+                await expect(MarketplaceContract.connect(badActor).setLotteryTicketMintInfo(true, utils.parseEther("0.1"), ANTCoinContract.address, 100)).to.be.revertedWith("Marketplace: Caller is not the owner or minter");
                 await expect(MarketplaceContract.setPurseMintInfo(true, utils.parseEther("0.1"), ethers.constants.AddressZero, 100)).to.be.revertedWith("Marketplace: Purse token address can't be zero address");
                 await expect(MarketplaceContract.setLotteryTicketMintInfo(true, utils.parseEther("0.1"), ethers.constants.AddressZero, 100)).to.be.revertedWith("Marketplace: Lottery token address can't be zero address");
 
@@ -315,7 +315,7 @@ describe("End2End", function () {
 
         describe("PremiumANT", async () => {
             it("setBatchInfo: should be set the correct batch info", async () => {
-                await expect(PremiumANTContract.connect(badActor).setBatchInfo(0, "Worker ANT", "Worker ANT Base URI", 100, 2)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(PremiumANTContract.connect(badActor).setBatchInfo(0, "Worker ANT", "Worker ANT Base URI", 100, 2)).to.be.revertedWith("PremiumANT: Caller is not the owner or minter");
                 await PremiumANTContract.setBatchInfo(0, "Worker ANT", "https://ipfs.io/ipfs/", 100, 2);
                 const workerBatchInfo = await PremiumANTContract.getBatchInfo(0)
                 expect(workerBatchInfo.toString()).to.be.equal("Worker ANT,https://ipfs.io/ipfs/,0,100,2");
@@ -385,7 +385,7 @@ describe("End2End", function () {
             it("ownerANTUpgrade: should be upgraded by owner", async () => {
                 await ANTShopContract.mint(0, 10, user1.address);
                 await PremiumANTContract.connect(user1).mint(0, user1.address, 2);
-                await expect(PremiumANTContract.connect(badActor).ownerANTUpgrade(1, 25)).to.be.revertedWith("PremiumANT: Caller is not the minter")
+                await expect(PremiumANTContract.connect(badActor).ownerANTUpgrade(1, 25)).to.be.revertedWith("PremiumANT: Caller is not the owner or minter")
                 await PremiumANTContract.ownerANTUpgrade(1, 25);
                 const antInfo1 = await PremiumANTContract.getANTInfo(1)
                 expect(antInfo1.level).to.be.equal(21);
@@ -395,7 +395,7 @@ describe("End2End", function () {
 
         describe("BasicANT", async () => {
             it("setBatchInfo: should be set the correct batch info", async () => {
-                await expect(BasicANTContract.connect(badActor).setBatchInfo(0, "Worker ANT", "Worker ANT Base URI", 100, ANTCoinContract.address, 1000)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(BasicANTContract.connect(badActor).setBatchInfo(0, "Worker ANT", "Worker ANT Base URI", 100, ANTCoinContract.address, 1000)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
                 await BasicANTContract.setBatchInfo(0, "Worker ANT", "Worker ANT Base URI", 100, ANTCoinContract.address, 1000);
                 const workerBatchInfo = await BasicANTContract.getBatchInfo(0)
                 expect(workerBatchInfo.toString()).to.be.equal(`Worker ANT,Worker ANT Base URI,0,100,${ANTCoinContract.address},1000,true`);
@@ -456,7 +456,7 @@ describe("End2End", function () {
 
             it("ownerANTUpgrade: should be upgraded by owner", async () => {
                 await BasicANTContract.connect(user1).mint(0, user1.address, 2, { value: basicANTMaticMintPrice.mul(2) });
-                await expect(BasicANTContract.connect(badActor).ownerANTUpgrade(1, 25)).to.be.revertedWith("BasicANT: Caller is not the minter")
+                await expect(BasicANTContract.connect(badActor).ownerANTUpgrade(1, 25)).to.be.revertedWith("BasicANT: Caller is not the owner or minter")
                 await BasicANTContract.ownerANTUpgrade(1, 6);
                 const antInfo1 = await BasicANTContract.getANTInfo(1)
                 expect(antInfo1.level).to.be.equal(3);
@@ -466,7 +466,7 @@ describe("End2End", function () {
 
         describe("Purse", async () => {
             it("addMultiPurseCategories: should add the purse category infos properly", async () => {
-                await expect(PurseContract.connect(badActor).addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(PurseContract.connect(badActor).addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])).to.be.revertedWith("Purse: Caller is not the owner or minter");
                 await expect(PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])).to.be.revertedWith("Purse: invalid purse category data");
                 await expect(PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [46, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])).to.be.revertedWith("Purse: invalid purse category data");
                 await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])
@@ -490,12 +490,16 @@ describe("End2End", function () {
                 await PurseContract.connect(user1).usePurseToken(1);
                 await PurseContract.connect(user1).usePurseToken(2);
                 await PurseContract.connect(user1).usePurseToken(3);
-
                 await expect(PurseContract.ownerOf(1)).to.be.reverted
-
                 const usedTokenIds = await PurseContract.getUsedPurseTokenIdsByAddress(user1.address);
                 const multiUserInfos = await PurseContract.getPurseMultiTokenRewardInfo(usedTokenIds);
                 expect(usedTokenIds.length).to.be.equal(multiUserInfos.length).to.be.equal(3)
+            })
+        })
+
+        describe("LevelingGround", async () => {
+            it("should work properly all owner setting functions", async () => {
+                
             })
         })
     });

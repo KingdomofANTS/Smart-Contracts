@@ -108,9 +108,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     // premium ant unstake event
     event LevelingGroundUnStakePremiumANT(uint256 id, address owner);
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'PremiumANT: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "LevelingGround: Caller is not the owner or minter");
         _;
     }
     
@@ -428,7 +427,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _premiumWiseANTRewardSpeed reward speed times
     */
 
-    function setPremiumWiseANTRewardSpeed(uint256 _premiumWiseANTRewardSpeed) external onlyOwner {
+    function setPremiumWiseANTRewardSpeed(uint256 _premiumWiseANTRewardSpeed) external onlyMinterOrOwner {
         premiumWiseANTRewardSpeed = _premiumWiseANTRewardSpeed;
     }
 
@@ -438,7 +437,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _basicWiseANTRewardSpeed reward speed times
     */
 
-    function setBasicWiseANTRewardSpeed(uint256 _basicWiseANTRewardSpeed) external onlyOwner {
+    function setBasicWiseANTRewardSpeed(uint256 _basicWiseANTRewardSpeed) external onlyMinterOrOwner {
         basicWiseANTRewardSpeed = _basicWiseANTRewardSpeed;
     }
 
@@ -448,7 +447,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _index batch index for wise ant
     */
 
-    function setPremiumWiseANTBatchIndex(uint256 _index) external onlyOwner {
+    function setPremiumWiseANTBatchIndex(uint256 _index) external onlyMinterOrOwner {
         premiumWiseANTBatchIndex = _index;
     }
 
@@ -458,7 +457,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _index batch index for wise ant
     */
 
-    function setBasicWiseANTBatchIndex(uint256 _index) external onlyOwner {
+    function setBasicWiseANTBatchIndex(uint256 _index) external onlyMinterOrOwner {
         basicWiseANTBatchIndex = _index;
     }
 
@@ -468,7 +467,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _stakeFeeAmount ant coin stake fee amount for staking
     */
 
-    function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyOwner {
+    function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyMinterOrOwner {
         stakeFeeAmount = _stakeFeeAmount;
     }
 
@@ -478,7 +477,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _cyclePeriod cycle period time
     */
 
-    function setFullCyclePeriod(uint256 _cyclePeriod) external onlyOwner {
+    function setFullCyclePeriod(uint256 _cyclePeriod) external onlyMinterOrOwner {
         fullCyclePeriod = _cyclePeriod;
     }
 
@@ -488,7 +487,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _benefitCyclePeriod benefit period time
     */
 
-    function setBenefitCyclePeriod(uint256 _benefitCyclePeriod) external onlyOwner {
+    function setBenefitCyclePeriod(uint256 _benefitCyclePeriod) external onlyMinterOrOwner {
         benefitCyclePeriod = _benefitCyclePeriod;
     }
 
@@ -498,7 +497,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _antCoin ANTCoin contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
@@ -508,7 +507,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _premiumANT Premium ANT contract address
     */
 
-    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
         premiumANT = _premiumANT;
     }
 
@@ -518,7 +517,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _basicANT Basic ANT contract address
     */
 
-    function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+    function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
         basicANT = _basicANT;
     }
 

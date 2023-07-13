@@ -117,28 +117,28 @@ describe("Bosses", function () {
         })
 
         it("setStakePeriod: should work if caller is owner", async () => {
-            await expect(BossesContract.connect(badActor).setStakePeriod(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BossesContract.connect(badActor).setStakePeriod(100)).to.be.revertedWith("Bosses: Caller is not the owner or minter");
             await BossesContract.setStakePeriod(1000);
             const expected = await BossesContract.stakePeriod();
             expect(expected).to.be.equal(1000)
         })
 
         it("setBurnRate: should work if caller is owner", async () => {
-            await expect(BossesContract.connect(badActor).setBurnRate(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BossesContract.connect(badActor).setBurnRate(100)).to.be.revertedWith("Bosses: Caller is not the owner or minter");
             await BossesContract.setBurnRate(1000);
             const expected = await BossesContract.burnRate();
             expect(expected).to.be.equal(1000)
         })
 
         it("setLimitANTCoinStakeAmount: should work if caller is owner", async () => {
-            await expect(BossesContract.connect(badActor).setLimitANTCoinStakeAmount(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BossesContract.connect(badActor).setLimitANTCoinStakeAmount(100)).to.be.revertedWith("Bosses: Caller is not the owner or minter");
             await BossesContract.setLimitANTCoinStakeAmount(1000);
             const expected = await BossesContract.limitANTCoinStakeAmount();
             expect(expected).to.be.equal(1000)
         })
 
         it("setBossesPoolsInfo: should work if caller is owner", async () => {
-            await expect(BossesContract.connect(badActor).setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BossesContract.connect(badActor).setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Bosses: Caller is not the owner or minter");
             await expect(BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Bosses: invalid bosses pools info")
             await expect(BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [ 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Bosses: invalid bosses pools info")
             await expect(BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Bosses: invalid bosses pools info")

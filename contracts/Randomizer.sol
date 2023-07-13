@@ -57,6 +57,15 @@ contract Randomizer is VRFConsumerBase, IRandomizer, Ownable {
     uint256 public fee;
     uint256 public latestLotteryId;
 
+    // minters
+    mapping(address => bool) private minters;
+
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "Randomizer: Caller is not the owner or minter");
+        _;
+    }
+
+
     /**
      * @notice Constructor
      * @dev RandomNumberGenerator must be deployed before the lottery.
@@ -68,6 +77,14 @@ contract Randomizer is VRFConsumerBase, IRandomizer, Ownable {
     constructor(bytes32 _keyHash, address _vrfCoordinator, address _linkToken, uint256 _vrfFee) VRFConsumerBase(_vrfCoordinator, _linkToken) {
         keyHash = _keyHash;
         fee = _vrfFee; // 0.1 LINK (Varies by network)
+    }
+
+    /**
+    * @notice Check address has minterRole
+    */
+
+    function getMinterRole(address _address) public view returns(bool) {
+        return minters[_address];
     }
 
     /**
@@ -85,7 +102,7 @@ contract Randomizer is VRFConsumerBase, IRandomizer, Ownable {
      * @notice Change the fee
      * @param _fee: new fee (in LINK)
      */
-    function setFee(uint256 _fee) external onlyOwner {
+    function setFee(uint256 _fee) external onlyMinterOrOwner {
         fee = _fee;
     }
 
@@ -93,7 +110,7 @@ contract Randomizer is VRFConsumerBase, IRandomizer, Ownable {
      * @notice Change the keyHash
      * @param _keyHash: new keyHash
      */
-    function setKeyHash(bytes32 _keyHash) external onlyOwner {
+    function setKeyHash(bytes32 _keyHash) external onlyMinterOrOwner {
         keyHash = _keyHash;
     }
 
@@ -101,7 +118,7 @@ contract Randomizer is VRFConsumerBase, IRandomizer, Ownable {
      * @notice Set the address for the antLottery
      * @param _antLottery: address of the PancakeSwap lottery
      */
-    function setLotteryAddress(address _antLottery) external onlyOwner {
+    function setLotteryAddress(address _antLottery) external onlyMinterOrOwner {
         antLottery = _antLottery;
     }
 
@@ -161,6 +178,24 @@ contract Randomizer is VRFConsumerBase, IRandomizer, Ownable {
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
         return success;
+    }
+
+    /**
+    * @notice Function to grant mint role
+    * @dev This function can only be called by the owner
+    * @param _address address to get minter role
+    */
+    function addMinterRole(address _address) external onlyOwner {
+        minters[_address] = true;
+    }
+
+    /**
+    * @notice Function to revoke mint role
+    * @dev This function can only be called by the owner
+    * @param _address address to revoke minter role
+    */
+    function revokeMinterRole(address _address) external onlyOwner {
+        minters[_address] = false;
     }
 
     /**

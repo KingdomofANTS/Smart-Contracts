@@ -43,7 +43,7 @@ describe("ANTFood", function () {
         })
 
         it("setTokenTypeInfo: should fail if caller is not the owner", async () => {
-            await expect(ANTShopContract.connect(badActor).setTokenTypeInfo(0, "ANTFood", "")).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(ANTShopContract.connect(badActor).setTokenTypeInfo(0, "ANTFood", "")).to.be.revertedWith("ANTShop: Caller is not the owner or minter");
         })
 
         it("setTokenTypeInfo: should work if caller is owner", async () => {
@@ -62,8 +62,8 @@ describe("ANTFood", function () {
         })
 
         describe("mint",  () => {
-            it("should fail if caller is not the minter", async () => {
-                await expect(ANTShopContract.connect(badActor).mint(0, 1, user1.address)).to.be.revertedWith("ANTShop: Caller is not the minter");
+            it("should fail if Caller is not the owner or minter", async () => {
+                await expect(ANTShopContract.connect(badActor).mint(0, 1, user1.address)).to.be.revertedWith("ANTShop: Caller is not the owner or minter");
             })
 
             it("should fail if type info not set", async () => {
@@ -83,8 +83,8 @@ describe("ANTFood", function () {
         })
 
         describe("burn",  () => {
-            it("should fail if caller is not the minter", async () => {
-                await expect(ANTShopContract.connect(badActor).burn(0, 1, user1.address)).to.be.revertedWith("ANTShop: Caller is not the minter");
+            it("should fail if Caller is not the owner or minter", async () => {
+                await expect(ANTShopContract.connect(badActor).burn(0, 1, user1.address)).to.be.revertedWith("ANTShop: Caller is not the owner or minter");
             })
 
             it("should fail if no tokens minted", async () => {

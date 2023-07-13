@@ -55,9 +55,9 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
 
     // minters
     mapping(address => bool) private minters;
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], "ANTCoin: Caller is not the minter");
+
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "ANTCoin: Caller is not the owner or minter");
         _;
     }
 
@@ -97,7 +97,7 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     * @param _amount The amount to mint the tokens
     */
 
-    function mint(address receipt, uint256 _amount) public override whenNotPaused onlyMinter {
+    function mint(address receipt, uint256 _amount) public override whenNotPaused onlyMinterOrOwner {
         require(totalCirculatingSupply() + _amount <= maxCirculationSupply, "ANTCoin: Mint amount exceed Max Circulation Supply");
         _mint(receipt, _amount);
     }
@@ -143,7 +143,7 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     * @param _amount The amount to mint the tokens
     */
 
-    function burn(address account, uint256 _amount) external override whenNotPaused onlyMinter {
+    function burn(address account, uint256 _amount) external override whenNotPaused onlyMinterOrOwner {
         _burn(account, _amount);
     }
 

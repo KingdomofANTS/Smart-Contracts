@@ -54,9 +54,8 @@ contract ANTShop is ERC1155, ERC1155Holder, IANTShop, Ownable, Pausable {
     // token type info
     mapping(uint256 => TypeInfo) private typeInfo;
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], "ANTShop: Caller is not the minter");
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "ANTShop: Caller is not the owner or minter");
         _;
     }
 
@@ -192,7 +191,7 @@ contract ANTShop is ERC1155, ERC1155Holder, IANTShop, Ownable, Pausable {
     * @param recipient recipient address for mint token
     */
 
-    function mint(uint256 typeId, uint256 quantity, address recipient) external override whenNotPaused onlyMinter {
+    function mint(uint256 typeId, uint256 quantity, address recipient) external override whenNotPaused onlyMinterOrOwner {
         require(typeInfo[typeId].isSet, "ANTShop: invalid type id");
         typeInfo[typeId].mints += quantity;
         _mint(recipient, typeId, quantity, '');
@@ -207,7 +206,7 @@ contract ANTShop is ERC1155, ERC1155Holder, IANTShop, Ownable, Pausable {
     * @param burnFrom token owner address to burn
     */
 
-    function burn(uint256 typeId, uint256 quantity, address burnFrom) external override whenNotPaused onlyMinter {
+    function burn(uint256 typeId, uint256 quantity, address burnFrom) external override whenNotPaused onlyMinterOrOwner {
         require(typeInfo[typeId].mints - typeInfo[typeId].burns > 0, "ANTShop: None minted");
         typeInfo[typeId].burns += quantity;
         _burn(burnFrom , typeId, quantity);
@@ -221,7 +220,7 @@ contract ANTShop is ERC1155, ERC1155Holder, IANTShop, Ownable, Pausable {
     * @param _baseURI tokenURI for token
     */
 
-    function setTokenTypeInfo(uint256 _typeId, string memory _name, string memory _baseURI) external onlyOwner {
+    function setTokenTypeInfo(uint256 _typeId, string memory _name, string memory _baseURI) external onlyMinterOrOwner {
         typeInfo[_typeId].name = _name;
         typeInfo[_typeId].baseURI = _baseURI;
         typeInfo[_typeId].isSet = true;

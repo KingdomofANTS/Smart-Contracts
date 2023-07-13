@@ -101,10 +101,9 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     uint256 public totalPremiumANTStaked = 0;
     uint256 public totalBasicANTStaked = 0;
     uint256 public minimumLevelForStake = 5;
-    
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], "Tasks: Caller is not the minter");
+
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "Tasks: Caller is not the owner or minter");
         _;
     }
 
@@ -361,7 +360,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _stakePeriod stake period timestamp
     */
 
-    function setStakePeriod(uint256 _stakePeriod) external onlyOwner {
+    function setStakePeriod(uint256 _stakePeriod) external onlyMinterOrOwner {
         stakePeriod = _stakePeriod;
     }
 
@@ -371,7 +370,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _rewardAmount the array of purse reward amount
     */
 
-    function setRewardsAmount(uint256[5] memory _rewardAmount) external onlyOwner {
+    function setRewardsAmount(uint256[5] memory _rewardAmount) external onlyMinterOrOwner {
         rewardsAmount = _rewardAmount;
     }
 
@@ -381,7 +380,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _rewardLevels the array for reward levels
     */
 
-    function setRewardLevels(uint256[2][5] memory _rewardLevels) external onlyOwner {
+    function setRewardLevels(uint256[2][5] memory _rewardLevels) external onlyMinterOrOwner {
         for(uint256 i = 0; i < 5; i++) {
             require(_rewardLevels[i][0] <= _rewardLevels[i][1], "Tasks: index0 should be less than index1 value");
             rewardLevels[i][0] = _rewardLevels[i][0];
@@ -395,7 +394,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _antCStakeFee ant coin stake fee amount
     */
 
-    function setANTCStakeFee(uint256 _antCStakeFee) external onlyOwner {
+    function setANTCStakeFee(uint256 _antCStakeFee) external onlyMinterOrOwner {
         antCStakeFee = _antCStakeFee;
     }
 
@@ -405,7 +404,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _minimumLevelForStake minimum level number
     */
 
-    function setMinimumLevelForStake(uint256 _minimumLevelForStake) external onlyOwner {
+    function setMinimumLevelForStake(uint256 _minimumLevelForStake) external onlyMinterOrOwner {
         minimumLevelForStake = _minimumLevelForStake;
     }
 
@@ -415,7 +414,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _randomizer the randomizer address
     */
 
-    function setRandomizerContract(IRandomizer _randomizer) external onlyOwner {
+    function setRandomizerContract(IRandomizer _randomizer) external onlyMinterOrOwner {
         require(address(_randomizer) != address(0x0), "Tasks: randomizer contract address can't be null");
         randomizer = _randomizer;
     }
@@ -426,7 +425,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _antCoin ant coin smart contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         require(address(_antCoin) != address(0x0), "Tasks: antcoin contract address can't be null");
         antCoin = _antCoin;
     }
@@ -437,7 +436,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _purse purse smart contract address
     */
 
-    function setPurseContract(IPurse _purse) external onlyOwner {
+    function setPurseContract(IPurse _purse) external onlyMinterOrOwner {
         require(address(_purse) != address(0x0), "Tasks: purse contract address can't be null");
         purse = _purse;
     }
@@ -448,7 +447,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _basicANT Basic ANT smart contract address
     */
 
-    function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+    function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
         require(address(_basicANT) != address(0x0), "Tasks: BasicANT contract address can't be null");
         basicANT = _basicANT;
     }
@@ -459,7 +458,7 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     * @param _premiumANT Premium ANT smart contract address
     */
 
-    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
         require(address(_premiumANT) != address(0x0), "Tasks: PremiumANT contract address can't be null");
         premiumANT = _premiumANT;
     }

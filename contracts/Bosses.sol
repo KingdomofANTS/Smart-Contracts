@@ -118,9 +118,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     // premium ant unstake event
     event BossesUnStakePremiumANT(uint256 id, address owner);
     
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'Bosses: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "Bosses: Caller is not the owner or minter");
         _;
     }
 
@@ -397,7 +396,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @param _levelRequired array of required levels
     */
 
-    function setBossesPoolsInfo(string[] memory _poolNames, uint256[] memory _rewardAPYs, uint256[] memory _drainedLevels, uint256[] memory _levelRequired) external onlyOwner {
+    function setBossesPoolsInfo(string[] memory _poolNames, uint256[] memory _rewardAPYs, uint256[] memory _drainedLevels, uint256[] memory _levelRequired) external onlyMinterOrOwner {
         delete bossesPools; // initialize bosses pools info
         require((_poolNames.length == _rewardAPYs.length) && (_rewardAPYs.length == _drainedLevels.length) && (_drainedLevels.length == _levelRequired.length), "Bosses: invalid bosses pools info");
         for(uint256 i = 0; i < _poolNames.length; i++) {
@@ -416,7 +415,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @param _limitANTCoinStakeAmount ant coin stake limit amount for each ants & pools
     */
 
-    function setLimitANTCoinStakeAmount(uint256 _limitANTCoinStakeAmount) external onlyOwner {
+    function setLimitANTCoinStakeAmount(uint256 _limitANTCoinStakeAmount) external onlyMinterOrOwner {
         limitANTCoinStakeAmount = _limitANTCoinStakeAmount;
     }
 
@@ -426,7 +425,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @param _burnRate burn rate
     */
 
-    function setBurnRate(uint256 _burnRate) external onlyOwner {
+    function setBurnRate(uint256 _burnRate) external onlyMinterOrOwner {
         burnRate = _burnRate;
     }
 
@@ -456,7 +455,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @param _stakePeriod stake period timestamp
     */
 
-    function setStakePeriod(uint256 _stakePeriod) external onlyOwner {
+    function setStakePeriod(uint256 _stakePeriod) external onlyMinterOrOwner {
         stakePeriod = _stakePeriod;        
     }
 
@@ -466,7 +465,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @param _randomizer Randomizer contract address
     */
 
-    function setRandomizerContract(IRandomizer _randomizer) external onlyOwner {
+    function setRandomizerContract(IRandomizer _randomizer) external onlyMinterOrOwner {
         randomizer = _randomizer;
     }
 
@@ -476,7 +475,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @param _antCoin ANTCoin contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
@@ -486,7 +485,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @param _premiumANT Premium ANT contract address
     */
 
-    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
         premiumANT = _premiumANT;
     }
 
@@ -496,7 +495,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     * @param _basicANT Basic ANT contract address
     */
 
-    function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+    function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
         basicANT = _basicANT;
     }
 

@@ -78,7 +78,7 @@ describe("ANTLottery", function () {
         })
 
         it("setAntCoinAmountPerTicket: should fail if caller is not the owner", async () => {
-            await expect(ANTLotteryContract.connect(badActor).setAntCoinAmountPerTicket(0)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(ANTLotteryContract.connect(badActor).setAntCoinAmountPerTicket(0)).to.be.revertedWith("ANTLottery: Caller is not the owner or minter");
         })
 
         it("setAntCoinAmountPerTicket: should work if caller is the owner", async () => {
@@ -88,7 +88,7 @@ describe("ANTLottery", function () {
         })
 
         it("setOperatorAndTreasuryAndInjectorAddresses: should fail if caller is not the owner", async () => {
-            await expect(ANTLotteryContract.connect(badActor).setOperatorAndTreasuryAndInjectorAddresses(user1.address, user2.address)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(ANTLotteryContract.connect(badActor).setOperatorAndTreasuryAndInjectorAddresses(user1.address, user2.address)).to.be.revertedWith("ANTLottery: Caller is not the owner or minter");
         })
 
         it("setOperatorAndTreasuryAndInjectorAddresses: should work if caller is the owner", async () => {
@@ -246,14 +246,14 @@ describe("ANTLottery", function () {
 
         describe("buyTickets", async () => {
 
-            it("should fail if caller is not the minter", async () => {
+            it("should fail if Caller is not the owner or minter", async () => {
                 const provider = ANTLotteryContract.provider;
                 const blockNumber = await provider.getBlockNumber();
                 const block = await provider.getBlock(blockNumber);
                 const blockTimestamp = block.timestamp;
                 const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
                 await ANTLotteryContract.connect(user1).startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
-                await expect(ANTLotteryContract.connect(badActor).buyTickets(user1.address, 1)).to.be.revertedWith("ANTLottery: Caller is not the minter");
+                await expect(ANTLotteryContract.connect(badActor).buyTickets(user1.address, 1)).to.be.revertedWith("ANTLottery: Caller is not the owner or minter");
             })
 
             it("should fail if lottery is not opened", async () => {
@@ -563,7 +563,7 @@ describe("ANTLottery", function () {
 
         describe("buyTickets in Marketplace", async () => {
             it("setLotteryTicketMintInfo: should fail if caller is not the owner", async () => {
-                await expect(MarketplaceContract.connect(badActor).setLotteryTicketMintInfo(true, 10000, ANTCoinContract.address, 2100000)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(MarketplaceContract.connect(badActor).setLotteryTicketMintInfo(true, 10000, ANTCoinContract.address, 2100000)).to.be.revertedWith("Marketplace: Caller is not the owner or minter");
             })
 
             it("setLotteryTicketMintInfo: should work if caller is the owner", async () => {

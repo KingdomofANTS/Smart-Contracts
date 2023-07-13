@@ -28,14 +28,14 @@ describe("Vesting", function () {
         });
 
         it("setReleaseCycle: should work", async () => {
-            await expect(VestingContract.connect(badActor).setReleaseCycle(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(VestingContract.connect(badActor).setReleaseCycle(100)).to.be.revertedWith("Vesting: Caller is not the owner or minter");
             await VestingContract.connect(deployer).setReleaseCycle(100);
             const releaseCycle = await VestingContract.releaseCycle();
             expect(releaseCycle).to.be.equal(100);
         })
 
         it("addVestingPoolInfo & revokeVestingPoolInfo: should add the vesting pool info properly by owner", async () => {
-            await expect(VestingContract.connect(badActor).addVestingPoolInfo("Private Sale", 10, 9)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(VestingContract.connect(badActor).addVestingPoolInfo("Private Sale", 10, 9)).to.be.revertedWith("Vesting: Caller is not the owner or minter");
             await expect(VestingContract.getVestingPoolInfo(0)).to.be.revertedWith("Vesting: vesting pool info isn't exist")
             await VestingContract.addVestingPoolInfo("private sale", 10, 9);
             await expect(VestingContract.getVestingPoolInfo(1)).to.be.revertedWith("Vesting: invalid vesting pool index")

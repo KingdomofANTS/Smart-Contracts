@@ -85,9 +85,8 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     // Mint event
     event MintBasicANT(address owner, uint256 quantity);
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'BasicANT: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "BasicANT: Caller is not the owner or minter");
         _;
     }
 
@@ -346,7 +345,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param potionAmount potion amount for upgrading
     */
 
-    function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinter {
+    function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinterOrOwner {
         require(_exists(tokenId), "BasicANT: token is not exist");
         ANTInfo storage antInfo = basicANTs[tokenId];
         if(antInfo.level >= maxLevel) {
@@ -381,7 +380,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param quantity the number of tokens to mint
     */
 
-    function ownerMint(uint256 _batchIndex, address recipient, uint256 quantity) external onlyMinter {
+    function ownerMint(uint256 _batchIndex, address recipient, uint256 quantity) external onlyMinterOrOwner {
         BatchInfo storage batchInfo = basicBatches[_batchIndex];
 
         uint256 startMinted = batchInfo.minted;
@@ -410,7 +409,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _mintMethod mint method value
     */
 
-    function setMintMethod(uint256 _batchIndex, bool _mintMethod) external onlyOwner {
+    function setMintMethod(uint256 _batchIndex, bool _mintMethod) external onlyMinterOrOwner {
         basicBatches[_batchIndex].mintMethod = _mintMethod;
     }
 
@@ -421,7 +420,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param newLevel the number of new level
     */
 
-    function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinter {
+    function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinterOrOwner {
         basicANTs[tokenId].level = newLevel;
         basicANTs[tokenId].remainPotions = 0;
     }
@@ -432,7 +431,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _startLevel start level value
     */
 
-    function setStartLevel(uint256 _startLevel) external onlyOwner {
+    function setStartLevel(uint256 _startLevel) external onlyMinterOrOwner {
         startLevel = _startLevel;
     }
 
@@ -442,7 +441,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _maxLevel max level value
     */
 
-    function setMaxLevel(uint256 _maxLevel) external onlyOwner {
+    function setMaxLevel(uint256 _maxLevel) external onlyMinterOrOwner {
         maxLevel = _maxLevel;
     }
 
@@ -452,7 +451,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _antFoodTokenId the ANT Food token id of ANTShop
     */
 
-    function setAntFoodTokenId(uint256 _antFoodTokenId) external onlyOwner {
+    function setAntFoodTokenId(uint256 _antFoodTokenId) external onlyMinterOrOwner {
         antFoodTokenId = _antFoodTokenId;
     }
 
@@ -462,7 +461,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _levelingPotionTokenId the leveling potion token id of ANTShop
     */
 
-    function setLevelingPotionTokenId(uint256 _levelingPotionTokenId) external onlyOwner {
+    function setLevelingPotionTokenId(uint256 _levelingPotionTokenId) external onlyMinterOrOwner {
         levelingPotionTokenId = _levelingPotionTokenId;
     }
 
@@ -477,7 +476,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _tokenAmountForMint token amount for basic ant minting
     */
 
-    function setBatchInfo(uint256 _batchIndex, string calldata _name, string calldata _baseURI, uint256 _mintPrice, address _tokenAddressFroMint, uint256 _tokenAmountForMint) external onlyOwner {
+    function setBatchInfo(uint256 _batchIndex, string calldata _name, string calldata _baseURI, uint256 _mintPrice, address _tokenAddressFroMint, uint256 _tokenAmountForMint) external onlyMinterOrOwner {
         basicBatches[_batchIndex].name = _name;
         basicBatches[_batchIndex].baseURI = _baseURI;
         basicBatches[_batchIndex].mintPrice = _mintPrice;
@@ -492,7 +491,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _upgradeANTFee ant coin fee
     */
 
-    function setUpgradeFee(uint256 _upgradeANTFee) external onlyOwner {
+    function setUpgradeFee(uint256 _upgradeANTFee) external onlyMinterOrOwner {
         upgradeANTFee = _upgradeANTFee;
     }
 
@@ -502,7 +501,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _antCoin ant coin smart contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
@@ -512,7 +511,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param _antShop ant shop smart contract address
     */
 
-    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+    function setANTShopContract(IANTShop _antShop) external onlyMinterOrOwner {
         antShop = _antShop;
     }
 
