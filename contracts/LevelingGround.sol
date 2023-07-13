@@ -84,7 +84,11 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     // total number of staked Premium ANTs
     uint256 public totalPremiumANTStaked;
     // ant coin stake fee amount
-    uint256 public stakeFeeAmount;
+    uint256 public stakeFeeAmount = 100 ether;
+
+    uint256 public fullCyclePeriod = 48 hours;
+
+    uint256 public benefitCyclePeriod = 0.5 hours;
     // basic was ant batch index
     uint256 public basicWiseANTBatchIndex = 1;
     // premium was ant batch index
@@ -163,12 +167,51 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return Premium ANT Array Stake information
+    */
+
+    function getPremiumANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory _tokenInfos = new StakeANT[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            _tokenInfos[i] = premiumANTGround[tokenIds[i]];
+        }
+
+        return _tokenInfos;
+    }
+
+    /**
     * @notice Return Basic ANT Stake information
     */
 
     function getBasicANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
         return basicANTGround[_tokenId];
     }
+
+    /**
+    * @notice Return Basic ANT Array Stake information
+    */
+
+    function getBasicANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory _tokenInfos = new StakeANT[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            _tokenInfos[i] = basicANTGround[tokenIds[i]];
+        }
+
+        return _tokenInfos;
+    }
+
 
     /**
     * @notice Return Staked Premium ANTs token ids
@@ -196,13 +239,41 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     function pendingRewardOfPremiumToken(uint256 tokenId) public view returns(uint256) {
         StakeANT storage _stakeANTInfo = premiumANTGround[tokenId];
         uint256 stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
-        uint256 cyclePeriod = 48 hours - 0.5 hours * (_stakeANTInfo.level - 1);
+        uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
         if (_stakeANTInfo.batchIndex == premiumWiseANTBatchIndex) {
             return (stakedPeriod * premiumWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
         } else {
             return (stakedPeriod * 1000) / cyclePeriod;
         }
+    }
+
+    /**
+    * @notice Return penidng potions reward amount arrray. 1,000 = 1 potion
+    * @param tokenIds premium ant token ids for getting the earning amount
+    */
+
+    function pendingRewardOfMultiPremiumTokens(uint256[] calldata tokenIds) public view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory _tokenInfos = new uint256[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT storage _stakeANTInfo = premiumANTGround[tokenIds[i]];
+            uint256 stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
+            uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
+
+            if (_stakeANTInfo.batchIndex == premiumWiseANTBatchIndex) {
+                _tokenInfos[i] = (stakedPeriod * premiumWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+            } else {
+                _tokenInfos[i] = (stakedPeriod * 1000) / cyclePeriod;
+            }
+        }
+
+        return _tokenInfos;
     }
 
     /**
@@ -213,13 +284,41 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     function pendingRewardOfBasicToken(uint256 tokenId) public view returns(uint256) {
         StakeANT storage _stakeANTInfo = basicANTGround[tokenId];
         uint256 stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
-        uint256 cyclePeriod = 48 hours - 0.5 hours * (_stakeANTInfo.level - 1);
+        uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
         if (_stakeANTInfo.batchIndex == basicWiseANTBatchIndex) {
             return (stakedPeriod * basicWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
         } else {
             return (stakedPeriod * 1000) / cyclePeriod;
         }
+    }
+
+    /**
+    * @notice Return penidng potions reward amount arrray. 1,000 = 1 potion
+    * @param tokenIds basic ant token ids for getting the earning amount
+    */
+
+    function pendingRewardOfMultiBasicTokens(uint256[] calldata tokenIds) public view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory _tokenInfos = new uint256[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT storage _stakeANTInfo = basicANTGround[tokenIds[i]];
+            uint256 stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
+            uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
+
+            if (_stakeANTInfo.batchIndex == basicWiseANTBatchIndex) {
+                _tokenInfos[i] = (stakedPeriod * basicWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+            } else {
+                _tokenInfos[i] = (stakedPeriod * 1000) / cyclePeriod;
+            }
+        }
+
+        return _tokenInfos;
     }
 
     /**
@@ -371,6 +470,26 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
 
     function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyOwner {
         stakeFeeAmount = _stakeFeeAmount;
+    }
+
+    /**
+    * @notice Set Full Cycle Period for giving a Leveling Potion to token owner
+    * @dev This function can only be called by the owner
+    * @param _cyclePeriod cycle period time
+    */
+
+    function setFullCyclePeriod(uint256 _cyclePeriod) external onlyOwner {
+        fullCyclePeriod = _cyclePeriod;
+    }
+
+    /**
+    * @notice Set Benefit Cycle Period for giving a Leveling Potion to token owner
+    * @dev This function can only be called by the owner
+    * @param _benefitCyclePeriod benefit period time
+    */
+
+    function setBenefitCyclePeriod(uint256 _benefitCyclePeriod) external onlyOwner {
+        benefitCyclePeriod = _benefitCyclePeriod;
     }
 
     /**
