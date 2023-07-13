@@ -303,10 +303,7 @@ describe("End2End", function () {
                 const provider = ANTLotteryContract.provider;
                 const blockNumber = await provider.getBlockNumber();
                 const block = await provider.getBlock(blockNumber);
-                const blockTimestamp = block.timestamp;
-                const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
                 await ANTLotteryContract.setOperatorAndTreasuryAndInjectorAddresses(deployer.address, deployer.address)
-                await ANTLotteryContract.startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
                 await MarketplaceContract.connect(user1).buyLotteryTickets(user1.address, 10, { value: utils.parseEther("1") });
                 const purseBalance1 = await PurseContract.balanceOf(user1.address);
                 expect(purseBalance1).to.be.equal(10)

@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const { utils } = require("ethers");
 const { ethers } = require("hardhat");
 const { network } = require("hardhat") 
 
@@ -88,7 +89,7 @@ describe("LevelingGround", function () {
 
         it("setStakeFeeAmount: should work if caller is the owner", async () => {
             const stakeFeeAmount = await LevelingGroundContract.stakeFeeAmount();
-            expect(stakeFeeAmount).to.be.equal(0);
+            expect(stakeFeeAmount).to.be.equal(utils.parseEther("100"));
             await LevelingGroundContract.setStakeFeeAmount(1);
             const expected = await LevelingGroundContract.stakeFeeAmount();
             expect(expected).to.be.equal(1);
