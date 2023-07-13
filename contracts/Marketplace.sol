@@ -251,6 +251,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     */
 
     function setPurseMintInfo(bool _mintMethod, uint256 _maticPrice, address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
+        require(_tokenAddress != address(0), "Marketplace: Purse token address can't be zero address");
         purseMintMethod = _mintMethod;
         purseMintPrice = _maticPrice;
         purseMintTokenAddress = _tokenAddress;
@@ -267,6 +268,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     */
 
     function setLotteryTicketMintInfo(bool _mintMethod, uint256 _maticPrice, address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
+        require(_tokenAddress != address(0), "Marketplace: Lottery token address can't be zero address");
         lotteryTicketMintMethod = _mintMethod;
         lotteryTicketMintPrice = _maticPrice;
         lotteryTicketMintTokenAddress = _tokenAddress;

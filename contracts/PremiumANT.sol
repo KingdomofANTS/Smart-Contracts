@@ -166,6 +166,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     function getANTExperience(uint256 tokenId) external view override returns(uint256) {
+        require(_exists(tokenId), "PremiumANT: token is not exist");
         ANTInfo memory ant = premiumANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
         uint256 remainderPotions = ant.remainPotions;
@@ -212,7 +213,27 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     function getANTInfo(uint256 tokenId) public view override returns(ANTInfo memory) {
+        require(_exists(tokenId), "PremiumANT: token is not exist");
         return premiumANTs[tokenId];
+    }
+
+    /**
+    * @notice Return Premium ANT information array including level, mintedNums, batchIndex, ...
+    * @param tokenIds tokenIds to get Premium ANT information
+    */
+
+    function getANTMultiInfo(uint256[] calldata tokenIds) public view returns(ANTInfo[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new ANTInfo[](0);
+        }
+
+        ANTInfo[] memory _tokenInfos = new ANTInfo[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            require(_exists(tokenIds[i]), "PremiumANT: token does not exist");
+            _tokenInfos[i] = premiumANTs[tokenIds[i]];
+        }
+        return _tokenInfos;
     }
 
     /**
@@ -234,7 +255,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param quantity the number of tokens to mint
     */
 
-    function mint(uint256 batchIndex, address recipient, uint256 quantity) external whenNotPaused {
+    function mint(uint256 batchIndex, address recipient, uint256 quantity) external whenNotPaused nonReentrant {
         BatchInfo storage batchInfo = premiumBatches[batchIndex];
         require(recipient == tx.origin, 'PremiumANT: caller is not minter');
         require(batchInfo.maxSupply > 0, "PremiumANT: batch information has not yet been set");
@@ -321,6 +342,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     */
 
     function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinter {
+        require(_exists(tokenId), "PremiumANT: token is not exist");
         ANTInfo storage antInfo = premiumANTs[tokenId];
         if(antInfo.level >= maxLevel) {
             return;

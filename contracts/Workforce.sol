@@ -168,12 +168,48 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return Premium ANT Array Stake information
+    */
+
+    function getPremiumANTMultiStakeInfo(uint256[] calldata _tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = _tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory _stakedInfos = new StakeANT[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            _stakedInfos[i] = premiumANTWorkforce[_tokenIds[i]];
+        }
+        return _stakedInfos;
+    }
+
+    /**
     * @notice Return Basic ANT Stake information
     */
 
     function getBasicANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
         return basicANTWorkforce[_tokenId];
     }
+
+
+    /**
+    * @notice Return Basic ANT Array Stake information
+    */
+
+    function getBasicANTMultiStakeInfo(uint256[] calldata _tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = _tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory _stakedInfos = new StakeANT[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            _stakedInfos[i] = basicANTWorkforce[_tokenIds[i]];
+        }
+        return _stakedInfos;
+    }
+
 
     /**
     * @notice Return Staked Premium ANTs token ids
@@ -194,7 +230,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Basic ANT Stake information
+    * @notice Return the current pending reward amount of Basic Token
     */
 
     function pendingRewardOfBasicToken(uint256 _tokenId) public view returns(uint256 pendingAmount) {
@@ -211,7 +247,35 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Premium ANT Stake information
+    * @notice Return the current pending reward amount of Basic Tokens
+    */
+
+    function pendingRewardOfMultiBasicTokens(uint256[] calldata _tokenIds) public view returns(uint256[] memory) {
+        uint256 tokenIdsLength = _tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory _pendingAmounts = new uint256[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT memory _stakeANTInfo = basicANTWorkforce[_tokenIds[i]];
+            uint256 antExperience = basicANT.getANTExperience(_tokenIds[i]); // 3000 => 30.00%
+            uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
+            uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
+            if(stakePeriod > maxStakePeriod) {
+                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod.mul(10 ** 4));
+            }
+            else {
+                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod.mul(10 ** 4));
+            }
+        }
+
+        return _pendingAmounts;
+    }
+
+    /**
+    * @notice Return the current pending amount of Premium Token
     */
 
     function pendingRewardOfPremiumToken(uint256 _tokenId) public view returns(uint256 pendingAmount) {
@@ -225,6 +289,32 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         else {
             pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod).div(10 ** 4);
         }
+    }
+
+    /**
+    * @notice Return the current pending amount array of Premium Tokens
+    */
+
+    function pendingRewardOfMultiPremiumTokens(uint256[] calldata _tokenIds) public view returns(uint256[] memory) {
+        uint256 tokenIdsLength = _tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory _pendingAmounts = new uint256[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT memory _stakeANTInfo = premiumANTWorkforce[_tokenIds[i]];
+            uint256 antExperience = premiumANT.getANTExperience(_tokenIds[i]); // 3000 => 30.00%
+            uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
+            uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
+            if(stakePeriod > maxStakePeriod) {
+                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod).div(10 ** 4);
+            }
+            else {
+                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod).div(10 ** 4);
+            }
+        }
+        return _pendingAmounts;
     }
 
     /**

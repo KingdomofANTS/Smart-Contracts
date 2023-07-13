@@ -47,6 +47,7 @@ interface IANTShop {
         uint256 burns; // burn amount
         bool isSet; // token info setting status
         string baseURI; // token uri for typeId
+        string name; // token name
     }
 
     function balanceOf(address account, uint256 id) external view returns(uint256);

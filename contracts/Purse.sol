@@ -67,6 +67,13 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     mapping(address => bool) private minters;
     // tokenId => category id
     mapping(uint256 => uint256) public purseInfo;
+    // reward earning info for each tokens
+    mapping(uint256 => PurseTokenRewardInfo) public purseTokenRewardInfos;
+    // used purse token ids by address
+    mapping(address => uint256[]) public usedPurseTokenIds;
+    // array indices of each token id for Purse Token
+    mapping(uint256 => uint256) public usedPurseTokenIdsIndicies;
+
     // ANTFood token id of ANTShop
     uint256 public antFoodTokenId = 0;
     // Leveling Potion token id of ANTShop
@@ -83,12 +90,13 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     // Mint event
     event Mint(address owner, uint256 quantity);
     // Purse category event
-    event UsePurseToken(address owner, uint256 tokenId, string categoryName, uint256 rewardType, uint256 quantity);
+    event UsePurseToken(address owner, uint256 tokenId, string categoryName, string rewardType, uint256 rewardTypeId, uint256 quantity);
 
     constructor(IRandomizer _randomizer, IANTShop _antShop, IANTLottery _antLottery) ERC721A("Purse Token", "Purse") {
         randomizer = _randomizer;
         antShop = _antShop;
         antLottery = _antLottery;
+        minters[_msgSender()] =  true;
     }
 
     /**
@@ -192,13 +200,83 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
+    * @notice Return token ids array which is used for earning reward
+    * @param _owner user address to get token ids
+    */
+
+    function getUsedPurseTokenIdsByAddress(address _owner) public view returns(uint256[] memory) {
+        return usedPurseTokenIds[_owner];
+    }
+
+    /**
+    * @notice Return purse token earning reward info array
+    * @param _tokenIds purse token ids array to get the earning info
+    */
+
+    function getPurseMultiTokenRewardInfo(uint256[] calldata _tokenIds) public view returns(PurseTokenRewardInfo[] memory) {
+        uint256 _tokenIdsLength = _tokenIds.length;
+        if (_tokenIdsLength == 0) {
+            return new PurseTokenRewardInfo[](0);
+        }
+
+        PurseTokenRewardInfo[] memory _tokenRewardInfos = new PurseTokenRewardInfo[](_tokenIdsLength);
+        for(uint256 i = 0; i < _tokenIdsLength; i++) {
+            PurseTokenRewardInfo memory _rewardInfo = purseTokenRewardInfos[_tokenIds[i]];
+            _tokenRewardInfos[i] = _rewardInfo;
+        }
+
+        return _tokenRewardInfos;
+    }
+
+    /**
+    * @notice Return category names of token Id array
+    * @param _tokenIds purse token id array to get category data
+    */
+
+    function getPurseCategoryInfoOfMultiToken(uint256[] calldata _tokenIds) public view returns(string[] memory) {
+        uint256 _tokenIdsLength = _tokenIds.length;
+        if (_tokenIdsLength == 0) {
+            return new string[](0);
+        }
+
+        string[] memory _tokenInfos = new string[](_tokenIdsLength);
+        for(uint256 i = 0; i < _tokenIdsLength; i++) {
+            require(_tokenIds[i] <= minted, "Purse: token doesn't exist");
+             PurseCategory memory _purseCategory = purseCategories[purseInfo[_tokenIds[i]]];
+            _tokenInfos[i] = _purseCategory.categoryName;
+        }
+
+        return _tokenInfos;
+    }
+
+    /**
     * @notice Return purse category information
     * @param _infoId purse info id to get category data
     */
 
     function getPurseCategoryInfo(uint256 _infoId) public view returns(PurseCategory memory) {
-        require(_infoId < purseCategories.length, "Purse: token doesn't exist");
+        require(_infoId < purseCategories.length, "Purse: category info doesn't exist");
         return purseCategories[_infoId];
+    }
+
+    /**
+    * @notice Return purse category information array
+    * @param _infoIds purse info id array to get category data
+    */
+
+    function getPurseCategoryMultiInfo(uint256[] calldata _infoIds) public view returns(PurseCategory[] memory) {
+        uint256 _infoIdsLength = _infoIds.length;
+        if (_infoIdsLength == 0) {
+            return new PurseCategory[](0);
+        }
+
+        PurseCategory[] memory purseCategoryInfo = new PurseCategory[](_infoIdsLength);
+        for(uint256 i = 0; i < _infoIdsLength; i++) {
+            require(_infoIds[i] < purseCategories.length, "Purse: category info doesn't exist");
+            purseCategoryInfo[i] = purseCategories[_infoIds[i]];
+        }
+
+        return purseCategoryInfo;
     }
 
     /**
@@ -213,20 +291,37 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
         uint256 random = randomizer.randomToken(tokenId).mod(100);
         uint256 rewardTypeId;
         uint256 quantity;
-
+        string memory rewardType = "";
+        
         if (random < purseCategory.antFoodRarity) {
-            rewardTypeId = antFoodTokenId;
             quantity = purseCategory.antFoodRewardAmount;
-        } else if (random < purseCategory.levelingPotionRarity) {
-            rewardTypeId = levelingPotionTokenId;
+            rewardType = "ANTFood";
+            antShop.mint(antFoodTokenId, quantity, _msgSender());
+        } else if (random < purseCategory.antFoodRarity + purseCategory.levelingPotionRarity) {
             quantity = purseCategory.levelingPotionRewardAmount;
+            rewardType = "LevelingPotion";
+            antShop.mint(levelingPotionTokenId, quantity, _msgSender());
         } else {
-            antLottery.buyTickets(_msgSender(), purseCategory.lotteryTicketRewardAmount);
+            quantity = purseCategory.lotteryTicketRewardAmount;
+            antLottery.buyTickets(_msgSender(), quantity);
+            rewardType = "LotteryTicket";
         }
 
-        antShop.mint(rewardTypeId, quantity, _msgSender());
+        purseTokenRewardInfos[tokenId] = PurseTokenRewardInfo({
+            owner: _msgSender(),
+            tokenId: tokenId,
+            purseCategoryId: purseInfo[tokenId],
+            rewardType: rewardType,
+            quantity: quantity,
+            isUsed: true
+        });
+
+        usedPurseTokenIds[_msgSender()].push(tokenId);
+        usedPurseTokenIdsIndicies[tokenId] = usedPurseTokenIds[_msgSender()].length - 1;
+
         _burn(tokenId);
-        emit UsePurseToken(_msgSender(), tokenId, purseCategory.categoryName, rewardTypeId, quantity);
+
+        emit UsePurseToken(_msgSender(), tokenId, purseCategory.categoryName, rewardType, rewardTypeId, quantity); // rewardTypeId will only exist when the earning reward token is ant shop token
     }
 
     /**
@@ -275,6 +370,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
         delete purseCategories;
         for(uint256 i = 0; i < _rarities.length; i ++) {
             require(_antFoodRarities[i] + _levelingPotionsRarities[i] + _lotteryTicketRarities[i] == 100, "Purse: invalid purse category data");
+
             purseCategories.push(PurseCategory({
                 categoryName: _names[i], rarity: _rarities[i], antFoodRarity: _antFoodRarities[i], 
                 levelingPotionRarity: _levelingPotionsRarities[i], lotteryTicketRarity: _lotteryTicketRarities[i], 

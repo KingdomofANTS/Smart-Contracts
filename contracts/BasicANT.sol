@@ -166,6 +166,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     */
 
     function getANTExperience(uint256 tokenId) external view override returns(uint256) {
+        require(_exists(tokenId), "BasicANT: token is not exist");
         ANTInfo memory ant = basicANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
         uint256 remainderPotions = ant.remainPotions;
@@ -204,7 +205,27 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     */
 
     function getANTInfo(uint256 tokenId) public view override returns(ANTInfo memory) {
+        require(_exists(tokenId), "BasicANT: token is not exist");
         return basicANTs[tokenId];
+    }
+
+    /**
+    * @notice Return Basic ANT information array including level, mintedNums, batchIndex, ...
+    * @param tokenIds tokenIds to get Basic ANT information
+    */
+
+    function getANTMultiInfo(uint256[] calldata tokenIds) public view returns(ANTInfo[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new ANTInfo[](0);
+        }
+
+        ANTInfo[] memory _tokenInfos = new ANTInfo[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            require(_exists(tokenIds[i]), "BasicANT: token does not exist");
+            _tokenInfos[i] = basicANTs[tokenIds[i]];
+        }
+        return _tokenInfos;
     }
 
     /**
@@ -234,7 +255,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param quantity the number of tokens to mint
     */
 
-    function mint(uint256 batchIndex, address recipient, uint256 quantity) external payable whenNotPaused {
+    function mint(uint256 batchIndex, address recipient, uint256 quantity) external payable nonReentrant whenNotPaused {
         BatchInfo storage batchInfo = basicBatches[batchIndex];
         require(recipient == tx.origin, 'BasicANT: caller is not minter');
         if(batchInfo.mintMethod){
@@ -326,6 +347,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     */
 
     function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinter {
+        require(_exists(tokenId), "BasicANT: token is not exist");
         ANTInfo storage antInfo = basicANTs[tokenId];
         if(antInfo.level >= maxLevel) {
             return;

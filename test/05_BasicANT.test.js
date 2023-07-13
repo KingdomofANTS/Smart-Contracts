@@ -19,8 +19,8 @@ describe("BasicANT", function () {
         await ANTShopContract.deployed();
 
         // set ANTFood and LevelingPotions contract
-        await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-        await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
+        await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
+        await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI2");
 
         // Basic ANT smart contract deployment
         BasicANT = await ethers.getContractFactory('BasicANT');
