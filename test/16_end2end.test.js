@@ -116,6 +116,9 @@ describe("End2End", function () {
         TasksContract = await Tasks.deploy(RandomizerContract.address, ANTCoinContract.address, PremiumANTContract.address, BasicANTContract.address, PurseContract.address);
         await TasksContract.deployed();
 
+        await TasksContract.setRewardLevels([[5, 19], [10, 25], [19, 40], [25, 40], [30, 40]])
+        await TasksContract.setRewardsAmount([1,2,3,4,5]);
+
         await ANTCoinContract.addMinterRole(TasksContract.address);
         await PremiumANTContract.addMinterRole(TasksContract.address);
         await BasicANTContract.addMinterRole(TasksContract.address);

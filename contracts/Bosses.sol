@@ -205,11 +205,47 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return Premium ANT Stake information array
+    */
+
+    function getPremiumANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory stakedInfo = new StakeANT[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            stakedInfo[i] = premiumANTBosses[tokenIds[i]];
+        }
+
+        return stakedInfo;
+    }
+
+    /**
     * @notice Return Basic ANT Stake information
     */
 
     function getBasicANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
         return basicANTBosses[_tokenId];
+    }
+
+    /**
+    * @notice Return Basic ANT Stake information array
+    */
+
+    function getBasicANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory stakedInfo = new StakeANT[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            stakedInfo[i] = basicANTBosses[tokenIds[i]];
+        }
+
+        return stakedInfo;
     }
 
     /**
@@ -238,6 +274,48 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     function getBossesPoolInfoByIndex(uint256 _poolIndex) external view returns(BossesPool memory) {
         require(_poolIndex < bossesPools.length, "Bosses: invalid pool index");
         return bossesPools[_poolIndex];
+    }
+
+    /**
+    * @notice Return Bosses Pool Info array by pool indexs
+    * @param poolIndexArray pool index array
+    */
+
+    function getBossesPoolMultiInfoByIndex(uint256[] calldata poolIndexArray) external view returns(BossesPool[] memory) {
+        uint256 poolIndexLengh = poolIndexArray.length;
+        if (poolIndexLengh == 0) {
+            return new BossesPool[](0);
+        }
+
+        BossesPool[] memory bossesPoolInfos = new BossesPool[](poolIndexLengh);
+        for(uint256 i = 0; i < poolIndexLengh; i++) {
+            require(poolIndexArray[i] < bossesPools.length, "Bosses: invalid pool index");
+            bossesPoolInfos[i] = bossesPools[poolIndexArray[i]];
+        }
+        return bossesPoolInfos;
+    }
+
+    /**
+    * @notice Return Bosses tokens earning reward amount array
+    * @param tokenIds premium ant token ids array
+    */
+
+    function pendingRewardMultiPremiumANT(uint256[] calldata tokenIds) external view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory pendingRewards = new uint256[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT memory _stakeANTInfo = premiumANTBosses[tokenIds[i]];
+            BossesPool memory _bossesPool = bossesPools[_stakeANTInfo.rewardIndex];
+            uint256 stakeAmount = _stakeANTInfo.stakeAmount;
+            uint256 earningReward = _calculateReward(stakeAmount, _bossesPool.rewardAPY);
+            pendingRewards[i] = earningReward;
+        }
+
+        return pendingRewards;
     }
 
     /**

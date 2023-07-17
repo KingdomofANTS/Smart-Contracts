@@ -187,11 +187,47 @@ contract Tasks is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return Premium ANTs Staked information array
+    */
+
+    function getPremiumANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory stakedInfo = new StakeANT[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            stakedInfo[i] = premiumANTTasks[tokenIds[i]];
+        }
+
+        return stakedInfo;
+    }
+
+    /**
     * @notice Return Basic ANT Stake information
     */
 
     function getBasicANTStakeInfo(uint256 _tokenId) external view returns(StakeANT memory) {
         return basicANTTasks[_tokenId];
+    }
+
+    /**
+    * @notice Return Basic ANTs Staked information array
+    */
+
+    function getBasicANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory stakedInfo = new StakeANT[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            stakedInfo[i] = basicANTTasks[tokenIds[i]];
+        }
+
+        return stakedInfo;
     }
 
     /**

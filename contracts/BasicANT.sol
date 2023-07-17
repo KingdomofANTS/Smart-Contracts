@@ -174,6 +174,30 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
+    * @notice Returns experience percentage number array calculated by level.
+    * @dev Added 2 digits after the decimal point. e.g. 6500 = 65.00%
+    */
+
+    function getMultiANTExperience(uint256[] calldata tokenIds) external view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory antsExperience = new uint256[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            require(_exists(tokenIds[i]), "BasicANT: token is not exist");
+            ANTInfo memory ant = basicANTs[tokenIds[i]];
+            uint256 totalPotions = getTotalPotions(ant.level);
+            uint256 remainderPotions = ant.remainPotions;
+            uint256 experience = (totalPotions + remainderPotions) * 10 + (ant.level * 10 + remainderPotions * 10 / ant.level) * 2;
+            antsExperience[i] = experience;
+        }
+
+        return antsExperience;
+    }
+
+    /**
     * @notice Override `transferFrom` function for IBasicANT interface
     */
 
