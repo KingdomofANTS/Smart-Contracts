@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { BigNumber, utils } = require("ethers");
-const { ethers } = require("hardhat")
+const { ethers, network } = require("hardhat")
 
 describe("End2End", function () {
     let ANTCoin, ANTCoinContract, ANTShop, ANTShopContract, BasicANT, BasicANTContract, PremiumANT, PremiumANTContract, ANTLottery, ANTLotteryContract, Purse, PurseContract, Marketplace, MarketplaceContract, Bosses, BossesContract, FoodGathering, FoodGatheringContract, LevelingGround, LevelingGroundContract, Tasks, TasksContract, Workforce, WorkforceContract, Vesting, VestingContract, Randomizer, RandomizerContract;
@@ -117,7 +117,7 @@ describe("End2End", function () {
         await TasksContract.deployed();
 
         await TasksContract.setRewardLevels([[5, 19], [10, 25], [19, 40], [25, 40], [30, 40]])
-        await TasksContract.setRewardsAmount([1,2,3,4,5]);
+        await TasksContract.setRewardsAmount([1, 2, 3, 4, 5]);
 
         await ANTCoinContract.addMinterRole(TasksContract.address);
         await PremiumANTContract.addMinterRole(TasksContract.address);
@@ -502,8 +502,108 @@ describe("End2End", function () {
 
         describe("LevelingGround", async () => {
             it("should work properly all owner setting functions", async () => {
-                
+                await expect(LevelingGroundContract.connect(badActor).setBenefitCyclePeriod(100)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
+                await expect(LevelingGroundContract.connect(badActor).setFullCyclePeriod(100)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
+                await expect(LevelingGroundContract.connect(badActor).setStakeFeeAmount(100)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
+                await expect(LevelingGroundContract.connect(badActor).setBasicWiseANTBatchIndex(100)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter"); await expect(LevelingGroundContract.connect(badActor).setBenefitCyclePeriod(100)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
+                await expect(LevelingGroundContract.connect(badActor).setPremiumWiseANTBatchIndex(100)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
+                await expect(LevelingGroundContract.connect(badActor).setBasicWiseANTRewardSpeed(100)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter")
+                await expect(LevelingGroundContract.connect(badActor).setPremiumWiseANTRewardSpeed(100)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter")
             })
+
+            it("should work stakePremiumANT & stakeBasicANT functions in levelingGround contract", async () => {
+                await ANTCoinContract.transfer(user1.address, utils.parseEther("10000"))
+                await ANTShopContract.mint(0, 100, user1.address);
+                await PremiumANTContract.connect(user1).mint(0, user1.address, 2);
+                const batchInfo = await BasicANTContract.getBatchInfo(0);
+                await BasicANTContract.connect(user1).mint(0, user1.address, 2, { value: batchInfo.mintPrice.mul(2) })
+                await LevelingGroundContract.connect(user1).stakePremiumANT(1);
+                await LevelingGroundContract.connect(user1).stakeBasicANT(1);
+                const basicANTInfo = await LevelingGroundContract.getBasicANTStakeInfo(1);
+                const premiumANTInfo = await LevelingGroundContract.getPremiumANTStakeInfo(1);
+                expect(basicANTInfo.level).to.be.equal(1);
+                expect(basicANTInfo.owner).to.be.equal(user1.address);
+                expect(basicANTInfo.batchIndex).to.be.equal(0);
+                expect(premiumANTInfo.level).to.be.equal(20);
+                expect(premiumANTInfo.owner).to.be.equal(user1.address);
+                expect(premiumANTInfo.batchIndex).to.be.equal(0);
+
+                await increaseTime(60 * 60 * (48 - 0.5 * Number(premiumANTInfo.level - 1)))
+                const pendingRewardPremiumANT = await LevelingGroundContract.pendingRewardOfPremiumToken(1);
+                expect(pendingRewardPremiumANT / 1000).to.be.equal(1)
+                await increaseTime(60 * 60 * 0.5 * Number(premiumANTInfo.level));
+                const pendingRewardBasicANT = await LevelingGroundContract.pendingRewardOfBasicToken(1);
+                expect(Math.floor(pendingRewardBasicANT / 1000)).to.be.equal(1)
+
+                await LevelingGroundContract.connect(user1).unStakeBasicANT(1);
+                await LevelingGroundContract.connect(user1).unStakePremiumANT(1);
+
+                const basicANTInfo2 = await BasicANTContract.getANTInfo(1);
+                const premiumANTInfo2 = await PremiumANTContract.getANTInfo(1);
+
+                expect(basicANTInfo2.remainPotions).to.be.equal(1)
+                expect(premiumANTInfo2.remainPotions).to.be.equal(1);
+            })
+        })
+
+        describe("Workforce", async () => {
+            it("should work all setting functions properly", async () => {
+                await expect(WorkforceContract.connect(badActor).setLimitAntCoinStakeAmount(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
+                await expect(WorkforceContract.connect(badActor).setBatchIndexForExtraAPY(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
+                await expect(WorkforceContract.connect(badActor).setExtraAPY(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
+                await expect(WorkforceContract.connect(badActor).setInitLevelAfterUnstake(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
+                await expect(WorkforceContract.connect(badActor).setCycleStakePeriod(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
+                await expect(WorkforceContract.connect(badActor).setMaxStakePeriod(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
+            })
+
+            it("stakePremiumANT & stakeBasicANT & unStakePremiumANT & unStakeBasicANT functions should work properly", async () => {
+                await WorkforceContract.setLimitAntCoinStakeAmount(utils.parseEther("100"))
+                await ANTShopContract.mint(0, 10, user1.address)
+                await PremiumANTContract.connect(user1).mint(0, user1.address, 2)
+                await BasicANTContract.connect(user1).mint(0, user1.address, 2, { value: utils.parseEther("0.2") })
+                await ANTCoinContract.transfer(user1.address, utils.parseEther("1000"))
+                await expect(WorkforceContract.connect(badActor).stakePremiumANT(1, utils.parseEther("100"))).to.be.revertedWith("Workforce: you are not owner of this token");
+                await expect(WorkforceContract.connect(user1).stakePremiumANT(1, utils.parseEther("0"))).to.be.revertedWith("Workforce: ant coin stake amount should be > 0");
+                await expect(WorkforceContract.connect(user1).stakePremiumANT(1, utils.parseEther("101"))).to.be.revertedWith("Workforce: ant coin stake amount exceed the limit amount");
+                await expect(WorkforceContract.connect(badActor).stakeBasicANT(1, utils.parseEther("100"))).to.be.revertedWith("Workforce: you are not owner of this token");
+                await expect(WorkforceContract.connect(user1).stakeBasicANT(1, utils.parseEther("0"))).to.be.revertedWith("Workforce: ant coin stake amount should be > 0");
+                await expect(WorkforceContract.connect(user1).stakeBasicANT(1, utils.parseEther("101"))).to.be.revertedWith("Workforce: ant coin stake amount exceed the limit amount");
+                await WorkforceContract.setLimitAntCoinStakeAmount(utils.parseEther("10000"))
+                await expect(WorkforceContract.connect(user1).stakePremiumANT(1, utils.parseEther("10000"))).to.be.revertedWith("Workforce: insufficient ant coin balance");
+                await expect(WorkforceContract.connect(user1).stakeBasicANT(1, utils.parseEther("10000"))).to.be.revertedWith("Workforce: insufficient ant coin balance");
+                await WorkforceContract.connect(user1).stakePremiumANT(1, utils.parseEther("100"));
+                await WorkforceContract.connect(user1).stakeBasicANT(1, utils.parseEther("100"));
+            })
+        })
+
+        describe("FoodGathering", async () => {
+
+        })
+
+        describe("ANTLottery", async () => {
+
+        })
+
+        describe("Bosses", async () => {
+
+        })
+
+        describe("Tasks", async () => {
+
+        })
+
+        describe("Vesting", async () => {
+
         })
     });
 });
+
+
+const rpc = ({ method, params }) => {
+    return network.provider.send(method, params);
+};
+
+const increaseTime = async (seconds) => {
+    await rpc({ method: "evm_increaseTime", params: [seconds] });
+    return rpc({ method: "evm_mine" });
+};

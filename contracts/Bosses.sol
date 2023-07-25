@@ -62,6 +62,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         uint256 originTimestamp; // staked timestamp
         uint256 rewardIndex; // reward Index 0 = Common, 1 = Uncommon, 2 = Rare, 3 = Ultra rare, 4 => Legendary
         uint256 stakeAmount; // ant coin staked amount
+        uint256 lockPeriod; // ant lock period in the pool
     }
 
     // Bosses Pools Info
@@ -319,12 +320,36 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return Bosses tokens earning reward amount array
+    * @param tokenIds basic ant token ids array
+    */
+
+    function pendingRewardMultiBasicANT(uint256[] calldata tokenIds) external view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory pendingRewards = new uint256[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT memory _stakeANTInfo = basicANTBosses[tokenIds[i]];
+            BossesPool memory _bossesPool = bossesPools[_stakeANTInfo.rewardIndex];
+            uint256 stakeAmount = _stakeANTInfo.stakeAmount;
+            uint256 earningReward = _calculateReward(stakeAmount, _bossesPool.rewardAPY);
+            pendingRewards[i] = earningReward;
+        }
+
+        return pendingRewards;
+    }
+
+    /**
     * @notice Stake PremiumANT into Bosses Pool with ANTCoin Stake Amount
     * @param _tokenId premium ant token id for stake
     */
 
     function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused nonReentrant {
         require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Bosses: you are not owner of this token');
+        require(_antCAmount > 0, "Bosses: stake amount should be >= 0");
         require(_antCAmount <= limitANTCoinStakeAmount, 'Bosses: ant coin stake amount exceed the limit amount');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Bosses: insufficient ant coin balance');
         require(bossesPools.length > 0, "Bosses: bosses pools info has not been set yet");
@@ -337,7 +362,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             owner: _msgSender(),
             originTimestamp: block.timestamp,
             rewardIndex: _randomRewardIndex,
-            stakeAmount: _antCAmount
+            stakeAmount: _antCAmount,
+            lockPeriod: stakePeriod
         });
 
         premiumANTStakedNFTs[_msgSender()].push(_tokenId);
@@ -356,6 +382,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
 
     function stakeBasicANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused nonReentrant {
         require(basicANT.ownerOf(_tokenId) == _msgSender(), 'Bosses: you are not owner of this token');
+        require(_antCAmount > 0, "Bosses: stake amount should be >= 0");
         require(_antCAmount <= limitANTCoinStakeAmount, 'Bosses: ant coin stake amount exceed the limit amount');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Bosses: insufficient ant coin balance');
         require(bossesPools.length > 0, "Bosses: bosses pools info has not been set yet");
@@ -368,7 +395,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             owner: _msgSender(),
             originTimestamp: block.timestamp,
             rewardIndex: _randomRewardIndex,
-            stakeAmount: _antCAmount
+            stakeAmount: _antCAmount,
+            lockPeriod: stakePeriod
         });
         
         basicANTStakedNFTs[_msgSender()].push(_tokenId);
@@ -391,7 +419,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         uint256 _stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
         require(_stakeANTInfo.owner == _msgSender(), 'Bosses: you are not owner of this premium ant');
 
-        if(_stakedPeriod < stakePeriod) {
+        if(_stakedPeriod < _stakeANTInfo.lockPeriod) {
             // early unStake
             uint256 burnAmount = _stakeANTInfo.stakeAmount * burnRate / 100;
             antCoin.burn(address(this), burnAmount);
@@ -429,7 +457,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         uint256 _stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
         require(_stakeANTInfo.owner == _msgSender(), 'Bosses: you are not owner of this basic ant');
 
-        if(_stakedPeriod < stakePeriod) {
+        if(_stakedPeriod < _stakeANTInfo.lockPeriod) {
             // early unStake
             uint256 burnAmount = _stakeANTInfo.stakeAmount * burnRate / 100;
             antCoin.burn(address(this), burnAmount);

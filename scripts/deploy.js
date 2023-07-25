@@ -4,6 +4,7 @@
 // You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
+const { utils } = require("ethers");
 const hre = require("hardhat");
 const { ethers } = hre
 
@@ -81,6 +82,8 @@ async function main() {
   const Marketplace = await ethers.getContractFactory("Marketplace");
   const MarketplaceContract = await Marketplace.deploy(ANTShopContract.address, PurseContract.address, ANTLotteryContract.address);
   await MarketplaceContract.deployed();
+  await MarketplaceContract.setMintInfo(0, utils.parseEther("0.0001"), ANTCoinContract.address, utils.parseEther("100"));
+  await MarketplaceContract.setMintInfo(1, utils.parseEther("0.001"), ANTCoinContract.address, utils.parseEther("100"));
   await ANTShopContract.addMinterRole(MarketplaceContract.address);
   await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
   await ANTShopContract.addMinterRole(PurseContract.address);
@@ -97,7 +100,7 @@ async function main() {
   await ANTCoinContract.addMinterRole(BossesContract.address);
   await PremiumANTContract.addMinterRole(BossesContract.address);
   await BasicANTContract.addMinterRole(BossesContract.address);
-  await BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])
+  await BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [5, 10, 18, 25, 40], [5, 10, 18, 25, 40])
 
   // food fathering
   const FoodGathering = await ethers.getContractFactory("FoodGathering")

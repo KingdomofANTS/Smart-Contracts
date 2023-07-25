@@ -63,7 +63,7 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
 
     constructor() ERC20("ANT Coin", "ANTC") {
         minters[_msgSender()] = true;
-        mint(_msgSender(), 100000000 ether); // 100 million
+        _mint(_msgSender(), 100000000 ether); // 100 million
     }
 
     /**
