@@ -577,7 +577,60 @@ describe("End2End", function () {
         })
 
         describe("FoodGathering", async () => {
+            it("food gathering stake & unStke functions should work properly", async () => {
+                const stakeFeeAmount = await FoodGatheringContract.stakeFeeAmount();
+                // transfer some ant coins to users wallet address
+                await ANTCoinContract.transfer(user1.address, utils.parseEther("1000000"));
+                await ANTCoinContract.transfer(user2.address, utils.parseEther("1000000"));
+                /** ------------------ user1 --------------- */
+                await FoodGatheringContract.connect(user1).stake(utils.parseEther("90000"));
+                // check user ant coin balance after staking
+                const user1Balance1 = await ANTCoinContract.balanceOf(user1.address);
+                expect(user1Balance1).to.be.equal(utils.parseEther("1000000").sub(utils.parseEther("90000")).sub(stakeFeeAmount));
+                const stakeInfo = await FoodGatheringContract.getStakedInfo(user1.address);
+                expect(stakeInfo.stakedAmount).to.be.equal(utils.parseEther("90000"));
+                expect(stakeInfo.rewardDebt).to.be.equal(0);
+                // increase timestamp to 24 hrs
+                await increaseTime(60 * 60 * 24);
+                // check pending reward amount
+                const pendingRewardByAddress = await FoodGatheringContract.pendingRewardByAddress(user1.address);
+                expect(pendingRewardByAddress).to.be.equal(3000)
+                // stake more ant coins again
+                await FoodGatheringContract.connect(user1).stake(utils.parseEther("90000"));
+                // check staked info status
+                const stakeInfo1 = await FoodGatheringContract.getStakedInfo(user1.address);
+                expect(stakeInfo1.stakedAmount).to.be.equal(utils.parseEther("180000"));
+                expect(stakeInfo1.rewardDebt).to.be.equal(3000);
+                // increase time to 24 hrs
+                await increaseTime(60 * 60 * 24);
+                // Unstake user1's staked ant coins
+                await FoodGatheringContract.connect(user1).unStake();
+                const stakeInfo2 = await FoodGatheringContract.getStakedInfo(user1.address);
+                expect(stakeInfo2.stakedAmount).to.be.equal(utils.parseEther("0"));
+                expect(stakeInfo2.rewardDebt).to.be.equal(0);
+                // check user1's fod balance
+                const user1FoodBalance = await ANTShopContract.balanceOf(user1.address, 0);
+                expect(user1FoodBalance).to.be.equal(9);
 
+                /** ------------------ user2 --------------- */
+                // stake 10000 ant coins. It's 30% of cycle ant coin amounts.
+                await FoodGatheringContract.connect(user2).stake(utils.parseEther("10000"));
+                // incrase time
+                await increaseTime(60 * 60 * 24);
+                // check user2's staked info
+                const stakeInfo3 = await FoodGatheringContract.getStakedInfo(user2.address);
+                expect(stakeInfo3.stakedAmount).to.be.equal(utils.parseEther("10000"));
+                expect(stakeInfo3.rewardDebt).to.be.equal(0);
+                // check pending reward. It should be 33% of a cycle reward amount
+                const pendingRewardUser2ByAddress = await FoodGatheringContract.pendingRewardByAddress(user2.address);
+                expect(pendingRewardUser2ByAddress).to.be.equal(333)
+                // incrase time to 3 days
+                await increaseTime(60 * 60 * 24 * 3);
+                await FoodGatheringContract.connect(user2).unStake();
+                // user2's ant food balance should be 1
+                const user2FoodBalance = await ANTShopContract.balanceOf(user2.address, 0);
+                expect(user2FoodBalance).to.be.equal(1);
+            })
         })
 
         describe("ANTLottery", async () => {
@@ -585,7 +638,7 @@ describe("End2End", function () {
         })
 
         describe("Bosses", async () => {
-
+            
         })
 
         describe("Tasks", async () => {

@@ -91,6 +91,8 @@ async function main() {
   await ANTCoinContract.addMinterRole(ANTLotteryContract.address);
   await PurseContract.addMinterRole(MarketplaceContract.address);
   await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0]);
+  await MarketplaceContract.setPurseMintInfo(true, utils.parseEther("3"), ANTCoinContract.address, utils.parseEther("100"));
+  await MarketplaceContract.setLotteryTicketMintInfo(true, utils.parseEther("0.06"), ANTCoinContract.address, utils.parseEther("100"))
 
   // bosses
   const Bosses = await ethers.getContractFactory('Bosses');
@@ -151,6 +153,22 @@ async function main() {
   await VestingContract.addVestingPoolInfo("Advisory", 10, 12);
   await VestingContract.addVestingPoolInfo("Reserve", 0, 12);
   await VestingContract.addVestingPoolInfo("Foundation", 10, 24)
+  
+  /** ----------Test Versoin -------------- */
+
+  await BossesContract.setStakePeriod(25920); // 0.3 day
+  await FoodGatheringContract.setCycleTimestamp(864); // 0.24 hours
+  await LevelingGroundContract.setFullCyclePeriod(72000); // 20 hours
+  await TasksContract.setStakePeriod(25920); // 0.3 day
+  await VestingContract.setReleaseCycle(25920); // 0.3 day
+  await WorkforceContract.setMaxStakePeriod(3600 * 24 * 30); // 30 days
+  await WorkforceContract.setCycleStakePeriod(3600 * 24 * 10); // 10 days
+  await BasicANTContract.setBatchInfo(0, "Worker ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", utils.parseEther("30"), ANTCoinContract.address, baiscANTANTCoinMintAmount);
+  await MarketplaceContract.setMintInfo(0, utils.parseEther("0.6"), ANTCoinContract.address, utils.parseEther("100"));
+  await MarketplaceContract.setMintInfo(1, utils.parseEther("3"), ANTCoinContract.address, utils.parseEther("100"));
+  await MarketplaceContract.setPurseMintInfo(true, utils.parseEther("3"), ANTCoinContract.address, utils.parseEther("100"));
+  await MarketplaceContract.setLotteryTicketMintInfo(true, utils.parseEther("0.06"), ANTCoinContract.address, utils.parseEther("100"))
+  await PremiumANTContract.setBatchInfo(0, "Worker ANT", "https://gateway.pinata.cloud/ipfs/Qmdq1EUL2cwRXhVHAQ7KNBcfcYW6LKTm7Z1HBNkhaU1Bna/", 100, 30)
 
   console.log("ANTCoin Contract Address:", ANTCoinContract.address);
   console.log("ANTShop Contract Address:", ANTShopContract.address);
