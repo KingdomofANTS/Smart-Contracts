@@ -79,6 +79,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     mapping(uint256 => uint256) public basicANTStakedNFTsIndicies;
     // array indices of each token id for Premium ANT
     mapping(uint256 => uint256) public premiumANTStakedNFTsIndicies;
+    
+    uint public immutable PRECISION = 1000;
     // total number of staked Basic ANTs
     uint256 public totalBasicANTStaked;
     // total number of staked Premium ANTs
@@ -241,9 +243,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
         if (_stakeANTInfo.batchIndex == premiumWiseANTBatchIndex) {
-            return (stakedPeriod * premiumWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+            return (stakedPeriod * premiumWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
         } else {
-            return (stakedPeriod * 1000) / cyclePeriod;
+            return (stakedPeriod * PRECISION) / cyclePeriod;
         }
     }
 
@@ -266,9 +268,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
             uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
             if (_stakeANTInfo.batchIndex == premiumWiseANTBatchIndex) {
-                _tokenInfos[i] = (stakedPeriod * premiumWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+                _tokenInfos[i] = (stakedPeriod * premiumWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
             } else {
-                _tokenInfos[i] = (stakedPeriod * 1000) / cyclePeriod;
+                _tokenInfos[i] = (stakedPeriod * PRECISION) / cyclePeriod;
             }
         }
 
@@ -286,9 +288,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
         if (_stakeANTInfo.batchIndex == basicWiseANTBatchIndex) {
-            return (stakedPeriod * basicWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+            return (stakedPeriod * basicWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
         } else {
-            return (stakedPeriod * 1000) / cyclePeriod;
+            return (stakedPeriod * PRECISION) / cyclePeriod;
         }
     }
 
@@ -311,9 +313,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
             uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
             if (_stakeANTInfo.batchIndex == basicWiseANTBatchIndex) {
-                _tokenInfos[i] = (stakedPeriod * basicWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+                _tokenInfos[i] = (stakedPeriod * basicWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
             } else {
-                _tokenInfos[i] = (stakedPeriod * 1000) / cyclePeriod;
+                _tokenInfos[i] = (stakedPeriod * PRECISION) / cyclePeriod;
             }
         }
 
@@ -379,7 +381,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = premiumANTGround[tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'LevelingGround: you are not owner of this premium ant');
         uint256 rewardPotions = pendingRewardOfPremiumToken(tokenId);
-        premiumANT.ownerANTUpgrade(tokenId, rewardPotions / 1000);
+        premiumANT.ownerANTUpgrade(tokenId, rewardPotions / PRECISION);
         premiumANT.transferFrom(address(this), _stakeANTInfo.owner, tokenId);
         uint256 lastStakedNFTs = premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1];
         premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTsIndicies[tokenId]] = lastStakedNFTs;
@@ -400,7 +402,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = basicANTGround[tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'LevelingGround: you are not owner of this basic ant');
         uint256 rewardPotions = pendingRewardOfBasicToken(tokenId);
-        basicANT.ownerANTUpgrade(tokenId, rewardPotions / 1000);
+        basicANT.ownerANTUpgrade(tokenId, rewardPotions / PRECISION);
         basicANT.transferFrom(address(this), _stakeANTInfo.owner, tokenId);
         uint256 lastStakedNFTs = basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1];
         basicANTStakedNFTs[_msgSender()][basicANTStakedNFTsIndicies[tokenId]] = lastStakedNFTs;

@@ -65,6 +65,7 @@ contract FoodGathering is Ownable, Pausable {
     mapping(address => bool) private minters;
     // staked information for each user
     mapping (address => StakeInfo) public stakedInfo;
+    uint public immutable PRECISION = 1000;
     // ant food token id
     uint256 public antFoodTokenId = 0;
     // ant coin stake fee amount
@@ -142,7 +143,7 @@ contract FoodGathering is Ownable, Pausable {
 
     function pendingRewardByAddress(address _staker) public view returns(uint256) {
         uint256 stakedPeriod = block.timestamp - stakedInfo[_staker].stakedTimestamp;
-        return stakedPeriod * stakedInfo[_staker].stakedAmount * 1000 / (cycleTimestamp * cycleStakedAmount) + stakedInfo[_staker].rewardDebt;
+        return stakedPeriod * stakedInfo[_staker].stakedAmount * PRECISION / (cycleTimestamp * cycleStakedAmount) + stakedInfo[_staker].rewardDebt;
     }
 
     /**
@@ -184,14 +185,14 @@ contract FoodGathering is Ownable, Pausable {
         delete stakedInfo[_msgSender()];
 
         if (rewardAmount > 0) {
-            antShop.mint(antFoodTokenId, rewardAmount.div(1000), _msgSender());
+            antShop.mint(antFoodTokenId, rewardAmount.div(PRECISION), _msgSender());
         }
 
         if (stakedAmount > 0) {
             antCoin.transfer(_msgSender(), stakedAmount);
         }
         
-        emit FoodGatheringUnStaked(_msgSender(), stakedAmount, rewardAmount.div(1000));
+        emit FoodGatheringUnStaked(_msgSender(), stakedAmount, rewardAmount.div(PRECISION));
     }
 
     /**
