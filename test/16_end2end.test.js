@@ -638,7 +638,92 @@ describe("End2End", function () {
         })
 
         describe("Bosses", async () => {
-            
+            it("setBossesPoolsInfo: should be set the bosses pools info properly", async () => {
+                // try to set with invalid pools info
+                await expect(BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25])).to.be.revertedWith("Bosses: invalid bosses pools info");
+                // set with the correct info
+                await expect(BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.not.reverted;
+                // get the information of all pools and check pool index 2 information
+                const bossesPoolMultiInfo = await BossesContract.getBossesPoolMultiInfoByIndex([0, 1, 2, 3, 4]);
+                expect(bossesPoolMultiInfo[2].poolName).to.be.equal("Beetle");
+                expect(bossesPoolMultiInfo[2].rewardAPY).to.be.equal(100);
+                expect(bossesPoolMultiInfo[2].drainedLevel).to.be.equal(1);
+                expect(bossesPoolMultiInfo[2].levelRequired).to.be.equal(18);
+            })
+
+            it("stakePremiumANT & stakeBasicANT should work", async () => {
+                // transfer ant coins and mint some ant foods to user1 address
+                await ANTCoinContract.transfer(user1.address, utils.parseEther("2000"))
+                await ANTShopContract.mint(0, 10, user1.address);
+                // mint premium & basic ant and upgrade the basic ant level to 27 since level should be greater than minimum level required
+                await PremiumANTContract.connect(user1).mint(0, user1.address, 2);
+                await BasicANTContract.connect(user1).mint(0, user1.address, 2, { value: basicANTMaticMintPrice.mul(2) })
+                await BasicANTContract.setLevel(1, 27)
+                // stake premium & basic ant
+                await BossesContract.connect(user1).stakePremiumANT(1, utils.parseEther("500"))
+                await BossesContract.connect(user1).stakeBasicANT(1, utils.parseEther("500"))
+                // check premium ant staked info
+                const premiumStakedInfo1 = await BossesContract.getPremiumANTStakeInfo(1);
+                const totalPremiumANTStaked1 = await BossesContract.totalPremiumANTStaked();
+                expect(premiumStakedInfo1.tokenId).to.be.equal(1)
+                expect(premiumStakedInfo1.owner).to.be.equal(user1.address)
+                expect(premiumStakedInfo1.stakeAmount).to.be.equal(utils.parseEther("500"));
+                expect(premiumStakedInfo1.lockPeriod).to.be.equal(30 * 60 * 60 * 24);
+                expect(totalPremiumANTStaked1).to.be.equal(1)
+                // check basic ant staked info
+                const basicStakedInfo1 = await BossesContract.getBasicANTStakeInfo(1);
+                const totalBasicANTStaked1 = await BossesContract.totalBasicANTStaked();
+                expect(basicStakedInfo1.tokenId).to.be.equal(1)
+                expect(basicStakedInfo1.owner).to.be.equal(user1.address)
+                expect(basicStakedInfo1.stakeAmount).to.be.equal(utils.parseEther("500"));
+                expect(basicStakedInfo1.lockPeriod).to.be.equal(30 * 60 * 60 * 24);
+                expect(totalBasicANTStaked1).to.be.equal(1)
+
+                /** --- unStake ants early(should be burn 20% of staked ant coins) --- */
+                const burnRate = await BossesContract.burnRate();
+                await BossesContract.connect(user1).unStakePremiumANT(1);
+                const user1ANTCoinBalance1 = await ANTCoinContract.balanceOf(user1.address);
+                const expectedBalance1 = utils.parseEther("1000").add(utils.parseEther("500").sub(utils.parseEther("500").mul(burnRate).div(100)))
+                expect(user1ANTCoinBalance1).to.be.equal(expectedBalance1)
+                await BossesContract.connect(user1).unStakeBasicANT(1);
+                const user1ANTCoinBalance2 = await ANTCoinContract.balanceOf(user1.address);
+                const expectedBalance2 = expectedBalance1.add(utils.parseEther("500").sub(utils.parseEther("500").mul(burnRate).div(100)))
+                expect(user1ANTCoinBalance2).to.be.equal(expectedBalance2)
+                const totalPremiumANTStaked2 = await BossesContract.totalPremiumANTStaked();
+                const totalBasicANTStaked2 = await BossesContract.totalBasicANTStaked();
+                expect(totalPremiumANTStaked2).to.be.equal(0);
+                expect(totalBasicANTStaked2).to.be.equal(0);
+
+                /** --- unStake ants after finishing stake period --- */
+                const stakePeriod = await BossesContract.stakePeriod();
+                await BossesContract.connect(user1).stakePremiumANT(1, utils.parseEther("500"));
+                await BossesContract.connect(user1).stakeBasicANT(1, utils.parseEther("500"));
+                const premiumANTStakeInfo2 = await BossesContract.getPremiumANTStakeInfo(1);
+                const premiumANTStakePoolInfo = await BossesContract.getBossesPoolInfoByIndex(premiumANTStakeInfo2.rewardIndex);
+                const basicANTStakeInfo2 = await BossesContract.getBasicANTStakeInfo(1);
+                const basicANTStakePoolInfo = await BossesContract.getBossesPoolInfoByIndex(basicANTStakeInfo2.rewardIndex);
+                
+                const totalPremiumANTStaked3 = await BossesContract.totalPremiumANTStaked();
+                const totalBasicANTStaked3 = await BossesContract.totalBasicANTStaked();
+                expect(totalPremiumANTStaked3).to.be.equal(1);
+                expect(totalBasicANTStaked3).to.be.equal(1);
+
+                // increase time
+                await increaseTime(Number(stakePeriod));
+                await BossesContract.connect(user1).unStakePremiumANT(1);
+                const user1ANTCoinBalance3 = await ANTCoinContract.balanceOf(user1.address);
+                const expectedBalance3 = expectedBalance2.sub(utils.parseEther("500")).add(utils.parseEther("500").mul(premiumANTStakePoolInfo.rewardAPY).div(100));
+                expect(user1ANTCoinBalance3).to.be.equal(expectedBalance3)
+                await BossesContract.connect(user1).unStakeBasicANT(1);
+                const user1ANTCoinBalance4 = await ANTCoinContract.balanceOf(user1.address);
+                const expectedBalance4 = expectedBalance3.add(utils.parseEther("500")).add(utils.parseEther("500").mul(basicANTStakePoolInfo.rewardAPY).div(100))
+                expect(user1ANTCoinBalance4).to.be.equal(expectedBalance4)
+
+                const totalPremiumANTStaked4 = await BossesContract.totalPremiumANTStaked();
+                const totalBasicANTStaked4 = await BossesContract.totalBasicANTStaked();
+                expect(totalPremiumANTStaked4).to.be.equal(0);
+                expect(totalBasicANTStaked4).to.be.equal(0);
+            })
         })
 
         describe("Tasks", async () => {
