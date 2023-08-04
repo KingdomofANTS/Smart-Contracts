@@ -77,12 +77,12 @@ describe("ANTLottery", function () {
             expect(result).to.be.equal("219876321");
         })
 
-        it("setAntCoinAmountPerTicket: should fail if caller is not the owner", async () => {
-            await expect(ANTLotteryContract.connect(badActor).setAntCoinAmountPerTicket(0)).to.be.revertedWith("ANTLottery: Caller is not the owner or minter");
+        it("setANTCoinAmountPerTicket: should fail if caller is not the owner", async () => {
+            await expect(ANTLotteryContract.connect(badActor).setANTCoinAmountPerTicket(0)).to.be.revertedWith("ANTLottery: Caller is not the owner or minter");
         })
 
-        it("setAntCoinAmountPerTicket: should work if caller is the owner", async () => {
-            await ANTLotteryContract.setAntCoinAmountPerTicket(100);
+        it("setANTCoinAmountPerTicket: should work if caller is the owner", async () => {
+            await ANTLotteryContract.setANTCoinAmountPerTicket(100);
             const expected = await ANTLotteryContract.antCoinAmountPerTicket();
             expect(expected).to.be.equal(100)
         })

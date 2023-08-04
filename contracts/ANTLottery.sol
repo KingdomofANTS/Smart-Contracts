@@ -629,7 +629,7 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
      * @param _antCoinAmountPerTicket ant coin amount
      */
 
-    function setAntCoinAmountPerTicket(uint256 _antCoinAmountPerTicket) external onlyMinterOrOwner {
+    function setANTCoinAmountPerTicket(uint256 _antCoinAmountPerTicket) external onlyMinterOrOwner {
         antCoinAmountPerTicket = _antCoinAmountPerTicket;
     }
 

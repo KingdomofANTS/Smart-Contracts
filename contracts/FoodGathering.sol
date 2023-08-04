@@ -65,7 +65,7 @@ contract FoodGathering is Ownable, Pausable {
     mapping(address => bool) private minters;
     // staked information for each user
     mapping (address => StakeInfo) public stakedInfo;
-    uint public immutable PRECISION = 1000;
+    uint256 public immutable PRECISION = 1000;
     // ant food token id
     uint256 public antFoodTokenId = 0;
     // ant coin stake fee amount

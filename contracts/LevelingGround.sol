@@ -80,7 +80,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     // array indices of each token id for Premium ANT
     mapping(uint256 => uint256) public premiumANTStakedNFTsIndicies;
     
-    uint public immutable PRECISION = 1000;
+    uint256 public immutable PRECISION = 1000;
     // total number of staked Basic ANTs
     uint256 public totalBasicANTStaked;
     // total number of staked Premium ANTs
