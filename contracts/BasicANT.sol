@@ -444,7 +444,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     * @param newLevel the number of new level
     */
 
-    function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinterOrOwner {
+    function setLevel(uint256 tokenId, uint256 newLevel) external override onlyMinterOrOwner {
         basicANTs[tokenId].level = newLevel;
         basicANTs[tokenId].remainPotions = 0;
     }

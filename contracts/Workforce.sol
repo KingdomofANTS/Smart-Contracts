@@ -380,7 +380,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = premiumANTWorkforce[_tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'Workforce: you are not owner of this premium ant');
         uint256 rewardAmount = pendingRewardOfPremiumToken(_tokenId);
-        premiumANT.downgradeLevel(_tokenId, initLevelAfterUnstake);
+        premiumANT.setLevel(_tokenId, initLevelAfterUnstake);
         premiumANT.transferFrom(address(this), _msgSender(), _tokenId);
         antCoin.transfer(_msgSender(), _stakeANTInfo.antCStakeAmount);
         antCoin.mint(_msgSender(), rewardAmount);
@@ -403,7 +403,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = basicANTWorkforce[_tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'Workforce: you are not owner of this basic ant');
         uint256 rewardAmount = pendingRewardOfBasicToken(_tokenId);
-        basicANT.downgradeLevel(_tokenId, initLevelAfterUnstake);
+        basicANT.setLevel(_tokenId, initLevelAfterUnstake);
         basicANT.transferFrom(address(this), _msgSender(), _tokenId);
         antCoin.transfer(_msgSender(), _stakeANTInfo.antCStakeAmount);
         antCoin.mint(_msgSender(), rewardAmount);

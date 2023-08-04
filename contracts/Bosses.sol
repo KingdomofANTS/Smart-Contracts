@@ -430,7 +430,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             uint256 earningReward = _calculateReward(stakeAmount, _bossesPool.rewardAPY);
             antCoin.transfer(_stakeANTInfo.owner, stakeAmount);
             antCoin.mint(_stakeANTInfo.owner, earningReward);
-            premiumANT.downgradeLevel(_tokenId, _bossesPool.drainedLevel);
+            premiumANT.setLevel(_tokenId, _bossesPool.drainedLevel);
         }
 
         premiumANT.transferFrom(address(this), _msgSender(), _tokenId);
@@ -468,7 +468,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             uint256 earningReward = _calculateReward(stakeAmount, _bossesPool.rewardAPY);
             antCoin.transfer(_stakeANTInfo.owner, stakeAmount);
             antCoin.mint(_stakeANTInfo.owner, earningReward);
-            basicANT.downgradeLevel(_tokenId, _bossesPool.drainedLevel);
+            basicANT.setLevel(_tokenId, _bossesPool.drainedLevel);
         }
 
         basicANT.transferFrom(address(this), _msgSender(), _tokenId);

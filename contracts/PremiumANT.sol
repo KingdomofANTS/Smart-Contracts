@@ -430,7 +430,7 @@ contract PremiumANT is ERC721AQueryable, IPremiumANT, Ownable, Pausable, Reentra
     * @param newLevel the number of new level
     */
 
-    function downgradeLevel(uint256 tokenId, uint256 newLevel) external override onlyMinterOrOwner {
+    function setLevel(uint256 tokenId, uint256 newLevel) external override onlyMinterOrOwner {
         premiumANTs[tokenId].level = newLevel;
         premiumANTs[tokenId].remainPotions = 0;
     }

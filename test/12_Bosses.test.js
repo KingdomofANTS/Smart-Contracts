@@ -239,8 +239,8 @@ describe("Bosses", function () {
             await expect(BossesContract.connect(user1).stakeBasicANT(1, antCoinTransferAmount)).to.be.revertedWith("Bosses: ant level must be greater than the minimum required pool level");
             
             // upgrade basic ants level to 5 for testing
-            await BasicANTContract.downgradeLevel(1, 5);  
-            await BasicANTContract.downgradeLevel(2, 5);
+            await BasicANTContract.setLevel(1, 5);  
+            await BasicANTContract.setLevel(2, 5);
 
             await BossesContract.connect(user1).stakeBasicANT(1, antCoinTransferAmount);
             await BossesContract.connect(user2).stakeBasicANT(2, antCoinTransferAmount);

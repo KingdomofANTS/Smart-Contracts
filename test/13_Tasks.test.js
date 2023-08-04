@@ -254,7 +254,7 @@ describe("Tasks", function () {
                 await BasicANTContract.setBatchInfo(0, "name1", "testBaseURI1", maticMintPrice, ANTCoinContract.address, tokenAmountForMint);
                 await BasicANTContract.connect(user1).mint(0, user1.address, 10, { value: maticMintPrice * 10 });
                 await ANTCoinContract.transfer(user1.address, antcoinInitAmount);
-                await BasicANTContract.downgradeLevel(1, 8);
+                await BasicANTContract.setLevel(1, 8);
                 const tx = await TasksContract.connect(user1).stakeBasicANT(1);
                 expect(tx).to.emit(TasksContract, "TasksStakeBasicANT").withArgs(1, user1.address);
                 const totalBasicANTStaked = await TasksContract.totalBasicANTStaked();
