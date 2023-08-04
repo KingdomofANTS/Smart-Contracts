@@ -83,8 +83,15 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     uint256 public lotteryTicketMintTokenAmount;
     // max number for buying the lottery tickets
     uint256 public maxNumberTicketsPerBuy = 9999;
+
+    mapping(address => bool) private minters;
     // ANTShop tokens mint information
     mapping(uint256 => MintInfo) public mintInfo;
+
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "Marketplace: Caller is not the owner or minter");
+        _;
+    }
     
     // buy ANTShop tokens event
     event BuyANTShopToken(uint256 typeId, address recipient, uint256 quantity);
@@ -204,6 +211,14 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
+    * @notice Check address has minterRole
+    */
+
+    function getMinterRole(address _address) public view returns(bool) {
+        return minters[_address];
+    }
+
+    /**
     *   ██████  ██     ██ ███    ██ ███████ ██████
     *  ██    ██ ██     ██ ████   ██ ██      ██   ██
     *  ██    ██ ██  █  ██ ██ ██  ██ █████   ██████
@@ -221,7 +236,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _tokenAmountForMint token token amount for minting
     */
 
-    function setMintInfo(uint256 _typeId, uint256 _mintPrice, address _tokenAddressForMint, uint256 _tokenAmountForMint) external onlyOwner {
+    function setMintInfo(uint256 _typeId, uint256 _mintPrice, address _tokenAddressForMint, uint256 _tokenAmountForMint) external onlyMinterOrOwner {
         require(_tokenAddressForMint != address(0x0), "Marketplace: token address can't be a null address");
         mintInfo[_typeId].mintPrice = _mintPrice;
         mintInfo[_typeId].tokenAddressForMint = _tokenAddressForMint;
@@ -237,7 +252,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _mintMethod mint method value
     */
 
-    function setMintMethod(uint256 _typeId, bool _mintMethod) external onlyOwner {
+    function setMintMethod(uint256 _typeId, bool _mintMethod) external onlyMinterOrOwner {
         mintInfo[_typeId].mintMethod = _mintMethod;
     }
 
@@ -250,7 +265,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _tokenAmount token amount for minting
     */
 
-    function setPurseMintInfo(bool _mintMethod, uint256 _maticPrice, address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
+    function setPurseMintInfo(bool _mintMethod, uint256 _maticPrice, address _tokenAddress, uint256 _tokenAmount) external onlyMinterOrOwner {
         require(_tokenAddress != address(0), "Marketplace: Purse token address can't be zero address");
         purseMintMethod = _mintMethod;
         purseMintPrice = _maticPrice;
@@ -267,7 +282,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _tokenAmount token amount for minting
     */
 
-    function setLotteryTicketMintInfo(bool _mintMethod, uint256 _maticPrice, address _tokenAddress, uint256 _tokenAmount) external onlyOwner {
+    function setLotteryTicketMintInfo(bool _mintMethod, uint256 _maticPrice, address _tokenAddress, uint256 _tokenAmount) external onlyMinterOrOwner {
         require(_tokenAddress != address(0), "Marketplace: Lottery token address can't be zero address");
         lotteryTicketMintMethod = _mintMethod;
         lotteryTicketMintPrice = _maticPrice;
@@ -281,7 +296,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _maxNumberTicketsPerBuy a max ticket numbers for buy
     */
 
-    function setMaxNumberTicketsPerBuy(uint256 _maxNumberTicketsPerBuy) external onlyOwner {
+    function setMaxNumberTicketsPerBuy(uint256 _maxNumberTicketsPerBuy) external onlyMinterOrOwner {
         maxNumberTicketsPerBuy = _maxNumberTicketsPerBuy;
     }
 
@@ -291,7 +306,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _purse Reference to Purse
     */
 
-    function setPurseContract(IPurse _purse) external onlyOwner {
+    function setPurseContract(IPurse _purse) external onlyMinterOrOwner {
         require(address(_purse) != address(0x0), "Marketplace: Purse address can't be null address");
         Purse = _purse;
     }
@@ -302,7 +317,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _antShop Reference to ANTShop
     */
 
-    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+    function setANTShopContract(IANTShop _antShop) external onlyMinterOrOwner {
         require(address(_antShop) != address(0x0), "Marketplace: ANTShop address can't be null address");
         ANTShop = _antShop;
     }
@@ -313,7 +328,7 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     * @param _antLottery Reference to ANTLottery
     */
 
-    function setANTLotteryContract(IANTLottery _antLottery) external onlyOwner {
+    function setANTLotteryContract(IANTLottery _antLottery) external onlyMinterOrOwner {
         require(address(_antLottery) != address(0x0), "Marketplace: ANTLottery address can't be null address");
         ANTLottery = _antLottery;
     }
@@ -324,6 +339,24 @@ contract Marketplace is Pausable, Ownable, ReentrancyGuard {
     function setPaused(bool _paused) external onlyOwner {
         if (_paused) _pause();
         else _unpause();
+    }
+
+    /**
+    * @notice Function to grant mint role
+    * @dev This function can only be called by the owner
+    * @param _address address to get minter role
+    */
+    function addMinterRole(address _address) external onlyOwner {
+        minters[_address] = true;
+    }
+
+    /**
+    * @notice Function to revoke mint role
+    * @dev This function can only be called by the owner
+    * @param _address address to revoke minter role
+    */
+    function revokeMinterRole(address _address) external onlyOwner {
+        minters[_address] = false;
     }
 
     /**

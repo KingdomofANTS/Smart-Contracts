@@ -79,6 +79,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     mapping(uint256 => uint256) public basicANTStakedNFTsIndicies;
     // array indices of each token id for Premium ANT
     mapping(uint256 => uint256) public premiumANTStakedNFTsIndicies;
+    
+    uint256 public immutable PRECISION = 1000;
     // total number of staked Basic ANTs
     uint256 public totalBasicANTStaked;
     // total number of staked Premium ANTs
@@ -108,9 +110,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     // premium ant unstake event
     event LevelingGroundUnStakePremiumANT(uint256 id, address owner);
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'PremiumANT: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "LevelingGround: Caller is not the owner or minter");
         _;
     }
     
@@ -242,9 +243,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
         if (_stakeANTInfo.batchIndex == premiumWiseANTBatchIndex) {
-            return (stakedPeriod * premiumWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+            return (stakedPeriod * premiumWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
         } else {
-            return (stakedPeriod * 1000) / cyclePeriod;
+            return (stakedPeriod * PRECISION) / cyclePeriod;
         }
     }
 
@@ -267,9 +268,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
             uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
             if (_stakeANTInfo.batchIndex == premiumWiseANTBatchIndex) {
-                _tokenInfos[i] = (stakedPeriod * premiumWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+                _tokenInfos[i] = (stakedPeriod * premiumWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
             } else {
-                _tokenInfos[i] = (stakedPeriod * 1000) / cyclePeriod;
+                _tokenInfos[i] = (stakedPeriod * PRECISION) / cyclePeriod;
             }
         }
 
@@ -287,9 +288,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
         if (_stakeANTInfo.batchIndex == basicWiseANTBatchIndex) {
-            return (stakedPeriod * basicWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+            return (stakedPeriod * basicWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
         } else {
-            return (stakedPeriod * 1000) / cyclePeriod;
+            return (stakedPeriod * PRECISION) / cyclePeriod;
         }
     }
 
@@ -312,9 +313,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
             uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
             if (_stakeANTInfo.batchIndex == basicWiseANTBatchIndex) {
-                _tokenInfos[i] = (stakedPeriod * basicWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+                _tokenInfos[i] = (stakedPeriod * basicWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
             } else {
-                _tokenInfos[i] = (stakedPeriod * 1000) / cyclePeriod;
+                _tokenInfos[i] = (stakedPeriod * PRECISION) / cyclePeriod;
             }
         }
 
@@ -380,7 +381,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = premiumANTGround[tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'LevelingGround: you are not owner of this premium ant');
         uint256 rewardPotions = pendingRewardOfPremiumToken(tokenId);
-        premiumANT.ownerANTUpgrade(tokenId, rewardPotions / 1000);
+        premiumANT.ownerANTUpgrade(tokenId, rewardPotions / PRECISION);
         premiumANT.transferFrom(address(this), _stakeANTInfo.owner, tokenId);
         uint256 lastStakedNFTs = premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1];
         premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTsIndicies[tokenId]] = lastStakedNFTs;
@@ -401,7 +402,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = basicANTGround[tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'LevelingGround: you are not owner of this basic ant');
         uint256 rewardPotions = pendingRewardOfBasicToken(tokenId);
-        basicANT.ownerANTUpgrade(tokenId, rewardPotions / 1000);
+        basicANT.ownerANTUpgrade(tokenId, rewardPotions / PRECISION);
         basicANT.transferFrom(address(this), _stakeANTInfo.owner, tokenId);
         uint256 lastStakedNFTs = basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1];
         basicANTStakedNFTs[_msgSender()][basicANTStakedNFTsIndicies[tokenId]] = lastStakedNFTs;
@@ -428,7 +429,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _premiumWiseANTRewardSpeed reward speed times
     */
 
-    function setPremiumWiseANTRewardSpeed(uint256 _premiumWiseANTRewardSpeed) external onlyOwner {
+    function setPremiumWiseANTRewardSpeed(uint256 _premiumWiseANTRewardSpeed) external onlyMinterOrOwner {
         premiumWiseANTRewardSpeed = _premiumWiseANTRewardSpeed;
     }
 
@@ -438,7 +439,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _basicWiseANTRewardSpeed reward speed times
     */
 
-    function setBasicWiseANTRewardSpeed(uint256 _basicWiseANTRewardSpeed) external onlyOwner {
+    function setBasicWiseANTRewardSpeed(uint256 _basicWiseANTRewardSpeed) external onlyMinterOrOwner {
         basicWiseANTRewardSpeed = _basicWiseANTRewardSpeed;
     }
 
@@ -448,7 +449,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _index batch index for wise ant
     */
 
-    function setPremiumWiseANTBatchIndex(uint256 _index) external onlyOwner {
+    function setPremiumWiseANTBatchIndex(uint256 _index) external onlyMinterOrOwner {
         premiumWiseANTBatchIndex = _index;
     }
 
@@ -458,7 +459,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _index batch index for wise ant
     */
 
-    function setBasicWiseANTBatchIndex(uint256 _index) external onlyOwner {
+    function setBasicWiseANTBatchIndex(uint256 _index) external onlyMinterOrOwner {
         basicWiseANTBatchIndex = _index;
     }
 
@@ -468,7 +469,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _stakeFeeAmount ant coin stake fee amount for staking
     */
 
-    function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyOwner {
+    function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyMinterOrOwner {
         stakeFeeAmount = _stakeFeeAmount;
     }
 
@@ -478,7 +479,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _cyclePeriod cycle period time
     */
 
-    function setFullCyclePeriod(uint256 _cyclePeriod) external onlyOwner {
+    function setFullCyclePeriod(uint256 _cyclePeriod) external onlyMinterOrOwner {
         fullCyclePeriod = _cyclePeriod;
     }
 
@@ -488,7 +489,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _benefitCyclePeriod benefit period time
     */
 
-    function setBenefitCyclePeriod(uint256 _benefitCyclePeriod) external onlyOwner {
+    function setBenefitCyclePeriod(uint256 _benefitCyclePeriod) external onlyMinterOrOwner {
         benefitCyclePeriod = _benefitCyclePeriod;
     }
 
@@ -498,7 +499,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _antCoin ANTCoin contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
@@ -508,7 +509,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _premiumANT Premium ANT contract address
     */
 
-    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
         premiumANT = _premiumANT;
     }
 
@@ -518,7 +519,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     * @param _basicANT Basic ANT contract address
     */
 
-    function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+    function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
         basicANT = _basicANT;
     }
 

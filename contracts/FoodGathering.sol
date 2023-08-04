@@ -65,6 +65,7 @@ contract FoodGathering is Ownable, Pausable {
     mapping(address => bool) private minters;
     // staked information for each user
     mapping (address => StakeInfo) public stakedInfo;
+    uint256 public immutable PRECISION = 1000;
     // ant food token id
     uint256 public antFoodTokenId = 0;
     // ant coin stake fee amount
@@ -81,9 +82,8 @@ contract FoodGathering is Ownable, Pausable {
         antShop = _antShop;
     }
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'Workforce: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "FoodGathering: Caller is not the owner or minter");
         _;
     }
 
@@ -143,7 +143,7 @@ contract FoodGathering is Ownable, Pausable {
 
     function pendingRewardByAddress(address _staker) public view returns(uint256) {
         uint256 stakedPeriod = block.timestamp - stakedInfo[_staker].stakedTimestamp;
-        return stakedPeriod * stakedInfo[_staker].stakedAmount * 1000 / (cycleTimestamp * cycleStakedAmount) + stakedInfo[_staker].rewardDebt;
+        return stakedPeriod * stakedInfo[_staker].stakedAmount * PRECISION / (cycleTimestamp * cycleStakedAmount) + stakedInfo[_staker].rewardDebt;
     }
 
     /**
@@ -185,14 +185,14 @@ contract FoodGathering is Ownable, Pausable {
         delete stakedInfo[_msgSender()];
 
         if (rewardAmount > 0) {
-            antShop.mint(antFoodTokenId, rewardAmount.div(1000), _msgSender());
+            antShop.mint(antFoodTokenId, rewardAmount.div(PRECISION), _msgSender());
         }
 
         if (stakedAmount > 0) {
             antCoin.transfer(_msgSender(), stakedAmount);
         }
         
-        emit FoodGatheringUnStaked(_msgSender(), stakedAmount, rewardAmount.div(1000));
+        emit FoodGatheringUnStaked(_msgSender(), stakedAmount, rewardAmount.div(PRECISION));
     }
 
     /**
@@ -209,7 +209,7 @@ contract FoodGathering is Ownable, Pausable {
     * @dev This function can only be called by the owner
     * @param _stakeFeeAmount staking fee amount
     */
-    function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyOwner {
+    function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyMinterOrOwner {
         stakeFeeAmount = _stakeFeeAmount;
     }
 
@@ -218,7 +218,7 @@ contract FoodGathering is Ownable, Pausable {
     * @dev This function can only be called by the owner
     * @param _maxAmountForStake max staking amount
     */
-    function setMaxAmountForStake(uint256 _maxAmountForStake) external onlyOwner {
+    function setMaxAmountForStake(uint256 _maxAmountForStake) external onlyMinterOrOwner {
         maxAmountForStake = _maxAmountForStake;
     }
 
@@ -227,7 +227,7 @@ contract FoodGathering is Ownable, Pausable {
     * @dev This function can only be called by the owner
     * @param _cycleStakedAmount one cycle staked amount
     */
-    function setCycleStakedAmount(uint256 _cycleStakedAmount) external onlyOwner {
+    function setCycleStakedAmount(uint256 _cycleStakedAmount) external onlyMinterOrOwner {
         cycleStakedAmount = _cycleStakedAmount;
     }
 
@@ -236,7 +236,7 @@ contract FoodGathering is Ownable, Pausable {
     * @dev This function can only be called by the owner
     * @param _cycleTimestamp one cycle staked duration
     */
-    function setCycleTimestamp(uint256 _cycleTimestamp) external onlyOwner {
+    function setCycleTimestamp(uint256 _cycleTimestamp) external onlyMinterOrOwner {
         cycleTimestamp = _cycleTimestamp;
     }
 
@@ -246,7 +246,7 @@ contract FoodGathering is Ownable, Pausable {
     * @param _antFoodTokenId ant food token id
     */
 
-    function setANTFoodTokenId(uint256 _antFoodTokenId) external onlyOwner {
+    function setANTFoodTokenId(uint256 _antFoodTokenId) external onlyMinterOrOwner {
         antFoodTokenId = _antFoodTokenId;
     }
 
@@ -255,7 +255,7 @@ contract FoodGathering is Ownable, Pausable {
     * @dev This function can only be called by the owner
     * @param _antCoin ant coin contract address
     */
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
@@ -264,7 +264,7 @@ contract FoodGathering is Ownable, Pausable {
     * @dev This function can only be called by the owner
     * @param _antShop ant shop contract address
     */
-    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+    function setANTShopContract(IANTShop _antShop) external onlyMinterOrOwner {
         antShop = _antShop;
     }
 

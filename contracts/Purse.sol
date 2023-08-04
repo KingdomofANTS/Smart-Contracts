@@ -81,9 +81,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     // total number of minted Premium ANT
     uint256 public minted = 0;
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'Purse: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "Purse: Caller is not the owner or minter");
         _;
     }
 
@@ -340,7 +339,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param quantity purse token qunatity to mint
     */
 
-    function mint(address recipient, uint256 quantity) external override onlyMinter {
+    function mint(address recipient, uint256 quantity) external override onlyMinterOrOwner {
         for(uint256 i = 1; i <= quantity; i ++) {
             purseInfo[minted + i] = getPurseCategoryRarity(minted + i);
             purseCategories[purseInfo[minted + i]].minted += 1;
@@ -364,7 +363,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param _minted array of minted token amounts
     */
 
-    function addMultiPurseCategories(string[] memory _names, uint256[] memory _rarities, uint256[] memory _antFoodRarities, uint256[] memory _levelingPotionsRarities, uint256[] memory _lotteryTicketRarities, uint256[] memory _antFoodRewardAmounts, uint256[] memory _levelingPotionAmounts, uint256[] memory _lotteryTicketAmounts, uint256[] memory _minted) external onlyOwner {
+    function addMultiPurseCategories(string[] memory _names, uint256[] memory _rarities, uint256[] memory _antFoodRarities, uint256[] memory _levelingPotionsRarities, uint256[] memory _lotteryTicketRarities, uint256[] memory _antFoodRewardAmounts, uint256[] memory _levelingPotionAmounts, uint256[] memory _lotteryTicketAmounts, uint256[] memory _minted) external onlyMinterOrOwner {
         require(_names.length == _rarities.length && _rarities.length == _antFoodRarities.length && _antFoodRarities.length == _levelingPotionsRarities.length && _levelingPotionsRarities.length == _lotteryTicketRarities.length && _lotteryTicketRarities.length == _antFoodRewardAmounts.length && _antFoodRewardAmounts.length == _levelingPotionAmounts.length && _levelingPotionAmounts.length == _lotteryTicketAmounts.length, "Purse: invalid purse category data");
         require(getSumValue(_rarities) == 100, "Purse: invalid purse category data");
         delete purseCategories;
@@ -393,7 +392,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param _lotteryTicketAmounts array of lottery ticket amounts
     */
 
-    function updatePurseCategories(string[] memory _names, uint256[] memory _rarities, uint256[] memory _antFoodRarities, uint256[] memory _levelingPotionsRarities, uint256[] memory _lotteryTicketRarities, uint256[] memory _antFoodRewardAmounts, uint256[] memory _levelingPotionAmounts, uint256[] memory _lotteryTicketAmounts) external onlyOwner {
+    function updatePurseCategories(string[] memory _names, uint256[] memory _rarities, uint256[] memory _antFoodRarities, uint256[] memory _levelingPotionsRarities, uint256[] memory _lotteryTicketRarities, uint256[] memory _antFoodRewardAmounts, uint256[] memory _levelingPotionAmounts, uint256[] memory _lotteryTicketAmounts) external onlyMinterOrOwner {
         require(_names.length == _rarities.length && _rarities.length == _antFoodRarities.length && _antFoodRarities.length == _levelingPotionsRarities.length && _levelingPotionsRarities.length == _lotteryTicketRarities.length && _lotteryTicketRarities.length == _antFoodRewardAmounts.length && _antFoodRewardAmounts.length == _levelingPotionAmounts.length && _levelingPotionAmounts.length == _lotteryTicketAmounts.length, "Purse: invalid purse category data");
         require(_names.length == purseCategories.length, "Purse: length doesn't match with purseCategory");
         require(getSumValue(_rarities) == 100, "Purse: invalid purse category data");
@@ -414,7 +413,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param _antFoodTokenId the ANT Food token id of ANTShop
     */
 
-    function setAntFoodTokenId(uint256 _antFoodTokenId) external onlyOwner {
+    function setAntFoodTokenId(uint256 _antFoodTokenId) external onlyMinterOrOwner {
         antFoodTokenId = _antFoodTokenId;
     }
 
@@ -424,7 +423,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param _levelingPotionTokenId the leveling potion token id of ANTShop
     */
 
-    function setLevelingPotionTokenId(uint256 _levelingPotionTokenId) external onlyOwner {
+    function setLevelingPotionTokenId(uint256 _levelingPotionTokenId) external onlyMinterOrOwner {
         levelingPotionTokenId = _levelingPotionTokenId;
     }
 
@@ -434,7 +433,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param _randomizer Randomizer contract address
     */
 
-    function setRandomizerContract(IRandomizer _randomizer) external onlyOwner {
+    function setRandomizerContract(IRandomizer _randomizer) external onlyMinterOrOwner {
         randomizer = _randomizer;
     }
 
@@ -444,7 +443,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param _antShop Reference to ANTShop
     */
 
-    function setANTShopContract(IANTShop _antShop) external onlyOwner {
+    function setANTShopContract(IANTShop _antShop) external onlyMinterOrOwner {
         require(address(_antShop) != address(0x0), "Purse: ANTShop address can't be null address");
         antShop = _antShop;
     }
@@ -455,7 +454,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param _antLottery Reference to ANTLottery
     */
 
-    function setANTLotteryContract(IANTLottery _antLottery) external onlyOwner {
+    function setANTLotteryContract(IANTLottery _antLottery) external onlyMinterOrOwner {
         require(address(_antLottery) != address(0x0), "Purse: ANTLottery address can't be null address");
         antLottery = _antLottery;
     }

@@ -86,7 +86,7 @@ describe("Purse", function () {
         });
 
         it("setAntFoodTokenId: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).setAntFoodTokenId(0)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(PurseContract.connect(badActor).setAntFoodTokenId(0)).to.be.revertedWith("Purse: Caller is not the owner or minter");
         })
 
         it("setAntFoodTokenId: should work if caller is the owner", async () => {
@@ -98,7 +98,7 @@ describe("Purse", function () {
         })
 
         it("setLevelingPotionTokenId: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).setLevelingPotionTokenId(0)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(PurseContract.connect(badActor).setLevelingPotionTokenId(0)).to.be.revertedWith("Purse: Caller is not the owner or minter");
         })
 
         it("setLevelingPotionTokenId: should work if caller is the owner", async () => {
@@ -111,7 +111,7 @@ describe("Purse", function () {
 
 
         it("setRandomizerContract: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).setRandomizerContract(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(PurseContract.connect(badActor).setRandomizerContract(user1.address)).to.be.revertedWith("Purse: Caller is not the owner or minter");
         })
 
         it("setRandomizerContract: should work if caller is the owner", async () => {
@@ -126,7 +126,7 @@ describe("Purse", function () {
         // ["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])
 
         it("addMultiPurseCategories: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).addMultiPurseCategories(["name"], [100], [40], [40], [20], [1], [1], [1], [1])).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(PurseContract.connect(badActor).addMultiPurseCategories(["name"], [100], [40], [40], [20], [1], [1], [1], [1])).to.be.revertedWith("Purse: Caller is not the owner or minter");
         })
 
         it("addMultiPurseCategories: should fail if param array length doens't match", async () => {
@@ -151,7 +151,7 @@ describe("Purse", function () {
         })
 
         it("updatePurseCategories: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).updatePurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100])).to.be.revertedWith("Ownable: caller is not the owner")
+            await expect(PurseContract.connect(badActor).updatePurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100])).to.be.revertedWith("Purse: Caller is not the owner or minter")
         })
 
         it("updatePurseCategories: should fail if updated purse categories array length doesn't match", async () => {
@@ -180,7 +180,7 @@ describe("Purse", function () {
 
         it("mint: should fail if caller is not minter", async () => {
             await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])
-            await expect(PurseContract.connect(user1).mint(user1.address, 2)).to.be.revertedWith("Purse: Caller is not the minter")
+            await expect(PurseContract.connect(user1).mint(user1.address, 2)).to.be.revertedWith("Purse: Caller is not the owner or minter")
         })
 
         it("buyPurseTokens: should fail if matic mint amount is not enough", async () => {

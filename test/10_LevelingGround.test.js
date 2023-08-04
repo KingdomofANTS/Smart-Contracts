@@ -84,7 +84,7 @@ describe("LevelingGround", function () {
         });
 
         it("setStakeFeeAmount: should fail if caller is not the owner", async () => {
-            await expect(LevelingGroundContract.connect(badActor).setStakeFeeAmount(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(LevelingGroundContract.connect(badActor).setStakeFeeAmount(1)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
         })
 
         it("setStakeFeeAmount: should work if caller is the owner", async () => {
@@ -96,7 +96,7 @@ describe("LevelingGround", function () {
         })
 
         it("setBasicWiseANTBatchIndex: should fail if caller is not the owner", async () => {
-            await expect(LevelingGroundContract.connect(badActor).setBasicWiseANTBatchIndex(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(LevelingGroundContract.connect(badActor).setBasicWiseANTBatchIndex(1)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
         })
 
         it("setBasicWiseANTBatchIndex: should work if caller is the owner", async () => {
@@ -108,7 +108,7 @@ describe("LevelingGround", function () {
         })
 
         it("setPremiumWiseANTBatchIndex: should fail if caller is not the owner", async () => {
-            await expect(LevelingGroundContract.connect(badActor).setPremiumWiseANTBatchIndex(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(LevelingGroundContract.connect(badActor).setPremiumWiseANTBatchIndex(1)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
         })
 
         it("setPremiumWiseANTBatchIndex: should work if caller is the owner", async () => {
@@ -120,7 +120,7 @@ describe("LevelingGround", function () {
         })
 
         it("setBasicWiseANTRewardSpeed: should fail if caller is not the owner", async () => {
-            await expect(LevelingGroundContract.connect(badActor).setBasicWiseANTRewardSpeed(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(LevelingGroundContract.connect(badActor).setBasicWiseANTRewardSpeed(1)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
         })
 
         it("setBasicWiseANTRewardSpeed: should work if caller is the owner", async () => {
@@ -132,7 +132,7 @@ describe("LevelingGround", function () {
         })
 
         it("setPremiumWiseANTRewardSpeed: should fail if caller is not the owner", async () => {
-            await expect(LevelingGroundContract.connect(badActor).setPremiumWiseANTRewardSpeed(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(LevelingGroundContract.connect(badActor).setPremiumWiseANTRewardSpeed(1)).to.be.revertedWith("LevelingGround: Caller is not the owner or minter");
         })
 
         it("setPremiumWiseANTRewardSpeed: should work if caller is the owner", async () => {

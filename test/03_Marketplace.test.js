@@ -61,7 +61,7 @@ describe("Marketplace", function () {
         })
 
         it("setMintInfo: should fail if caller is not the owner", async () => {
-            await expect(MarketplaceContract.connect(badActor).setMintInfo(0, 1, ANTCoinContract.address, 1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(MarketplaceContract.connect(badActor).setMintInfo(0, 1, ANTCoinContract.address, 1)).to.be.revertedWith("Marketplace: Caller is not the owner or minter");
         })
 
         it("setMintInfo: should fail if token address is null", async () => {
@@ -82,7 +82,7 @@ describe("Marketplace", function () {
         })
 
         it("setMintMethod: should fail if caller is not the owner", async () => {
-            await expect(MarketplaceContract.connect(badActor).setMintMethod(0, false)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(MarketplaceContract.connect(badActor).setMintMethod(0, false)).to.be.revertedWith("Marketplace: Caller is not the owner or minter");
         })
 
         it("setMintMethod: should work if caller is owner", async () => {

@@ -110,11 +110,11 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     // premium ant unstake event
     event WorkforceUnStakePremiumANT(uint256 id, address owner);
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'Workforce: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "Workforce: Caller is not the owner or minter");
         _;
     }
+
 
     constructor(IANTCoin _antCoin, IPremiumANT _premiumANT, IBasicANT _basicANT) {
         antCoin = _antCoin;
@@ -380,7 +380,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = premiumANTWorkforce[_tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'Workforce: you are not owner of this premium ant');
         uint256 rewardAmount = pendingRewardOfPremiumToken(_tokenId);
-        premiumANT.downgradeLevel(_tokenId, initLevelAfterUnstake);
+        premiumANT.setLevel(_tokenId, initLevelAfterUnstake);
         premiumANT.transferFrom(address(this), _msgSender(), _tokenId);
         antCoin.transfer(_msgSender(), _stakeANTInfo.antCStakeAmount);
         antCoin.mint(_msgSender(), rewardAmount);
@@ -403,7 +403,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = basicANTWorkforce[_tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'Workforce: you are not owner of this basic ant');
         uint256 rewardAmount = pendingRewardOfBasicToken(_tokenId);
-        basicANT.downgradeLevel(_tokenId, initLevelAfterUnstake);
+        basicANT.setLevel(_tokenId, initLevelAfterUnstake);
         basicANT.transferFrom(address(this), _msgSender(), _tokenId);
         antCoin.transfer(_msgSender(), _stakeANTInfo.antCStakeAmount);
         antCoin.mint(_msgSender(), rewardAmount);
@@ -432,7 +432,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _antCoin ANTCoin contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
@@ -442,7 +442,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _premiumANT Premium ANT contract address
     */
 
-    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
         premiumANT = _premiumANT;
     }
 
@@ -452,7 +452,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _basicANT Basic ANT contract address
     */
 
-    function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+    function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
         basicANT = _basicANT;
     }
 
@@ -462,7 +462,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _maxStakePeriod max stake period timestamp
     */
 
-    function setMaxStakePeriod(uint256 _maxStakePeriod) external onlyOwner {
+    function setMaxStakePeriod(uint256 _maxStakePeriod) external onlyMinterOrOwner {
         maxStakePeriod = _maxStakePeriod;
     }
 
@@ -472,7 +472,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _cycleStakePeriod one reward cycle period timestamp
     */
 
-    function setCycleStakePeriod(uint256 _cycleStakePeriod) external onlyOwner {
+    function setCycleStakePeriod(uint256 _cycleStakePeriod) external onlyMinterOrOwner {
         cycleStakePeriod = _cycleStakePeriod;
     }
 
@@ -482,7 +482,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _level init level value
     */
 
-    function setInitLevelAfterUnstake(uint256 _level) external onlyOwner {
+    function setInitLevelAfterUnstake(uint256 _level) external onlyMinterOrOwner {
         initLevelAfterUnstake = _level;
     }
 
@@ -492,7 +492,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _extraAPY extra apy percentage e.g. 500 = 5.00 %
     */
 
-    function setExtraAPY(uint256 _extraAPY) external onlyOwner {
+    function setExtraAPY(uint256 _extraAPY) external onlyMinterOrOwner {
         extraAPY = _extraAPY;
     }
 
@@ -502,7 +502,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _batchIndexForExtraAPY batch index value for extra apy
     */
 
-    function setBatchIndexForExtraAPY(uint256 _batchIndexForExtraAPY) external onlyOwner {
+    function setBatchIndexForExtraAPY(uint256 _batchIndexForExtraAPY) external onlyMinterOrOwner {
         batchIndexForExtraAPY = _batchIndexForExtraAPY;
     }
 
@@ -512,7 +512,7 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     * @param _limitStakeAmount limit antcoin stake amount
     */
 
-    function setLimitAntCoinStakeAmount(uint256 _limitStakeAmount) external onlyOwner {
+    function setLimitAntCoinStakeAmount(uint256 _limitStakeAmount) external onlyMinterOrOwner {
         limitAntCoinStakeAmount = _limitStakeAmount;
     }
 

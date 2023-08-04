@@ -500,7 +500,7 @@ describe("Workforce", function () {
         })
 
         it("setLimitAntCoinStakeAmount: should fail if caller is not the owner", async () => {
-            await expect(WorkforceContract.connect(badActor).setLimitAntCoinStakeAmount(100)).to.be.revertedWith("Ownable: caller is not the owner")
+            await expect(WorkforceContract.connect(badActor).setLimitAntCoinStakeAmount(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter")
         })
 
         it("setLimitAntCoinStakeAmount: shoudl work if caller is the owner", async () => {

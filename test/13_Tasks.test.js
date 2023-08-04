@@ -102,11 +102,11 @@ describe("Tasks", function () {
         });
 
         it("contracts setting: should fail if caller is not the owner", async () => {
-            await expect(TasksContract.connect(badActor).setRandomizerContract(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(TasksContract.connect(badActor).setANTCoinContract(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(TasksContract.connect(badActor).setPurseContract(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(TasksContract.connect(badActor).setBasicANTContract(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(TasksContract.connect(badActor).setPremiumANTContract(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(TasksContract.connect(badActor).setRandomizerContract(user1.address)).to.be.revertedWith("Tasks: Caller is not the owner or minter");
+            await expect(TasksContract.connect(badActor).setANTCoinContract(user1.address)).to.be.revertedWith("Tasks: Caller is not the owner or minter");
+            await expect(TasksContract.connect(badActor).setPurseContract(user1.address)).to.be.revertedWith("Tasks: Caller is not the owner or minter");
+            await expect(TasksContract.connect(badActor).setBasicANTContract(user1.address)).to.be.revertedWith("Tasks: Caller is not the owner or minter");
+            await expect(TasksContract.connect(badActor).setPremiumANTContract(user1.address)).to.be.revertedWith("Tasks: Caller is not the owner or minter");
         })
 
         it("contract setting: should update the contract addresses properly if caller is owner", async () => {
@@ -130,7 +130,7 @@ describe("Tasks", function () {
         })
 
         it("setMinimumLevelForStake: should fail if caller is not the owner", async () => {
-            await expect(TasksContract.connect(badActor).setMinimumLevelForStake(10)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(TasksContract.connect(badActor).setMinimumLevelForStake(10)).to.be.revertedWith("Tasks: Caller is not the owner or minter");
         })
 
         it("setMinimumLevelForStake: should work if caller is the owner", async () => {
@@ -140,7 +140,7 @@ describe("Tasks", function () {
         })
 
         it("setANTCStakeFee: should fail if caller is not the owner", async () => {
-            await expect(TasksContract.connect(badActor).setANTCStakeFee(10)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(TasksContract.connect(badActor).setANTCStakeFee(10)).to.be.revertedWith("Tasks: Caller is not the owner or minter");
         })
 
         it("setANTCStakeFee: should work if caller is the owner", async () => {
@@ -150,7 +150,7 @@ describe("Tasks", function () {
         })
 
         it("setRewardLevels: should fail if caller is not the owner", async () => {
-            await expect(TasksContract.connect(badActor).setRewardLevels([[2, 5], [2, 5], [2, 5], [2, 5], [2, 5]])).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(TasksContract.connect(badActor).setRewardLevels([[2, 5], [2, 5], [2, 5], [2, 5], [2, 5]])).to.be.revertedWith("Tasks: Caller is not the owner or minter");
         })
 
         it("setRewardLevels: should fail if reward info is incorrect", async () => {
@@ -166,7 +166,7 @@ describe("Tasks", function () {
         })
 
         it("setRewardsAmount: should fail if caller is not the owner", async () => {
-            await expect(TasksContract.connect(badActor).setRewardsAmount([1, 2, 3, 4, 5])).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(TasksContract.connect(badActor).setRewardsAmount([1, 2, 3, 4, 5])).to.be.revertedWith("Tasks: Caller is not the owner or minter");
         })
 
         it("setRewardsAmount: should work if caller is the owner", async () => {
@@ -254,7 +254,7 @@ describe("Tasks", function () {
                 await BasicANTContract.setBatchInfo(0, "name1", "testBaseURI1", maticMintPrice, ANTCoinContract.address, tokenAmountForMint);
                 await BasicANTContract.connect(user1).mint(0, user1.address, 10, { value: maticMintPrice * 10 });
                 await ANTCoinContract.transfer(user1.address, antcoinInitAmount);
-                await BasicANTContract.downgradeLevel(1, 8);
+                await BasicANTContract.setLevel(1, 8);
                 const tx = await TasksContract.connect(user1).stakeBasicANT(1);
                 expect(tx).to.emit(TasksContract, "TasksStakeBasicANT").withArgs(1, user1.address);
                 const totalBasicANTStaked = await TasksContract.totalBasicANTStaked();
