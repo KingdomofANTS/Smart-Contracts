@@ -447,7 +447,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice UnStake baisc ant from Bosses Pool with earning rewards
+    * @notice UnStake basic ant from Bosses Pool with earning rewards
     *         if you unstake ant early, you will lose 20% of ant coin staked amount
     * @param _tokenId basic ant token id for unStake
     */
