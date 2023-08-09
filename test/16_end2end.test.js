@@ -780,7 +780,49 @@ describe("End2End", function () {
         })
 
         describe("Vesting", async () => {
+            it("all initial setting functions should work properly", async () => {
+                await expect(VestingContract.connect(user1).addVestingPoolInfo("Private sale", 20, 9)).to.be.revertedWith("Vesting: Caller is not the owner or minter");
+                await VestingContract.addVestingPoolInfo("Private sale", 20, 9);
+                await VestingContract.addVestingPoolInfo("Public sale", 40, 6);
+                await VestingContract.addVestingPoolInfo("Team", 10, 12);
+                await VestingContract.addVestingPoolInfo("Advisory", 10, 12);
+                await VestingContract.addVestingPoolInfo("Reserve", 0, 12);
+                await VestingContract.addVestingPoolInfo("Foundation", 10, 24)
 
+                const poolInfo1 = await VestingContract.getVestingPoolInfo(2);
+                expect(poolInfo1.poolName).to.be.equal("Team");
+                expect(poolInfo1.initReleaseRate).to.be.equal(10);
+                expect(poolInfo1.maxReleaseCount).to.be.equal(12);
+            })
+
+            it("launchVestingPool & releaseVestingPool & depositANTCoinToVestingPool should work properly", async () => {
+                await VestingContract.addVestingPoolInfo("Private sale", 20, 9);
+                await VestingContract.addVestingPoolInfo("Public sale", 40, 6);
+                await VestingContract.addVestingPoolInfo("Team", 10, 12);
+                await VestingContract.addVestingPoolInfo("Advisory", 10, 12);
+                await VestingContract.addVestingPoolInfo("Reserve", 0, 12);
+                await VestingContract.addVestingPoolInfo("Foundation", 10, 24)
+                const initOwnerBalance = await ANTCoinContract.balanceOf(deployer.address);
+                const depositTokenAmount = utils.parseEther("1000000");
+                await VestingContract.depositANTCoinToVestingPool(2, depositTokenAmount);
+                const ownerBalance1 = await ANTCoinContract.balanceOf(deployer.address);
+                expect(ownerBalance1).to.be.equal(initOwnerBalance.sub(depositTokenAmount));
+                await VestingContract.addUserAddressesByPool(2, [user1.address, user2.address, user3.address]);
+                await VestingContract.launchVestingPool(2);
+                const user1ANTBalance1 = await ANTCoinContract.balanceOf(user1.address);
+                const user2ANTBalance1 = await ANTCoinContract.balanceOf(user2.address);
+                const user3ANTBalance1 = await ANTCoinContract.balanceOf(user3.address);
+                const expectedANTBalance1 = (depositTokenAmount.mul(10).div(100)).div(3)
+                expect(user1ANTBalance1).to.be.equal(user2ANTBalance1).to.be.equal(user3ANTBalance1).to.be.equal(expectedANTBalance1);
+                const releaseCycle = await VestingContract.releaseCycle();
+                await increaseTime(Number(releaseCycle));
+                await VestingContract.releaseVestingPool(2);
+                const user1ANTBalance2 = await ANTCoinContract.balanceOf(user1.address);
+                const user2ANTBalance2 = await ANTCoinContract.balanceOf(user2.address);
+                const user3ANTBalance2 = await ANTCoinContract.balanceOf(user3.address);
+                const expectedANTBalance2 = expectedANTBalance1.add((depositTokenAmount.mul(90).div(100)).div(12).div(3))
+                expect(user1ANTBalance2).to.be.equal(user2ANTBalance2).to.be.equal(user3ANTBalance2).to.be.equal(expectedANTBalance2);
+            })
         })
     });
 });
