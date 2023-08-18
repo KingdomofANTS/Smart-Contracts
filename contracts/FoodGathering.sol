@@ -102,10 +102,10 @@ contract FoodGathering is Ownable, Pausable {
     */
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice       Transfer ETH and return the success status.
+    * @dev          This function only forwards 30,000 gas to the callee.
+    * @param to     Address for ETH to be send to
+    * @param value  Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -147,9 +147,9 @@ contract FoodGathering is Ownable, Pausable {
     }
 
     /**
-    * @notice Function to stake ant coin amount for getting ant food reward
-    * @dev need to pay ant coin stake fee amount
-    * @param _antCAmount ant coin stake amount
+    * @notice               Function to stake ant coin amount for getting ant food reward
+    * @dev                  need to pay ant coin stake fee amount
+    * @param _antCAmount    ant coin stake amount
     */
 
     function stake(uint256 _antCAmount) external whenNotPaused {
@@ -205,45 +205,45 @@ contract FoodGathering is Ownable, Pausable {
     */
 
     /**
-    * @notice Function to set staking fee amount.
-    * @dev This function can only be called by the owner
-    * @param _stakeFeeAmount staking fee amount
+    * @notice                   Function to set staking fee amount.
+    * @dev                      This function can only be called by the owner
+    * @param _stakeFeeAmount    staking fee amount
     */
     function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyMinterOrOwner {
         stakeFeeAmount = _stakeFeeAmount;
     }
 
     /**
-    * @notice Function to set max staking amount.
-    * @dev This function can only be called by the owner
-    * @param _maxAmountForStake max staking amount
+    * @notice                       Function to set max staking amount.
+    * @dev                          This function can only be called by the owner
+    * @param _maxAmountForStake     max staking amount
     */
     function setMaxAmountForStake(uint256 _maxAmountForStake) external onlyMinterOrOwner {
         maxAmountForStake = _maxAmountForStake;
     }
 
     /**
-    * @notice Function to set one cycle amount for reward
-    * @dev This function can only be called by the owner
-    * @param _cycleStakedAmount one cycle staked amount
+    * @notice                       Function to set one cycle amount for reward
+    * @dev                          This function can only be called by the owner
+    * @param _cycleStakedAmount     one cycle staked amount
     */
     function setCycleStakedAmount(uint256 _cycleStakedAmount) external onlyMinterOrOwner {
         cycleStakedAmount = _cycleStakedAmount;
     }
 
     /**
-    * @notice Function to set one cycle duration for reward
-    * @dev This function can only be called by the owner
-    * @param _cycleTimestamp one cycle staked duration
+    * @notice                   Function to set one cycle duration for reward
+    * @dev                      This function can only be called by the owner
+    * @param _cycleTimestamp    one cycle staked duration
     */
     function setCycleTimestamp(uint256 _cycleTimestamp) external onlyMinterOrOwner {
         cycleTimestamp = _cycleTimestamp;
     }
 
     /**
-    * @notice Function to set ant food token id
-    * @dev This function can only be called by the owner
-    * @param _antFoodTokenId ant food token id
+    * @notice                   Function to set ant food token id
+    * @dev                      This function can only be called by the owner
+    * @param _antFoodTokenId    ant food token id
     */
 
     function setANTFoodTokenId(uint256 _antFoodTokenId) external onlyMinterOrOwner {
@@ -251,36 +251,36 @@ contract FoodGathering is Ownable, Pausable {
     }
 
     /**
-    * @notice Function to set ant coin contract address
-    * @dev This function can only be called by the owner
-    * @param _antCoin ant coin contract address
+    * @notice           Function to set ant coin contract address
+    * @dev              This function can only be called by the owner
+    * @param _antCoin   ant coin contract address
     */
     function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
     /**
-    * @notice Function to set ant shop contract address
-    * @dev This function can only be called by the owner
-    * @param _antShop ant shop contract address
+    * @notice           Function to set ant shop contract address
+    * @dev              This function can only be called by the owner
+    * @param _antShop   ant shop contract address
     */
     function setANTShopContract(IANTShop _antShop) external onlyMinterOrOwner {
         antShop = _antShop;
     }
 
     /**
-    * @notice Function to grant mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to get minter role
+    * @notice           Function to grant mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to get minter role
     */
     function addMinterRole(address _address) external onlyOwner {
         minters[_address] = true;
     }
 
     /**
-    * @notice Function to revoke mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to revoke minter role
+    * @notice           Function to revoke mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to revoke minter role
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
@@ -295,20 +295,20 @@ contract FoodGathering is Ownable, Pausable {
     }
 
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
-    * @param amount Amount of ETH to send
+    * @notice           Allows owner to withdraw ETH funds to an address
+    * @dev              wraps _user in payable to fix address -> address payable
+    * @param to         Address for ETH to be send to
+    * @param amount     Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
         require(_safeTransferETH(to, amount));
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
-    * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @notice                   Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract     token smart contract address for withraw
+    * @param to                 wallet address for token to be send to
+    * @param amount             withdraw token amount
     */
     function withdrawToken(
         address _tokenContract,

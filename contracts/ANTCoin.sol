@@ -91,10 +91,10 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     }
 
     /**
-    * @notice Mint ANT Coin tokens to receipt address
-    * @dev Modifer to require msg.sender to be minter
-    * @param receipt Receipt address to mint the tokens
-    * @param _amount The amount to mint the tokens
+    * @notice           Mint ANT Coin tokens to receipt address
+    * @dev              Modifer to require msg.sender to be minter
+    * @param receipt    Receipt address to mint the tokens
+    * @param _amount    The amount to mint the tokens
     */
 
     function mint(address receipt, uint256 _amount) public override whenNotPaused onlyMinterOrOwner {
@@ -166,10 +166,10 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     }
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice       Transfer ETH and return the success status.
+    * @dev          This function only forwards 30,000 gas to the callee.
+    * @param to     Address for ETH to be send to
+    * @param value  Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -177,9 +177,9 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     }
 
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
+    * @notice       Allows owner to withdraw ETH funds to an address
+    * @dev          wraps _user in payable to fix address -> address payable
+    * @param to     Address for ETH to be send to
     * @param amount Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
@@ -187,10 +187,10 @@ contract ANTCoin is ERC20, IANTCoin, Ownable, Pausable {
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
-    * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @notice                   Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract     Address for the token
+    * @param to                 Address for token to be send to
+    * @param amount             Amount of token to send
     */
     function withdrawToken(
         address _tokenContract,

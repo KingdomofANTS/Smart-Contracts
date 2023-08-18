@@ -40,51 +40,28 @@ W: https://kingdomofants.io
 
 pragma solidity ^0.8.13;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
-import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
-import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
+import '@chainlink/contracts/src/v0.8/VRFConsumerBase.sol';
 import "./interfaces/IRandomizer.sol";
 import "./interfaces/IANTLottery.sol";
 
-contract Randomizer is VRFConsumerBaseV2, ConfirmedOwner, IRandomizer {
+contract Randomizer_Old is VRFConsumerBase, IRandomizer, Ownable {
     using SafeERC20 for IERC20;
-
-    struct RequestStatus {
-        bool fulfilled; // whether the request has been successfully fulfilled
-        bool exists; // whether a requestId exists
-        uint256[] randomWords;
-    }
-
-    VRFCoordinatorV2Interface COORDINATOR;
-    // Your subscription ID.
-    uint64 s_subscriptionId;
-    // past requests Id.
-    uint256[] public requestIds;
-    uint256 public lastRequestId;
-    uint32 numWords = 2;
-    uint32 callbackGasLimit = 100000;
-    uint16 requestConfirmations = 3;
 
     address public antLottery;
     bytes32 public keyHash;
     bytes32 public latestRequestId;
     uint32 public randomResult;
- 
+    uint256 public fee;
     uint256 public latestLotteryId;
-
-    event RequestSent(uint256 requestId, uint32 numWords);
-    event RequestFulfilled(uint256 requestId, uint256[] randomWords);
-
 
     // minters
     mapping(address => bool) private minters;
 
-    mapping(uint256 => RequestStatus) public s_requests; /* requestId --> requestStatus */
-
     modifier onlyMinterOrOwner() {
-        require(minters[msg.sender] || msg.sender == owner(), "Randomizer: Caller is not the owner or minter");
+        require(minters[_msgSender()] || _msgSender() == owner(), "Randomizer: Caller is not the owner or minter");
         _;
     }
 
@@ -95,12 +72,11 @@ contract Randomizer is VRFConsumerBaseV2, ConfirmedOwner, IRandomizer {
      * Once the lottery contract is deployed, setLotteryAddress must be called.
      * https://docs.chain.link/docs/vrf-contracts/
      * @param _vrfCoordinator: address of the VRF coordinator
-     * @param _keyHash: valid key hash
+     * @param _linkToken: address of the LINK token
      */
-    constructor(bytes32 _keyHash, address _vrfCoordinator, uint64 subscriptionId) VRFConsumerBaseV2(_vrfCoordinator) ConfirmedOwner(msg.sender) {
-        COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
-        s_subscriptionId = subscriptionId;
+    constructor(bytes32 _keyHash, address _vrfCoordinator, address _linkToken, uint256 _vrfFee) VRFConsumerBase(_vrfCoordinator, _linkToken) {
         keyHash = _keyHash;
+        fee = _vrfFee; // 0.1 LINK (Varies by network)
     }
 
     /**
@@ -117,24 +93,18 @@ contract Randomizer is VRFConsumerBaseV2, ConfirmedOwner, IRandomizer {
     function getRandomNumber() external override {
         require(msg.sender == antLottery, "Only antLottery");
         require(keyHash != bytes32(0), "Must have valid key hash");
-        uint256 requestId = COORDINATOR.requestRandomWords(
-            keyHash,
-            s_subscriptionId,
-            requestConfirmations,
-            callbackGasLimit,
-            numWords
-        );
-        s_requests[requestId] = RequestStatus({
-            randomWords: new uint256[](0),
-            exists: true,
-            fulfilled: false
-        });
-        requestIds.push(requestId);
-        lastRequestId = requestId;
-        requestIds.push(requestId);
-        emit RequestSent(requestId, numWords);
+        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK tokens");
+
+        latestRequestId = requestRandomness(keyHash, fee);
     }
- 
+
+    /**
+     * @notice Change the fee
+     * @param _fee: new fee (in LINK)
+     */
+    function setFee(uint256 _fee) external onlyMinterOrOwner {
+        fee = _fee;
+    }
 
     /**
      * @notice Change the keyHash
@@ -179,38 +149,10 @@ contract Randomizer is VRFConsumerBaseV2, ConfirmedOwner, IRandomizer {
     /**
      * @notice Callback function used by ChainLink's VRF Coordinator
      */
-
-    // function fulfillRandomWords(
-    //     uint256 _requestId,
-    //     uint256[] memory _randomWords
-    // ) internal override {
-    //     require(s_requests[_requestId].exists, "request not found");
-    //     require(uint256(lastRequestId) == uint256(_requestId), "Wrong requestId");
-    //     s_requests[_requestId].fulfilled = true;
-    //     s_requests[_requestId].randomWords = _randomWords;
-    //     randomResult = uint32(1000000 + (_randomWords[0] % 1000000));
-    //     // latestLotteryId = IANTLottery(antLottery).viewCurrentLotteryId();
-    //     emit RequestFulfilled(_requestId, _randomWords);
-    // }
-
-    function fulfillRandomWords(
-        uint256 _requestId,
-        uint256[] memory _randomWords
-    ) internal override {
-        require(s_requests[_requestId].exists, "request not found");
-        s_requests[_requestId].fulfilled = true;
-        s_requests[_requestId].randomWords = _randomWords;
-        randomResult = uint32(1000000 + (_randomWords[0] % 1000000));
+    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
+        require(latestRequestId == requestId, "Wrong requestId");
+        randomResult = uint32(1000000 + (randomness % 1000000));
         latestLotteryId = IANTLottery(antLottery).viewCurrentLotteryId();
-        emit RequestFulfilled(_requestId, _randomWords);
-    }
-
-    function getRequestStatus(
-        uint256 _requestId
-    ) external view returns (bool fulfilled, uint256[] memory randomWords) {
-        require(s_requests[_requestId].exists, "request not found");
-        RequestStatus memory request = s_requests[_requestId];
-        return (request.fulfilled, request.randomWords);
     }
 
     /**

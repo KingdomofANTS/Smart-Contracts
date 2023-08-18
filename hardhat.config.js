@@ -6,7 +6,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: "0.8.13", 
+        version: "0.8.13",
         settings: {
           optimizer: {
             enabled: true,
@@ -17,6 +17,12 @@ module.exports = {
     ],
   },
   networks: {
+    hardhat: {
+      forking: {
+        url: "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY_TESTNET,
+        blockNumber: 39062652
+      }
+    },
     mumbai: {
       chainId: 80001,
       url: "https://polygon-mumbai.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY_TESTNET,
