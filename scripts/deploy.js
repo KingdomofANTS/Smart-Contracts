@@ -52,18 +52,18 @@ async function main() {
 
   // ramdomizer
   const polyKeyHash = "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
-  const polyVrfCoordinator = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed"
-  const polyLinkToken = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
-  const vrFee = "1000000000000"
+  const polyVrfCoordinator = "0x7a1bac17ccc5b313516c5e16fb24f7659aa5ebed"
+  const subScriptionId = 5715;
   const Randomizer = await hre.ethers.getContractFactory("Randomizer");
-  const RandomizerContract = await Randomizer.deploy(polyKeyHash, polyVrfCoordinator, polyLinkToken, vrFee);
+  const RandomizerContract = await Randomizer.deploy(polyKeyHash, polyVrfCoordinator, subScriptionId);
   await RandomizerContract.deployed();
-
+  
   // ant lottery
   const ANTLottery = await ethers.getContractFactory("ANTLottery");
   const ANTLotteryContract = await ANTLottery.deploy(RandomizerContract.address, ANTCoinContract.address);
   await ANTLotteryContract.deployed();
   await ANTLotteryContract.setOperatorAndTreasuryAndInjectorAddresses(deployer.address, deployer.address);
+  await RandomizerContract.setLotteryAddress(ANTLotteryContract.address)
 
 
   /*------------------It needs to be confirmed while testing ----------------- */
@@ -222,7 +222,7 @@ async function main() {
 
   await hre.run("verify:verify", {
     address: RandomizerContract.address,
-    constructorArguments: [polyKeyHash, polyVrfCoordinator, polyLinkToken, vrFee],
+    constructorArguments: [polyKeyHash, polyVrfCoordinator, subScriptionId],
   });
 
   await hre.run("verify:verify", {

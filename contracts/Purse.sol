@@ -108,10 +108,10 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     */
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice           Transfer ETH and return the success status.
+    * @dev              This function only forwards 30,000 gas to the callee.
+    * @param to         Address for ETH to be send to
+    * @param value      Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -127,8 +127,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Return sum value of arr array
-    * @param arr uint256 array to calculate the sum value
+    * @notice       Return sum value of arr array
+    * @param arr    uint256 array to calculate the sum value
     */
 
     function getSumValue(uint256[] memory arr) internal pure returns (uint256) {
@@ -149,8 +149,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Return randomness pruse category id
-    * @param _tokenId purse token id to get random category item
+    * @notice           Return randomness pruse category id
+    * @param _tokenId   purse token id to get random category item
     */
 
     function getPurseCategoryRarity(uint256 _tokenId) internal view returns(uint256 categoryType) {
@@ -188,8 +188,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Return category name of token Id
-    * @param tokenId purse token id to get category data
+    * @notice           Return category name of token Id
+    * @param tokenId    purse token id to get category data
     */
 
     function getPurseCategoryInfoOfToken(uint256 tokenId) public view returns(string memory) {
@@ -199,7 +199,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Return token ids array which is used for earning reward
+    * @notice       Return token ids array which is used for earning reward
     * @param _owner user address to get token ids
     */
 
@@ -208,8 +208,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Return purse token earning reward info array
-    * @param _tokenIds purse token ids array to get the earning info
+    * @notice           Return purse token earning reward info array
+    * @param _tokenIds  purse token ids array to get the earning info
     */
 
     function getPurseMultiTokenRewardInfo(uint256[] calldata _tokenIds) public view returns(PurseTokenRewardInfo[] memory) {
@@ -228,8 +228,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Return category names of token Id array
-    * @param _tokenIds purse token id array to get category data
+    * @notice              Return category names of token Id array
+    * @param _tokenIds     purse token id array to get category data
     */
 
     function getPurseCategoryInfoOfMultiToken(uint256[] calldata _tokenIds) public view returns(string[] memory) {
@@ -249,8 +249,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Return purse category information
-    * @param _infoId purse info id to get category data
+    * @notice           Return purse category information
+    * @param _infoId    purse info id to get category data
     */
 
     function getPurseCategoryInfo(uint256 _infoId) public view returns(PurseCategory memory) {
@@ -259,8 +259,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Return purse category information array
-    * @param _infoIds purse info id array to get category data
+    * @notice           Return purse category information array
+    * @param _infoIds   purse info id array to get category data
     */
 
     function getPurseCategoryMultiInfo(uint256[] calldata _infoIds) public view returns(PurseCategory[] memory) {
@@ -279,8 +279,8 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Use purse  token to get reward with randomness
-    * @param tokenId purse token id to get reward
+    * @notice           Use purse  token to get reward with randomness
+    * @param tokenId    purse token id to get reward
     */
 
     function usePurseToken(uint256 tokenId) external whenNotPaused {
@@ -295,10 +295,12 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
         if (random < purseCategory.antFoodRarity) {
             quantity = purseCategory.antFoodRewardAmount;
             rewardType = "ANTFood";
+            rewardTypeId = antFoodTokenId;
             antShop.mint(antFoodTokenId, quantity, _msgSender());
         } else if (random < purseCategory.antFoodRarity + purseCategory.levelingPotionRarity) {
             quantity = purseCategory.levelingPotionRewardAmount;
             rewardType = "LevelingPotion";
+            rewardTypeId = levelingPotionTokenId;
             antShop.mint(levelingPotionTokenId, quantity, _msgSender());
         } else {
             quantity = purseCategory.lotteryTicketRewardAmount;
@@ -333,10 +335,10 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     */
 
     /**
-    * @notice Mint the purse tokens
-    * @dev This function can only be called by the minter
-    * @param recipient recipient wallet address to mint the purse tokens
-    * @param quantity purse token qunatity to mint
+    * @notice           Mint the purse tokens
+    * @dev              This function can only be called by the minter
+    * @param recipient  recipient wallet address to mint the purse tokens
+    * @param quantity   purse token qunatity to mint
     */
 
     function mint(address recipient, uint256 quantity) external override onlyMinterOrOwner {
@@ -350,17 +352,17 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Set Multiple Purse Category struct data
-    * @dev This function can only be called by the owner
-    * @param _names array of category names
-    * @param _rarities array of rarities. total value should be 100
-    * @param _antFoodRarities array of rarities. total value should be 100
-    * @param _levelingPotionsRarities array of rarities. total value should be 100
-    * @param _lotteryTicketRarities array of rarities. total value should be 100
-    * @param _antFoodRewardAmounts array of 
-    * @param _levelingPotionAmounts array of leveling potions amounts
-    * @param _lotteryTicketAmounts array of lottery ticket amounts
-    * @param _minted array of minted token amounts
+    * @notice                           Set Multiple Purse Category struct data
+    * @dev                              This function can only be called by the owner
+    * @param _names                     array of category names
+    * @param _rarities                  array of rarities. total value should be 100
+    * @param _antFoodRarities           array of rarities. total value should be 100
+    * @param _levelingPotionsRarities   array of rarities. total value should be 100
+    * @param _lotteryTicketRarities     array of rarities. total value should be 100
+    * @param _antFoodRewardAmounts      array of ant food reward amounts
+    * @param _levelingPotionAmounts     array of leveling potions amounts
+    * @param _lotteryTicketAmounts      array of lottery ticket amounts
+    * @param _minted                    array of minted token amounts
     */
 
     function addMultiPurseCategories(string[] memory _names, uint256[] memory _rarities, uint256[] memory _antFoodRarities, uint256[] memory _levelingPotionsRarities, uint256[] memory _lotteryTicketRarities, uint256[] memory _antFoodRewardAmounts, uint256[] memory _levelingPotionAmounts, uint256[] memory _lotteryTicketAmounts, uint256[] memory _minted) external onlyMinterOrOwner {
@@ -380,16 +382,16 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Update Purse Category struct data
-    * @dev This function can only be called by the owner
-    * @param _names array of category names
-    * @param _rarities array of rarities. total value should be 100
-    * @param _antFoodRarities array of rarities. total value should be 100
-    * @param _levelingPotionsRarities array of rarities. total value should be 100
-    * @param _lotteryTicketRarities array of rarities. total value should be 100
-    * @param _antFoodRewardAmounts array of 
-    * @param _levelingPotionAmounts array of leveling potions amounts
-    * @param _lotteryTicketAmounts array of lottery ticket amounts
+    * @notice                           Update Purse Category struct data
+    * @dev                              This function can only be called by the owner
+    * @param _names                     array of category names
+    * @param _rarities                  array of rarities. total value should be 100
+    * @param _antFoodRarities           array of rarities. total value should be 100
+    * @param _levelingPotionsRarities   array of rarities. total value should be 100
+    * @param _lotteryTicketRarities     array of rarities. total value should be 100
+    * @param _antFoodRewardAmounts      array of 
+    * @param _levelingPotionAmounts     array of leveling potions amounts
+    * @param _lotteryTicketAmounts      array of lottery ticket amounts
     */
 
     function updatePurseCategories(string[] memory _names, uint256[] memory _rarities, uint256[] memory _antFoodRarities, uint256[] memory _levelingPotionsRarities, uint256[] memory _lotteryTicketRarities, uint256[] memory _antFoodRewardAmounts, uint256[] memory _levelingPotionAmounts, uint256[] memory _lotteryTicketAmounts) external onlyMinterOrOwner {
@@ -408,9 +410,9 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Function to set the ANT Food token id of ANTShop
-    * @dev This function can only be called by the owner
-    * @param _antFoodTokenId the ANT Food token id of ANTShop
+    * @notice                   Function to set the ANT Food token id of ANTShop
+    * @dev                      This function can only be called by the owner
+    * @param _antFoodTokenId    the ANT Food token id of ANTShop
     */
 
     function setAntFoodTokenId(uint256 _antFoodTokenId) external onlyMinterOrOwner {
@@ -418,9 +420,9 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Function to set the leveling potion token id of ANTShop
-    * @dev This function can only be called by the owner
-    * @param _levelingPotionTokenId the leveling potion token id of ANTShop
+    * @notice                           Function to set the leveling potion token id of ANTShop
+    * @dev                              This function can only be called by the owner
+    * @param _levelingPotionTokenId     leveling potion token id of ANTShop
     */
 
     function setLevelingPotionTokenId(uint256 _levelingPotionTokenId) external onlyMinterOrOwner {
@@ -428,9 +430,9 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Set randomizer contract address
-    * @dev This function can only be called by the owner
-    * @param _randomizer Randomizer contract address
+    * @notice               Set randomizer contract address
+    * @dev                  This function can only be called by the owner
+    * @param _randomizer    Randomizer contract address
     */
 
     function setRandomizerContract(IRandomizer _randomizer) external onlyMinterOrOwner {
@@ -438,9 +440,9 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Set a new ANTShop smart contract address
-    * @dev This function can only be called by the owner
-    * @param _antShop Reference to ANTShop
+    * @notice           Set a new ANTShop smart contract address
+    * @dev              This function can only be called by the owner
+    * @param _antShop   Reference to ANTShop
     */
 
     function setANTShopContract(IANTShop _antShop) external onlyMinterOrOwner {
@@ -449,9 +451,9 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Set a new ANTLottery smart contract address
-    * @dev This function can only be called by the owner
-    * @param _antLottery Reference to ANTLottery
+    * @notice               Set a new ANTLottery smart contract address
+    * @dev                  This function can only be called by the owner
+    * @param _antLottery    Reference to ANTLottery
     */
 
     function setANTLotteryContract(IANTLottery _antLottery) external onlyMinterOrOwner {
@@ -460,18 +462,18 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Function to grant mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to get minter role
+    * @notice           Function to grant mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to get minter role
     */
     function addMinterRole(address _address) external onlyOwner {
         minters[_address] = true;
     }
 
     /**
-    * @notice Function to revoke mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to revoke minter role
+    * @notice           Function to revoke mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to revoke minter role
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
@@ -486,20 +488,20 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     }
 
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
-    * @param amount Amount of ETH to send
+    * @notice           Allows owner to withdraw ETH funds to an address
+    * @dev              wraps _user in payable to fix address -> address payable
+    * @param to         Address for ETH to be send to
+    * @param amount     Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
         require(_safeTransferETH(to, amount));
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
-    * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @notice                   Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract     Address for the token
+    * @param to                 Address for token to be send to
+    * @param amount             Amount of token to send
     */
     function withdrawToken(
         address _tokenContract,

@@ -79,6 +79,10 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     uint256 public levelingPotionTokenId = 1;
     // ANT Coin fee when use Leveling Potion to upgrade the BaiscANT
     uint256 public upgradeANTFee = 5 ether;
+    // Worker ant batch index for extra apy
+    uint256 public antIndexForExtraAPY = 0;
+    // Extra APY Amount
+    uint256 public extraAPYForWokerANT = 500; // 5%
 
     // Upgrade ANT Event
     event UpgradeBasicANT(uint256 tokenId, address owner, uint256 currentLevel);
@@ -114,18 +118,18 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Return total used leveling potions amount of level
-    * @param _level level to calculate the total used leveling potions
+    * @notice          Return total used leveling potions amount of level
+    * @param _level    level to calculate the total used leveling potions
     */
     function getTotalPotions(uint256 _level) internal pure returns(uint256 totalPotions) {
         totalPotions = (_level.mul(_level.add(1))).div(2);
     }
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice       Transfer ETH and return the success status.
+    * @dev          This function only forwards 30,000 gas to the callee.
+    * @param to     Address for ETH to be send to
+    * @param value  Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -160,22 +164,24 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Returns an experience percentage number calculated by level.
-    * @dev Added 2 digits after the decimal point. e.g. 6500 = 65.00%
+    * @notice   Returns an experience percentage number calculated by level.
+    * @dev      Added 2 digits after the decimal point. e.g. 6500 = 65.00%
     */
 
     function getANTExperience(uint256 tokenId) external view override returns(uint256) {
         require(_exists(tokenId), "BasicANT: token is not exist");
         ANTInfo memory ant = basicANTs[tokenId];
         uint256 totalPotions = getTotalPotions(ant.level);
-        uint256 remainderPotions = ant.remainPotions;
-        uint256 experience = (totalPotions + remainderPotions) * 10 + (ant.level * 10 + remainderPotions * 10 / ant.level) * 2;
+        uint256 experience = totalPotions * 10 + (ant.level / 5) * 100;
+        if(ant.batchIndex == antIndexForExtraAPY) {
+            experience += extraAPYForWokerANT;
+        }
         return experience;
     }
 
     /**
-    * @notice Returns experience percentage number array calculated by level.
-    * @dev Added 2 digits after the decimal point. e.g. 6500 = 65.00%
+    * @notice   Returns experience percentage number array calculated by level.
+    * @dev      Added 2 digits after the decimal point. e.g. 6500 = 65.00%
     */
 
     function getMultiANTExperience(uint256[] calldata tokenIds) external view returns(uint256[] memory) {
@@ -189,8 +195,10 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
             require(_exists(tokenIds[i]), "BasicANT: token is not exist");
             ANTInfo memory ant = basicANTs[tokenIds[i]];
             uint256 totalPotions = getTotalPotions(ant.level);
-            uint256 remainderPotions = ant.remainPotions;
-            uint256 experience = (totalPotions + remainderPotions) * 10 + (ant.level * 10 + remainderPotions * 10 / ant.level) * 2;
+            uint256 experience = totalPotions * 10 + (ant.level / 5) * 100;
+            if(ant.batchIndex == antIndexForExtraAPY) {
+                experience += extraAPYForWokerANT;
+            }
             antsExperience[i] = experience;
         }
 
@@ -214,7 +222,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Return Batch information including name, mintedNums, baseURI, ...
+    * @notice           Return Batch information including name, mintedNums, baseURI, ...
     * @param batchIndex batch index to get the data
     */
 
@@ -223,8 +231,8 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Return Basic ANT information including level, mintedNums, batchIndex, ...
-    * @param tokenId tokenId to get Basic ANT information
+    * @notice           Return Basic ANT information including level, mintedNums, batchIndex, ...
+    * @param tokenId    tokenId to get Basic ANT information
     */
 
     function getANTInfo(uint256 tokenId) public view override returns(ANTInfo memory) {
@@ -233,8 +241,8 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Return Basic ANT information array including level, mintedNums, batchIndex, ...
-    * @param tokenIds tokenIds to get Basic ANT information
+    * @notice           Return Basic ANT information array including level, mintedNums, batchIndex, ...
+    * @param tokenIds   tokenIds to get Basic ANT information
     */
 
     function getANTMultiInfo(uint256[] calldata tokenIds) public view returns(ANTInfo[] memory) {
@@ -260,8 +268,8 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Override `tokenURI` function of ERC721A
-    * @param tokenId tokenId to get Basic ANT metadata
+    * @notice           Override `tokenURI` function of ERC721A
+    * @param tokenId    tokenId to get Basic ANT metadata
     */
 
     function tokenURI(uint256 tokenId) public view override(ERC721A, IERC721A) returns(string memory) {
@@ -272,10 +280,10 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Mint Basic ANTs
-    * @param batchIndex batch index for Basic ANT mint
-    * @param recipient recipient wallet address to get a new Basic ANTs
-    * @param quantity the number of tokens to mint
+    * @notice               Mint Basic ANTs
+    * @param batchIndex     batch index for Basic ANT mint
+    * @param recipient      recipient wallet address to get a new Basic ANTs
+    * @param quantity       the number of tokens to mint
     */
 
     function mint(uint256 batchIndex, address recipient, uint256 quantity) external payable nonReentrant whenNotPaused {
@@ -313,9 +321,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Upgrade Basic ANTs with Leveling Potions
-    * @param tokenId Basic ant token id for upgrading
-    * @param potionAmount Leveling potion amount for upgrading ant
+    * @notice               Upgrade Basic ANTs with Leveling Potions
+    * @param tokenId        Basic ant token id for upgrading
+    * @param potionAmount   Leveling potion amount for upgrading ant
     */
 
     function upgradeBasicANT(uint256 tokenId, uint256 potionAmount) external whenNotPaused {
@@ -363,10 +371,10 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     */
 
     /**
-    * @notice Function to upgrade basic ant
-    * @dev This function can only be called by the minter
-    * @param tokenId token id of basic ant for upgrading
-    * @param potionAmount potion amount for upgrading
+    * @notice               Function to upgrade basic ant
+    * @dev                  This function can only be called by the minter
+    * @param tokenId        token id of basic ant for upgrading
+    * @param potionAmount   potion amount for upgrading
     */
 
     function ownerANTUpgrade(uint256 tokenId, uint256 potionAmount) external override onlyMinterOrOwner {
@@ -397,11 +405,11 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to mint Basic ANTs for free if caller is a minter
-    * @dev This function can only be called by the owner
-    * @param _batchIndex batch index for Basic ANT mint
-    * @param recipient recipient wallet address to get a new Basic ANTs
-    * @param quantity the number of tokens to mint
+    * @notice               Function to mint Basic ANTs for free if caller is a minter
+    * @dev                  This function can only be called by the owner
+    * @param _batchIndex    batch index for Basic ANT mint
+    * @param recipient      recipient wallet address to get a new Basic ANTs
+    * @param quantity       the number of tokens to mint
     */
 
     function ownerMint(uint256 _batchIndex, address recipient, uint256 quantity) external onlyMinterOrOwner {
@@ -427,10 +435,10 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Set mint method true => Matic mint, false => custom token mint
-    * @dev This function can only be called by the owner
-    * @param _batchIndex batch index to set the mint method
-    * @param _mintMethod mint method value
+    * @notice               Set mint method true => Matic mint, false => custom token mint
+    * @dev                  This function can only be called by the owner
+    * @param _batchIndex    batch index to set the mint method
+    * @param _mintMethod    mint method value
     */
 
     function setMintMethod(uint256 _batchIndex, bool _mintMethod) external onlyMinterOrOwner {
@@ -438,10 +446,10 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to update Basic ANTs level
-    * @dev This function can only be called by the minter
-    * @param tokenId Basic ant token id for updating level
-    * @param newLevel the number of new level
+    * @notice           Function to update Basic ANTs level
+    * @dev              This function can only be called by the minter
+    * @param tokenId    Basic ant token id for updating level
+    * @param newLevel   the number of new level
     */
 
     function setLevel(uint256 tokenId, uint256 newLevel) external override onlyMinterOrOwner {
@@ -450,9 +458,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to set the start level of Basic ANT
-    * @dev This function can only be called by the owner
-    * @param _startLevel start level value
+    * @notice               Function to set the start level of Basic ANT
+    * @dev                  This function can only be called by the owner
+    * @param _startLevel    start level value
     */
 
     function setStartLevel(uint256 _startLevel) external onlyMinterOrOwner {
@@ -460,9 +468,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to set the max level of Basic ANT
-    * @dev This function can only be called by the owner
-    * @param _maxLevel max level value
+    * @notice           Function to set the max level of Basic ANT
+    * @dev              This function can only be called by the owner
+    * @param _maxLevel  max level value
     */
 
     function setMaxLevel(uint256 _maxLevel) external onlyMinterOrOwner {
@@ -470,9 +478,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to set the ANT Food token id of ANTShop
-    * @dev This function can only be called by the owner
-    * @param _antFoodTokenId the ANT Food token id of ANTShop
+    * @notice                   Function to set the ANT Food token id of ANTShop
+    * @dev                      This function can only be called by the owner
+    * @param _antFoodTokenId    the ANT Food token id of ANTShop
     */
 
     function setAntFoodTokenId(uint256 _antFoodTokenId) external onlyMinterOrOwner {
@@ -480,9 +488,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to set the leveling potion token id of ANTShop
-    * @dev This function can only be called by the owner
-    * @param _levelingPotionTokenId the leveling potion token id of ANTShop
+    * @notice                           Function to set the leveling potion token id of ANTShop
+    * @dev                              This function can only be called by the owner
+    * @param _levelingPotionTokenId     the leveling potion token id of ANTShop
     */
 
     function setLevelingPotionTokenId(uint256 _levelingPotionTokenId) external onlyMinterOrOwner {
@@ -490,14 +498,14 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to set the batch info including name, baseURI, maxSupply
-    * @dev This function can only be called by the owner
-    * @param _batchIndex batch index to set the batch information
-    * @param _name Basic Batch name of batch index
-    * @param _baseURI Basic Batch baseURI of batch index
-    * @param _mintPrice Basic ANT mint price with Matic
-    * @param _tokenAddressFroMint token address for basic ant minting
-    * @param _tokenAmountForMint token amount for basic ant minting
+    * @notice                       Function to set the batch info including name, baseURI, maxSupply
+    * @dev                          This function can only be called by the owner
+    * @param _batchIndex            batch index to set the batch information
+    * @param _name                  Basic Batch name of batch index
+    * @param _baseURI               Basic Batch baseURI of batch index
+    * @param _mintPrice             Basic ANT mint price with Matic
+    * @param _tokenAddressFroMint   token address for basic ant minting
+    * @param _tokenAmountForMint    token amount for basic ant minting
     */
 
     function setBatchInfo(uint256 _batchIndex, string calldata _name, string calldata _baseURI, uint256 _mintPrice, address _tokenAddressFroMint, uint256 _tokenAmountForMint) external onlyMinterOrOwner {
@@ -510,9 +518,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to set the ant coin fee when upgrading the BasicANT
-    * @dev This function can only be called by the owner
-    * @param _upgradeANTFee ant coin fee
+    * @notice                   Function to set the ant coin fee when upgrading the BasicANT
+    * @dev                      This function can only be called by the owner
+    * @param _upgradeANTFee     ant coin fee
     */
 
     function setUpgradeFee(uint256 _upgradeANTFee) external onlyMinterOrOwner {
@@ -520,9 +528,21 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to set the ant coin smart contract address
-    * @dev This function can only be called by the owner
-    * @param _antCoin ant coin smart contract address
+    * @notice                   Function to set the worker ant extra apy info
+    * @dev                      This function can only be called by the owner
+    * @param batchIndex         Worker ANT Index
+    * @param extraAPY           Extra APY for worker ant
+    */
+
+    function setExtraRewardInfoForWorkerANT(uint256 batchIndex, uint256 extraAPY) external onlyMinterOrOwner {
+        antIndexForExtraAPY = batchIndex;
+        extraAPYForWokerANT = extraAPY;
+    }
+
+    /**
+    * @notice           Function to set the ant coin smart contract address
+    * @dev              This function can only be called by the owner
+    * @param _antCoin   ant coin smart contract address
     */
 
     function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
@@ -530,9 +550,9 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to set the ant shop smart contract address
-    * @dev This function can only be called by the owner
-    * @param _antShop ant shop smart contract address
+    * @notice               Function to set the ant shop smart contract address
+    * @dev                  This function can only be called by the owner
+    * @param _antShop       ant shop smart contract address
     */
 
     function setANTShopContract(IANTShop _antShop) external onlyMinterOrOwner {
@@ -548,38 +568,38 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     }
 
     /**
-    * @notice Function to grant mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to get minter role
+    * @notice           Function to grant mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to get minter role
     */
     function addMinterRole(address _address) external onlyOwner {
         minters[_address] = true;
     }
 
     /**
-    * @notice Function to revoke mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to revoke minter role
+    * @notice           Function to revoke mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to revoke minter role
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
     }
 
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
-    * @param amount Amount of ETH to send
+    * @notice           Allows owner to withdraw ETH funds to an address
+    * @dev              wraps _user in payable to fix address -> address payable
+    * @param to         Address for ETH to be send to
+    * @param amount     Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
         require(_safeTransferETH(to, amount));
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
-    * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @notice                   Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract     Address for the token
+    * @param to                 Address for token to be send to
+    * @param amount             Amount of token to send
     */
     function withdrawToken(
         address _tokenContract,
