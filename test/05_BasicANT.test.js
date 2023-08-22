@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat")
+const { BigNumber } = require("ethers")
 const { utils } = require("ethers")
 
 describe("BasicANT", function () {
@@ -27,7 +28,7 @@ describe("BasicANT", function () {
         BasicANTContract = await BasicANT.deploy(ANTCoinContract.address, ANTShopContract.address);
         await BasicANTContract.deployed();
 
-        await ANTShopContract.addMinterRole(BasicANTContract.address); 
+        await ANTShopContract.addMinterRole(BasicANTContract.address);
         await ANTCoinContract.addMinterRole(BasicANTContract.address)
         await ANTCoinContract.transfer(user1.address, utils.parseEther("1000"))
     });
@@ -230,7 +231,7 @@ describe("BasicANT", function () {
                 expect(tx).to.emit(BasicANTContract, "UpgradeANT").withArgs("1", user1.address, "3")
             })
 
-            
+
             it("setUpgradeFee: should fail if caller is not the owner", async () => {
                 await expect(BasicANTContract.connect(badActor).setUpgradeFee(100)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
             })
@@ -242,7 +243,7 @@ describe("BasicANT", function () {
             })
 
             it("should fail if user don't have enough ant coin stake fee", async () => {
-               await expect(BasicANTContract.connect(user2).upgradeBasicANT(2, 10)).to.be.revertedWith("BasicANT: insufficient ant coin fee for upgrading") 
+                await expect(BasicANTContract.connect(user2).upgradeBasicANT(2, 10)).to.be.revertedWith("BasicANT: insufficient ant coin fee for upgrading")
             })
 
             it("should burn the ant coin fee when upgrading the ANT", async () => {
@@ -289,9 +290,9 @@ describe("BasicANT", function () {
             const antInfo = await BasicANTContract.getANTInfo(1);
             expect(antInfo.toString()).to.be.equal("3,1,0,1");
             const experienceResult1 = await BasicANTContract.getANTExperience(1);
-            
-            const expectedResult11 = ((3 * ( 3 + 1)) / 2 + 1 ) * 10 + (3 * 10 + Math.floor(10 / 3)) * 2
-            expect(Number(experienceResult1)).to.be.equal(Number(expectedResult11));
+            const level = BigNumber.from("3");
+            const expectedResult = ((level.mul(level.add(1)).div(2)).mul(10)).add(500).add((level.div(5)).mul(100))
+            expect(Number(experienceResult1)).to.be.equal(Number(expectedResult));
         })
 
         it("transferFrom: should transfer token without approve step if caller has minter role", async () => {

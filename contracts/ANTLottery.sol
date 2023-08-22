@@ -48,8 +48,7 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import './interfaces/IRandomizer.sol';
 import './interfaces/IANTCoin.sol';
-import './interfaces/IANTLottery.sol';
-import 'hardhat/console.sol';
+import './interfaces/IANTLottery.sol';  
 
 contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
 

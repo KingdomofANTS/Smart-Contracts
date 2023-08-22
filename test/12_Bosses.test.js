@@ -10,12 +10,12 @@ describe("Bosses", function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
 
         // Randomizer smart contract deployment
-        const keyHash = "0x01f7a05a9b9582bd382add6f255d31774e3846da15c0f45959a3b0266cb40d6b";
-        const linkToken = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
-        const vrfCordinator = "0xa555fC018435bef5A13C6c6870a9d4C11DEC329C";
-        const vrfFee = "1000000000000000000"
+                // Randomizer smart contract deployment
+        const polyKeyHash = "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
+        const polyVrfCoordinator = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed"
+        const subScriptionId = 5715;
         Randomizer = await ethers.getContractFactory("Randomizer");
-        RandomizerContract = await Randomizer.deploy(keyHash, linkToken, vrfCordinator, vrfFee);
+        RandomizerContract = await Randomizer.deploy(polyKeyHash, polyVrfCoordinator, subScriptionId);
         await RandomizerContract.deployed();
 
         // ANTCoin smart contract deployment
