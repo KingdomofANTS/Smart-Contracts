@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat")
+const { BigNumber } = require("ethers")
 const { utils } = require("ethers")
 
 describe("BasicANT", function () {
@@ -19,15 +20,15 @@ describe("BasicANT", function () {
         await ANTShopContract.deployed();
 
         // set ANTFood and LevelingPotions contract
-        await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-        await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
+        await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
+        await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI2");
 
         // Basic ANT smart contract deployment
         BasicANT = await ethers.getContractFactory('BasicANT');
         BasicANTContract = await BasicANT.deploy(ANTCoinContract.address, ANTShopContract.address);
         await BasicANTContract.deployed();
 
-        await ANTShopContract.addMinterRole(BasicANTContract.address); 
+        await ANTShopContract.addMinterRole(BasicANTContract.address);
         await ANTCoinContract.addMinterRole(BasicANTContract.address)
         await ANTCoinContract.transfer(user1.address, utils.parseEther("1000"))
     });
@@ -62,7 +63,7 @@ describe("BasicANT", function () {
         })
 
         it("setLevelingPotionTokenId: should fail if caller is not the owner", async () => {
-            await expect(BasicANTContract.connect(badActor).setLevelingPotionTokenId(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BasicANTContract.connect(badActor).setLevelingPotionTokenId(1)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("setLevelingPotionTokenId: should work if caller is the owner", async () => {
@@ -72,7 +73,7 @@ describe("BasicANT", function () {
         })
 
         it("setAntFoodTokenId: should fail if caller is not the owner", async () => {
-            await expect(BasicANTContract.connect(badActor).setAntFoodTokenId(1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BasicANTContract.connect(badActor).setAntFoodTokenId(1)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("setAntFoodTokenId: should work if caller is owner", async () => {
@@ -82,7 +83,7 @@ describe("BasicANT", function () {
         })
 
         it("setBatchInfo: should fail if caller is not the owner", async () => {
-            await expect(BasicANTContract.connect(badActor).setBatchInfo(0, "name1", "testBaseURI1", 1000, ANTCoinContract.address, 10000)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BasicANTContract.connect(badActor).setBatchInfo(0, "name1", "testBaseURI1", 1000, ANTCoinContract.address, 10000)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("setBatchInfo: should work if caller is the owner", async () => {
@@ -95,7 +96,7 @@ describe("BasicANT", function () {
         })
 
         it("setStartLevel: should fail if caller is not the owner", async () => {
-            await expect(BasicANTContract.connect(badActor).setStartLevel(0)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BasicANTContract.connect(badActor).setStartLevel(0)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("setStartLevel: should work if caller is the owner", async () => {
@@ -104,22 +105,22 @@ describe("BasicANT", function () {
             expect(expected).to.be.equal(10);
         })
 
-        it("downgradeLevel: should fail if caller is not the minter", async () => {
-            await expect(BasicANTContract.connect(badActor).downgradeLevel(0, 1)).to.be.revertedWith("BasicANT: Caller is not the minter");
+        it("setLevel: should fail if Caller is not the owner or minter", async () => {
+            await expect(BasicANTContract.connect(badActor).setLevel(0, 1)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
-        it("downgradeLevel: should work if caller has a minter role", async () => {
+        it("setLevel: should work if caller has a minter role", async () => {
             await BasicANTContract.setBatchInfo(0, "name1", "testBaseURI1", 1000, ANTCoinContract.address, 10000);
             await BasicANTContract.setBatchInfo(1, "name2", "testBaseURI2", 2000, ANTCoinContract.address, 20000);
             await BasicANTContract.connect(user1).mint(0, user1.address, 1, { value: 1000 });
             await BasicANTContract.addMinterRole(user1.address);
-            await BasicANTContract.downgradeLevel(1, 0);
+            await BasicANTContract.setLevel(1, 0);
             const antInfo = await BasicANTContract.getANTInfo(1);
             expect(antInfo.toString()).to.be.equal("0,0,0,1")
         })
 
-        it("ownerMint: should fail if caller is not the minter", async () => {
-            await expect(BasicANTContract.connect(badActor).ownerMint(0, user1.address, 1)).to.be.revertedWith("BasicANT: Caller is not the minter");
+        it("ownerMint: should fail if Caller is not the owner or minter", async () => {
+            await expect(BasicANTContract.connect(badActor).ownerMint(0, user1.address, 1)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
         })
 
         it("ownerMint: should work if caller has a minter role", async () => {
@@ -230,9 +231,9 @@ describe("BasicANT", function () {
                 expect(tx).to.emit(BasicANTContract, "UpgradeANT").withArgs("1", user1.address, "3")
             })
 
-            
+
             it("setUpgradeFee: should fail if caller is not the owner", async () => {
-                await expect(BasicANTContract.connect(badActor).setUpgradeFee(100)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(BasicANTContract.connect(badActor).setUpgradeFee(100)).to.be.revertedWith("BasicANT: Caller is not the owner or minter");
             })
 
             it("setUpgradeFee: should work if caller is the owner", async () => {
@@ -242,7 +243,7 @@ describe("BasicANT", function () {
             })
 
             it("should fail if user don't have enough ant coin stake fee", async () => {
-               await expect(BasicANTContract.connect(user2).upgradeBasicANT(2, 10)).to.be.revertedWith("BasicANT: insufficient ant coin fee for upgrading") 
+                await expect(BasicANTContract.connect(user2).upgradeBasicANT(2, 10)).to.be.revertedWith("BasicANT: insufficient ant coin fee for upgrading")
             })
 
             it("should burn the ant coin fee when upgrading the ANT", async () => {
@@ -289,9 +290,9 @@ describe("BasicANT", function () {
             const antInfo = await BasicANTContract.getANTInfo(1);
             expect(antInfo.toString()).to.be.equal("3,1,0,1");
             const experienceResult1 = await BasicANTContract.getANTExperience(1);
-            
-            const expectedResult11 = ((3 * ( 3 + 1)) / 2 + 1 ) * 10 + (3 * 10 + Math.floor(10 / 3)) * 2
-            expect(Number(experienceResult1)).to.be.equal(Number(expectedResult11));
+            const level = BigNumber.from("3");
+            const expectedResult = ((level.mul(level.add(1)).div(2)).mul(10)).add(500).add((level.div(5)).mul(100))
+            expect(Number(experienceResult1)).to.be.equal(Number(expectedResult));
         })
 
         it("transferFrom: should transfer token without approve step if caller has minter role", async () => {

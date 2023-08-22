@@ -69,15 +69,25 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     IANTCoin public antCoin;
     // array of vesting pools
     VestingPool[] public vestingPools;
+    
+    // minters
+    mapping(address => bool) private minters;
     // mapping of user wallet addresses for receving the tokens from vesting pools
     mapping(uint256 => address[]) public userAddresses;
     // one time release timestamp
+    
     uint256 public releaseCycle = 30 days;
+    
     // make sure vesting pool info and pool index is correct
     modifier isValidPool(uint256 _poolIndex) {
       require(vestingPools.length > 0, "Vesting: vesting pool info isn't exist");
       require(_poolIndex < vestingPools.length, "Vesting: invalid vesting pool index");
       _;
+    }
+
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "Vesting: Caller is not the owner or minter");
+        _;
     }
 
     // Event for adding vesting pool info
@@ -124,6 +134,14 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     */
 
     /**
+    * @notice Check address has minterRole
+    */
+
+    function getMinterRole(address _address) public view returns(bool) {
+        return minters[_address];
+    }
+
+    /**
     * @notice Return Vesting Pool Info by index
     * @param _poolIndex vesting pool index
     */
@@ -156,7 +174,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _poolIndex vesting pool index
     */
 
-    function launchVestingPool(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
+    function launchVestingPool(uint256 _poolIndex) external onlyMinterOrOwner isValidPool(_poolIndex) {
       VestingPool memory _poolInfo = vestingPools[_poolIndex];
       require(!_poolInfo.isLaunched, "Vesting: already launched");
       require(userAddresses[_poolIndex].length > 0, "Vesting: empty array detected");
@@ -181,7 +199,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _poolIndex vesting pool index
     */
 
-    function releaseVestingPool(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
+    function releaseVestingPool(uint256 _poolIndex) external onlyMinterOrOwner isValidPool(_poolIndex) {
         VestingPool storage _poolInfo = vestingPools[_poolIndex];
 
         require(_poolInfo.currentReleasedCount < _poolInfo.maxReleaseCount, "Vesting: can't release any coins anymore from vesting pool");
@@ -214,7 +232,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _tokenAmount ant coin token amount for depositing
     */
 
-    function depositANTCoinToVestingPool(uint256 _poolIndex, uint256 _tokenAmount) external onlyOwner isValidPool(_poolIndex) {
+    function depositANTCoinToVestingPool(uint256 _poolIndex, uint256 _tokenAmount) external onlyMinterOrOwner isValidPool(_poolIndex) {
         require(antCoin.balanceOf(_msgSender()) >= _tokenAmount, "Vesting: insufficient ant coin balance for depositing tokens");
         require(!vestingPools[_poolIndex].isLaunched, "Vesting: can't deposit anymore after lauching the vesting pool");
         antCoin.transferFrom(_msgSender(), address(this), _tokenAmount);
@@ -228,7 +246,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _tokenAmount ant coin token amount for depositing
     */
 
-    function withdrawANTCoinFromVestingPool(uint256 _poolIndex, uint256 _tokenAmount) external onlyOwner isValidPool(_poolIndex) {
+    function withdrawANTCoinFromVestingPool(uint256 _poolIndex, uint256 _tokenAmount) external onlyMinterOrOwner isValidPool(_poolIndex) {
         require(vestingPools[_poolIndex].tokenAmount >= _tokenAmount, "Vesting: insufficient ant coin balance for withdrawing tokens");
         require(!vestingPools[_poolIndex].isLaunched, "Vesting: can't withdraw anymore after lauching the vesting pool");
         antCoin.transfer(_msgSender(), _tokenAmount);
@@ -243,7 +261,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _releaseCount release month count
     */
 
-    function addVestingPoolInfo(string memory _poolName, uint256 _initReleaseRate, uint256 _releaseCount) external onlyOwner {
+    function addVestingPoolInfo(string memory _poolName, uint256 _initReleaseRate, uint256 _releaseCount) external onlyMinterOrOwner {
       vestingPools.push(VestingPool({
         poolName: _poolName,
         initReleaseRate: _initReleaseRate,
@@ -264,7 +282,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _poolIndex vesting pool index
     */
 
-    function revokeVestingPoolInfo(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
+    function revokeVestingPoolInfo(uint256 _poolIndex) external onlyMinterOrOwner isValidPool(_poolIndex) {
       uint256 lastPoolIndex = vestingPools.length - 1;
       address[] storage poolAddresses = userAddresses[lastPoolIndex];
 
@@ -285,7 +303,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _userAddresses array of user wallet addresses
     */
 
-    function addUserAddressesByPool(uint256 _poolIndex, address[] memory _userAddresses) external onlyOwner isValidPool(_poolIndex) {
+    function addUserAddressesByPool(uint256 _poolIndex, address[] memory _userAddresses) external onlyMinterOrOwner isValidPool(_poolIndex) {
       require(_userAddresses.length > 0, "Vesting: array of user wallet addresses must be greater than zero");
       for(uint256 i = 0; i < _userAddresses.length; i++) {
         userAddresses[_poolIndex].push(_userAddresses[i]);
@@ -298,7 +316,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _poolIndex vesting pool index
     */
 
-    function revokeUserAddressesFromPool(uint256 _poolIndex) external onlyOwner isValidPool(_poolIndex) {
+    function revokeUserAddressesFromPool(uint256 _poolIndex) external onlyMinterOrOwner isValidPool(_poolIndex) {
       delete userAddresses[_poolIndex];
     }
 
@@ -308,7 +326,7 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _releaseCycle release cycle period time stamp
     */
 
-    function setReleaseCycle(uint256 _releaseCycle) external onlyOwner {
+    function setReleaseCycle(uint256 _releaseCycle) external onlyMinterOrOwner {
       releaseCycle = _releaseCycle;
     }
 
@@ -318,8 +336,28 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     * @param _antCoin ANTCoin contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
+    }
+
+    /**
+    * @notice Function to grant mint role
+    * @dev This function can only be called by the owner
+    * @param _address address to get minter role
+    */
+
+    function addMinterRole(address _address) external onlyOwner {
+        minters[_address] = true;
+    }
+
+    /**
+    * @notice Function to revoke mint role
+    * @dev This function can only be called by the owner
+    * @param _address address to revoke minter role
+    */
+
+    function revokeMinterRole(address _address) external onlyOwner {
+        minters[_address] = false;
     }
 
     /**

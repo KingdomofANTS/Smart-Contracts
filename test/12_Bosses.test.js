@@ -10,12 +10,12 @@ describe("Bosses", function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
 
         // Randomizer smart contract deployment
-        const keyHash = "0x01f7a05a9b9582bd382add6f255d31774e3846da15c0f45959a3b0266cb40d6b";
-        const linkToken = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
-        const vrfCordinator = "0xa555fC018435bef5A13C6c6870a9d4C11DEC329C";
-        const vrfFee = "1000000000000000000"
+                // Randomizer smart contract deployment
+        const polyKeyHash = "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
+        const polyVrfCoordinator = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed"
+        const subScriptionId = 5715;
         Randomizer = await ethers.getContractFactory("Randomizer");
-        RandomizerContract = await Randomizer.deploy(keyHash, linkToken, vrfCordinator, vrfFee);
+        RandomizerContract = await Randomizer.deploy(polyKeyHash, polyVrfCoordinator, subScriptionId);
         await RandomizerContract.deployed();
 
         // ANTCoin smart contract deployment
@@ -29,8 +29,8 @@ describe("Bosses", function () {
         await ANTShopContract.deployed();
 
         // set ANTFood and LevelingPotions contract
-        await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-        await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
+        await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
+        await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI2");
 
         // Basic ANT smart contract deployment
         BasicANT = await ethers.getContractFactory('BasicANT');
@@ -117,28 +117,28 @@ describe("Bosses", function () {
         })
 
         it("setStakePeriod: should work if caller is owner", async () => {
-            await expect(BossesContract.connect(badActor).setStakePeriod(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BossesContract.connect(badActor).setStakePeriod(100)).to.be.revertedWith("Bosses: Caller is not the owner or minter");
             await BossesContract.setStakePeriod(1000);
             const expected = await BossesContract.stakePeriod();
             expect(expected).to.be.equal(1000)
         })
 
         it("setBurnRate: should work if caller is owner", async () => {
-            await expect(BossesContract.connect(badActor).setBurnRate(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BossesContract.connect(badActor).setBurnRate(100)).to.be.revertedWith("Bosses: Caller is not the owner or minter");
             await BossesContract.setBurnRate(1000);
             const expected = await BossesContract.burnRate();
             expect(expected).to.be.equal(1000)
         })
 
         it("setLimitANTCoinStakeAmount: should work if caller is owner", async () => {
-            await expect(BossesContract.connect(badActor).setLimitANTCoinStakeAmount(100)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BossesContract.connect(badActor).setLimitANTCoinStakeAmount(100)).to.be.revertedWith("Bosses: Caller is not the owner or minter");
             await BossesContract.setLimitANTCoinStakeAmount(1000);
             const expected = await BossesContract.limitANTCoinStakeAmount();
             expect(expected).to.be.equal(1000)
         })
 
         it("setBossesPoolsInfo: should work if caller is owner", async () => {
-            await expect(BossesContract.connect(badActor).setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(BossesContract.connect(badActor).setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Bosses: Caller is not the owner or minter");
             await expect(BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake"], [20, 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Bosses: invalid bosses pools info")
             await expect(BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [ 50, 100, 250, 600], [1, 1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Bosses: invalid bosses pools info")
             await expect(BossesContract.setBossesPoolsInfo(["Catepillar", "Snail", "Beetle", "Snake", "Anteater"], [20, 50, 100, 250, 600], [1, 1, 1, 1], [5, 10, 18, 25, 40])).to.be.revertedWith("Bosses: invalid bosses pools info")
@@ -239,8 +239,8 @@ describe("Bosses", function () {
             await expect(BossesContract.connect(user1).stakeBasicANT(1, antCoinTransferAmount)).to.be.revertedWith("Bosses: ant level must be greater than the minimum required pool level");
             
             // upgrade basic ants level to 5 for testing
-            await BasicANTContract.downgradeLevel(1, 5);  
-            await BasicANTContract.downgradeLevel(2, 5);
+            await BasicANTContract.setLevel(1, 5);  
+            await BasicANTContract.setLevel(2, 5);
 
             await BossesContract.connect(user1).stakeBasicANT(1, antCoinTransferAmount);
             await BossesContract.connect(user2).stakeBasicANT(2, antCoinTransferAmount);

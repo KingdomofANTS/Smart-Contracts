@@ -53,5 +53,14 @@ interface IPurse {
         uint256 lotteryTicketRewardAmount; // lottery ticekt reward amounts
     }
 
+    struct PurseTokenRewardInfo {
+      address owner; // token owner
+      uint256 tokenId; // token id
+      uint256 purseCategoryId; // id number of purse category
+      string rewardType; // earned reward type when use a purse token. e.g. ANTFood, LevelingPotion, LotteryTicket
+      uint256 quantity; // earned reward amount
+      bool isUsed; // purse token is used or not
+    }
+
     function mint(address receipient, uint256 quantity) external;
 }

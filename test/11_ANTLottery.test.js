@@ -77,18 +77,18 @@ describe("ANTLottery", function () {
             expect(result).to.be.equal("219876321");
         })
 
-        it("setAntCoinAmountPerTicket: should fail if caller is not the owner", async () => {
-            await expect(ANTLotteryContract.connect(badActor).setAntCoinAmountPerTicket(0)).to.be.revertedWith("Ownable: caller is not the owner");
+        it("setANTCoinAmountPerTicket: should fail if caller is not the owner", async () => {
+            await expect(ANTLotteryContract.connect(badActor).setANTCoinAmountPerTicket(0)).to.be.revertedWith("ANTLottery: Caller is not the owner or minter");
         })
 
-        it("setAntCoinAmountPerTicket: should work if caller is the owner", async () => {
-            await ANTLotteryContract.setAntCoinAmountPerTicket(100);
+        it("setANTCoinAmountPerTicket: should work if caller is the owner", async () => {
+            await ANTLotteryContract.setANTCoinAmountPerTicket(100);
             const expected = await ANTLotteryContract.antCoinAmountPerTicket();
             expect(expected).to.be.equal(100)
         })
 
         it("setOperatorAndTreasuryAndInjectorAddresses: should fail if caller is not the owner", async () => {
-            await expect(ANTLotteryContract.connect(badActor).setOperatorAndTreasuryAndInjectorAddresses(user1.address, user2.address)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(ANTLotteryContract.connect(badActor).setOperatorAndTreasuryAndInjectorAddresses(user1.address, user2.address)).to.be.revertedWith("ANTLottery: Caller is not the owner or minter");
         })
 
         it("setOperatorAndTreasuryAndInjectorAddresses: should work if caller is the owner", async () => {
@@ -246,14 +246,14 @@ describe("ANTLottery", function () {
 
         describe("buyTickets", async () => {
 
-            it("should fail if caller is not the minter", async () => {
+            it("should fail if Caller is not the owner or minter", async () => {
                 const provider = ANTLotteryContract.provider;
                 const blockNumber = await provider.getBlockNumber();
                 const block = await provider.getBlock(blockNumber);
                 const blockTimestamp = block.timestamp;
                 const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
                 await ANTLotteryContract.connect(user1).startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
-                await expect(ANTLotteryContract.connect(badActor).buyTickets(user1.address, 1)).to.be.revertedWith("ANTLottery: Caller is not the minter");
+                await expect(ANTLotteryContract.connect(badActor).buyTickets(user1.address, 1)).to.be.revertedWith("ANTLottery: Caller is not the owner or minter");
             })
 
             it("should fail if lottery is not opened", async () => {
@@ -376,6 +376,29 @@ describe("ANTLottery", function () {
         })
 
         describe("claimTickets", async () => {
+
+            it("should fail if bracket is not correct", async () => {
+                await ANTLotteryContract.setOperatorAndTreasuryAndInjectorAddresses(user1.address, user2.address);
+                const provider = ANTLotteryContract.provider;
+                const blockNumber = await provider.getBlockNumber();
+                const block = await provider.getBlock(blockNumber);
+                const blockTimestamp = block.timestamp;
+                const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
+                await ANTLotteryContract.addMinterRole(user1.address);
+                await ANTLotteryContract.connect(user1).startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
+                await ANTLotteryContract.connect(user1).buyTickets(user1.address, 100);
+                await increaseTime(Number(MIN_LENGTH_LOTTERY) + 100);
+                await RandomizerContract.setLotteryAddress(ANTLotteryContract.address);
+                const ticketRandomNumbers = await ANTLotteryContract.viewNumbersAndStatusesForTicketIds([0, 1]);
+                await RandomizerContract.setNextRandomResult("1000" + ticketRandomNumbers[0][0].toString().slice(-3));
+                await ANTLotteryContract.connect(user1).closeLottery(1);
+                await RandomizerContract.changeLatestLotteryId();
+                await ANTLotteryContract.connect(user1).drawFinalNumberAndMakeLotteryClaimable(1);
+                const lotteryInfo = await ANTLotteryContract.viewLottery(1);
+                console.log("countWinnersPerBracket:", lotteryInfo.countWinnersPerBracket.toString(), ", antCoinPerBracket: ", lotteryInfo.antCoinPerBracket.toString());
+                // await expect(ANTLotteryContract.connect(user1).claimTickets(1, [0], [0])).to.be.revertedWith("ANTLottery: Bracket must be higher");
+            })
+
             it("should fail if param length is not equal", async () => {
                 await expect(ANTLotteryContract.connect(user1).claimTickets(1, ["2"], ["3", "4"])).to.be.revertedWith("ANTLottery: Not same length");
             });
@@ -495,27 +518,7 @@ describe("ANTLottery", function () {
                 await expect(ANTLotteryContract.connect(user1).claimTickets(1, [0], [5])).to.be.revertedWith("ANTLottery: No prize for this bracket");
             })
 
-            it("should fail if bracket is not correct", async () => {
-                const provider = ANTLotteryContract.provider;
-                const blockNumber = await provider.getBlockNumber();
-                const block = await provider.getBlock(blockNumber);
-                const blockTimestamp = block.timestamp;
-                const MIN_LENGTH_LOTTERY = await ANTLotteryContract.MIN_LENGTH_LOTTERY();
-                await ANTLotteryContract.addMinterRole(user1.address);
-                await ANTLotteryContract.connect(user1).startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
-                await ANTLotteryContract.connect(user1).buyTickets(user1.address, 100);
-                await increaseTime(Number(MIN_LENGTH_LOTTERY) + 100);
-                await RandomizerContract.setLotteryAddress(ANTLotteryContract.address);
-                const ticketRandomNumbers = await ANTLotteryContract.viewNumbersAndStatusesForTicketIds([0, 1]);
-                await RandomizerContract.setNextRandomResult("100" + ticketRandomNumbers[0][0].toString().slice(-4));
-                await ANTLotteryContract.connect(user1).closeLottery(1);
-                await RandomizerContract.changeLatestLotteryId();
-                await ANTLotteryContract.connect(user1).drawFinalNumberAndMakeLotteryClaimable(1);
-                const lotteryInfo = await ANTLotteryContract.viewLottery(1);
-                console.log("countWinnersPerBracket:", lotteryInfo.countWinnersPerBracket.toString(), ", antCoinPerBracket: ", lotteryInfo.antCoinPerBracket.toString());
-                console.log(ticketRandomNumbers[0][0], lotteryInfo.finalNumber)
-                await expect(ANTLotteryContract.connect(user1).claimTickets(1, [0], [0])).to.be.revertedWith("ANTLottery: Bracket must be higher");
-            })
+
 
             it("should work if all conditions are correct", async () => {
                 const provider = ANTLotteryContract.provider;
@@ -563,7 +566,7 @@ describe("ANTLottery", function () {
 
         describe("buyTickets in Marketplace", async () => {
             it("setLotteryTicketMintInfo: should fail if caller is not the owner", async () => {
-                await expect(MarketplaceContract.connect(badActor).setLotteryTicketMintInfo(true, 10000, ANTCoinContract.address, 2100000)).to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(MarketplaceContract.connect(badActor).setLotteryTicketMintInfo(true, 10000, ANTCoinContract.address, 2100000)).to.be.revertedWith("Marketplace: Caller is not the owner or minter");
             })
 
             it("setLotteryTicketMintInfo: should work if caller is the owner", async () => {

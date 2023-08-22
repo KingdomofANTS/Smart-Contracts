@@ -43,15 +43,17 @@ describe("ANTFood", function () {
         })
 
         it("setTokenTypeInfo: should fail if caller is not the owner", async () => {
-            await expect(ANTShopContract.connect(badActor).setTokenTypeInfo(0, "")).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(ANTShopContract.connect(badActor).setTokenTypeInfo(0, "ANTFood", "")).to.be.revertedWith("ANTShop: Caller is not the owner or minter");
         })
 
         it("setTokenTypeInfo: should work if caller is owner", async () => {
-            await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-            await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
+            await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
+            await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI2");
             const tokenTypeInfo1 = await ANTShopContract.getInfoForType(0);
             const tokenTypeInfo2 = await ANTShopContract.getInfoForType(1);
             expect(tokenTypeInfo1.mints).to.be.equal(tokenTypeInfo1.burns).to.be.equal(0);
+            expect(tokenTypeInfo1.name).to.be.equal("ANTFood");
+            expect(tokenTypeInfo2.name).to.be.equal("Leveling Potions");
             expect(tokenTypeInfo2.mints).to.be.equal(tokenTypeInfo2.burns).to.be.equal(0);
             expect(tokenTypeInfo1.isSet).to.be.equal(tokenTypeInfo2.isSet).to.be.equal(true);
             expect(tokenTypeInfo1.baseURI).to.be.equal("testBaseURI1");
@@ -60,8 +62,8 @@ describe("ANTFood", function () {
         })
 
         describe("mint",  () => {
-            it("should fail if caller is not the minter", async () => {
-                await expect(ANTShopContract.connect(badActor).mint(0, 1, user1.address)).to.be.revertedWith("ANTShop: Caller is not the minter");
+            it("should fail if Caller is not the owner or minter", async () => {
+                await expect(ANTShopContract.connect(badActor).mint(0, 1, user1.address)).to.be.revertedWith("ANTShop: Caller is not the owner or minter");
             })
 
             it("should fail if type info not set", async () => {
@@ -71,7 +73,7 @@ describe("ANTFood", function () {
 
             it("should work if caller is minter", async () => {
                 await ANTShopContract.addMinterRole(user1.address);
-                await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+                await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
                 await ANTShopContract.connect(user1).mint(0, 2, user2.address);
                 const tokenTypeInfo = await ANTShopContract.getInfoForType(0);
                 expect(tokenTypeInfo.mints).to.be.equal(2);
@@ -81,8 +83,8 @@ describe("ANTFood", function () {
         })
 
         describe("burn",  () => {
-            it("should fail if caller is not the minter", async () => {
-                await expect(ANTShopContract.connect(badActor).burn(0, 1, user1.address)).to.be.revertedWith("ANTShop: Caller is not the minter");
+            it("should fail if Caller is not the owner or minter", async () => {
+                await expect(ANTShopContract.connect(badActor).burn(0, 1, user1.address)).to.be.revertedWith("ANTShop: Caller is not the owner or minter");
             })
 
             it("should fail if no tokens minted", async () => {
@@ -92,7 +94,7 @@ describe("ANTFood", function () {
 
             it("should work if caller is minter", async () => {
                 await ANTShopContract.addMinterRole(user1.address);
-                await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+                await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
                 await ANTShopContract.connect(user1).mint(0, 2, user2.address);
                 const tokenTypeInfo = await ANTShopContract.getInfoForType(0);
                 expect(tokenTypeInfo.mints).to.be.equal(2);
@@ -113,8 +115,8 @@ describe("ANTFood", function () {
         })
 
         it("uri: should work if token info is already set", async () => {
-            await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-            await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
+            await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
+            await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI2");
             expect(await ANTShopContract.uri(0)).to.be.equal("testBaseURI1");
             expect(await ANTShopContract.uri(1)).to.be.equal("testBaseURI2");
         })
@@ -124,7 +126,7 @@ describe("ANTFood", function () {
         })
 
         it("setPaused: should work if caller is owner", async () => {
-            await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+            await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
             await ANTShopContract.addMinterRole(user1.address);
             await ANTShopContract.setPaused(true);
             await expect(ANTShopContract.connect(user1).mint(0, 1, user2.address)).to.be.revertedWith("Pausable: paused");
@@ -136,14 +138,14 @@ describe("ANTFood", function () {
 
         it("Mint Event: should work Mint Emit", async () => {
             await ANTShopContract.addMinterRole(user1.address);
-            await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+            await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
             const tx = await ANTShopContract.connect(user1).mint(0, 1, user2.address);
             await expect(tx).to.emit(ANTShopContract, 'Mint').withArgs(0, user2.address, 1)
         })
 
         it("Burn Event: should work Burn Emit", async () => {
             await ANTShopContract.addMinterRole(user1.address);
-            await ANTShopContract.setTokenTypeInfo(0, "testBaseURI");
+            await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI");
             await ANTShopContract.connect(user1).mint(0, 1, user2.address);
             const tx = await ANTShopContract.connect(user1).burn(0, 1, user2.address);
             await expect(tx).to.emit(ANTShopContract, 'Burn').withArgs(0, user2.address, 1)

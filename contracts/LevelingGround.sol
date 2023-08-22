@@ -79,12 +79,18 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     mapping(uint256 => uint256) public basicANTStakedNFTsIndicies;
     // array indices of each token id for Premium ANT
     mapping(uint256 => uint256) public premiumANTStakedNFTsIndicies;
+    
+    uint256 public immutable PRECISION = 1000;
     // total number of staked Basic ANTs
     uint256 public totalBasicANTStaked;
     // total number of staked Premium ANTs
     uint256 public totalPremiumANTStaked;
     // ant coin stake fee amount
-    uint256 public stakeFeeAmount;
+    uint256 public stakeFeeAmount = 100 ether;
+
+    uint256 public fullCyclePeriod = 48 hours;
+
+    uint256 public benefitCyclePeriod = 0.5 hours;
     // basic was ant batch index
     uint256 public basicWiseANTBatchIndex = 1;
     // premium was ant batch index
@@ -104,9 +110,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     // premium ant unstake event
     event LevelingGroundUnStakePremiumANT(uint256 id, address owner);
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'PremiumANT: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "LevelingGround: Caller is not the owner or minter");
         _;
     }
     
@@ -127,10 +132,10 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     */
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice       Transfer ETH and return the success status.
+    * @dev          This function only forwards 30,000 gas to the callee.
+    * @param to     Address for ETH to be send to
+    * @param value  Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -163,6 +168,25 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return Premium ANT Array Stake information
+    */
+
+    function getPremiumANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory _tokenInfos = new StakeANT[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            _tokenInfos[i] = premiumANTGround[tokenIds[i]];
+        }
+
+        return _tokenInfos;
+    }
+
+    /**
     * @notice Return Basic ANT Stake information
     */
 
@@ -171,8 +195,28 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Staked Premium ANTs token ids
-    * @param _owner user address to get the staked premium ant token ids
+    * @notice Return Basic ANT Array Stake information
+    */
+
+    function getBasicANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory _tokenInfos = new StakeANT[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            _tokenInfos[i] = basicANTGround[tokenIds[i]];
+        }
+
+        return _tokenInfos;
+    }
+
+
+    /**
+    * @notice           Return Staked Premium ANTs token ids
+    * @param _owner     user address to get the staked premium ant token ids
     */
 
     function getPremiumANTStakedByAddress(address _owner) public view returns(uint256[] memory) {
@@ -180,7 +224,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Staked Basic ANTs token ids
+    * @notice       Return Staked Basic ANTs token ids
     * @param _owner user address to get the staked basic ant token ids
     */
 
@@ -189,42 +233,98 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return penidng potions reward amount 1,000 = 1 potion
-    * @param tokenId premium ant token id for getting reward
+    * @notice           Return penidng potions reward amount 1,000 = 1 potion
+    * @param tokenId    premium ant token id for getting reward
     */
 
     function pendingRewardOfPremiumToken(uint256 tokenId) public view returns(uint256) {
         StakeANT storage _stakeANTInfo = premiumANTGround[tokenId];
         uint256 stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
-        uint256 cyclePeriod = 48 hours - 0.5 hours * (_stakeANTInfo.level - 1);
+        uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
         if (_stakeANTInfo.batchIndex == premiumWiseANTBatchIndex) {
-            return (stakedPeriod * premiumWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+            return (stakedPeriod * premiumWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
         } else {
-            return (stakedPeriod * 1000) / cyclePeriod;
+            return (stakedPeriod * PRECISION) / cyclePeriod;
         }
     }
 
     /**
-    * @notice Return penidng potions reward amount 1,000 = 1 potion
-    * @param tokenId basic ant token id for getting reward
+    * @notice           Return penidng potions reward amount arrray. 1,000 = 1 potion
+    * @param tokenIds   premium ant token ids for getting the earning amount
+    */
+
+    function pendingRewardOfMultiPremiumTokens(uint256[] calldata tokenIds) public view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory _tokenInfos = new uint256[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT storage _stakeANTInfo = premiumANTGround[tokenIds[i]];
+            uint256 stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
+            uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
+
+            if (_stakeANTInfo.batchIndex == premiumWiseANTBatchIndex) {
+                _tokenInfos[i] = (stakedPeriod * premiumWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
+            } else {
+                _tokenInfos[i] = (stakedPeriod * PRECISION) / cyclePeriod;
+            }
+        }
+
+        return _tokenInfos;
+    }
+
+    /**
+    * @notice           Return penidng potions reward amount 1,000 = 1 potion
+    * @param tokenId    basic ant token id for getting reward
     */
 
     function pendingRewardOfBasicToken(uint256 tokenId) public view returns(uint256) {
         StakeANT storage _stakeANTInfo = basicANTGround[tokenId];
         uint256 stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
-        uint256 cyclePeriod = 48 hours - 0.5 hours * (_stakeANTInfo.level - 1);
+        uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
 
         if (_stakeANTInfo.batchIndex == basicWiseANTBatchIndex) {
-            return (stakedPeriod * basicWiseANTRewardSpeed * 1000) / cyclePeriod; // 2x faster if ant is wise
+            return (stakedPeriod * basicWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
         } else {
-            return (stakedPeriod * 1000) / cyclePeriod;
+            return (stakedPeriod * PRECISION) / cyclePeriod;
         }
     }
 
     /**
-    * @notice Function to stake premium ant to Leveling ground with stake fee
-    * @param tokenId premium ant token id for staking
+    * @notice            Return penidng potions reward amount arrray. 1,000 = 1 potion
+    * @param tokenIds    basic ant token ids for getting the earning amount
+    */
+
+    function pendingRewardOfMultiBasicTokens(uint256[] calldata tokenIds) public view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory _tokenInfos = new uint256[](tokenIdsLength);
+
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT storage _stakeANTInfo = basicANTGround[tokenIds[i]];
+            uint256 stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
+            uint256 cyclePeriod = fullCyclePeriod - benefitCyclePeriod * (_stakeANTInfo.level - 1);
+
+            if (_stakeANTInfo.batchIndex == basicWiseANTBatchIndex) {
+                _tokenInfos[i] = (stakedPeriod * basicWiseANTRewardSpeed * PRECISION) / cyclePeriod; // 2x faster if ant is wise
+            } else {
+                _tokenInfos[i] = (stakedPeriod * PRECISION) / cyclePeriod;
+            }
+        }
+
+        return _tokenInfos;
+    }
+
+    /**
+    * @notice           Function to stake premium ant to Leveling ground with stake fee
+    * @param tokenId    premium ant token id for staking
     */
 
     function stakePremiumANT(uint256 tokenId) external {
@@ -248,8 +348,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to stake basic ant to Leveling ground with stake fee
-    * @param tokenId basic ant token id for staking
+    * @notice           Function to stake basic ant to Leveling ground with stake fee
+    * @param tokenId    basic ant token id for staking
     */
 
     function stakeBasicANT(uint256 tokenId) external {
@@ -273,15 +373,15 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to unStake premium ant from Leveling Ground
-    * @param tokenId premium ant token id for unStaking
+    * @notice           Function to unStake premium ant from Leveling Ground
+    * @param tokenId    premium ant token id for unStaking
     */
 
     function unStakePremiumANT(uint256 tokenId) external {
         StakeANT memory _stakeANTInfo = premiumANTGround[tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'LevelingGround: you are not owner of this premium ant');
         uint256 rewardPotions = pendingRewardOfPremiumToken(tokenId);
-        premiumANT.ownerANTUpgrade(tokenId, rewardPotions / 1000);
+        premiumANT.ownerANTUpgrade(tokenId, rewardPotions / PRECISION);
         premiumANT.transferFrom(address(this), _stakeANTInfo.owner, tokenId);
         uint256 lastStakedNFTs = premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTs[_msgSender()].length - 1];
         premiumANTStakedNFTs[_msgSender()][premiumANTStakedNFTsIndicies[tokenId]] = lastStakedNFTs;
@@ -294,15 +394,15 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to unStake basic ant from Leveling Ground
-    * @param tokenId basic ant token id for unStaking
+    * @notice           Function to unStake basic ant from Leveling Ground
+    * @param tokenId    basic ant token id for unStaking
     */
 
     function unStakeBasicANT(uint256 tokenId) external {
         StakeANT memory _stakeANTInfo = basicANTGround[tokenId];
         require(_stakeANTInfo.owner == _msgSender(), 'LevelingGround: you are not owner of this basic ant');
         uint256 rewardPotions = pendingRewardOfBasicToken(tokenId);
-        basicANT.ownerANTUpgrade(tokenId, rewardPotions / 1000);
+        basicANT.ownerANTUpgrade(tokenId, rewardPotions / PRECISION);
         basicANT.transferFrom(address(this), _stakeANTInfo.owner, tokenId);
         uint256 lastStakedNFTs = basicANTStakedNFTs[_msgSender()][basicANTStakedNFTs[_msgSender()].length - 1];
         basicANTStakedNFTs[_msgSender()][basicANTStakedNFTsIndicies[tokenId]] = lastStakedNFTs;
@@ -324,82 +424,102 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     */
 
     /**
-    * @notice Set premium wise ant reward faster speed e.g. 2 = 2x
-    * @dev This function can only be called by the owner
+    * @notice                           Set premium wise ant reward faster speed e.g. 2 = 2x
+    * @dev                              This function can only be called by the owner
     * @param _premiumWiseANTRewardSpeed reward speed times
     */
 
-    function setPremiumWiseANTRewardSpeed(uint256 _premiumWiseANTRewardSpeed) external onlyOwner {
+    function setPremiumWiseANTRewardSpeed(uint256 _premiumWiseANTRewardSpeed) external onlyMinterOrOwner {
         premiumWiseANTRewardSpeed = _premiumWiseANTRewardSpeed;
     }
 
     /**
-    * @notice Set basic wise ant reward faster speed e.g. 2 = 2x
-    * @dev This function can only be called by the owner
-    * @param _basicWiseANTRewardSpeed reward speed times
+    * @notice                           Set basic wise ant reward faster speed e.g. 2 = 2x
+    * @dev                              This function can only be called by the owner
+    * @param _basicWiseANTRewardSpeed   reward speed times
     */
 
-    function setBasicWiseANTRewardSpeed(uint256 _basicWiseANTRewardSpeed) external onlyOwner {
+    function setBasicWiseANTRewardSpeed(uint256 _basicWiseANTRewardSpeed) external onlyMinterOrOwner {
         basicWiseANTRewardSpeed = _basicWiseANTRewardSpeed;
     }
 
     /**
-    * @notice Set premium wise ant batch index
-    * @dev This function can only be called by the owner
-    * @param _index batch index for wise ant
+    * @notice           Set premium wise ant batch index
+    * @dev              This function can only be called by the owner
+    * @param _index     batch index for wise ant
     */
 
-    function setPremiumWiseANTBatchIndex(uint256 _index) external onlyOwner {
+    function setPremiumWiseANTBatchIndex(uint256 _index) external onlyMinterOrOwner {
         premiumWiseANTBatchIndex = _index;
     }
 
     /**
-    * @notice Set basic wise ant batch index
-    * @dev This function can only be called by the owner
+    * @notice       Set basic wise ant batch index
+    * @dev          This function can only be called by the owner
     * @param _index batch index for wise ant
     */
 
-    function setBasicWiseANTBatchIndex(uint256 _index) external onlyOwner {
+    function setBasicWiseANTBatchIndex(uint256 _index) external onlyMinterOrOwner {
         basicWiseANTBatchIndex = _index;
     }
 
     /**
-    * @notice Set stake fee amount
-    * @dev This function can only be called by the owner
-    * @param _stakeFeeAmount ant coin stake fee amount for staking
+    * @notice                   Set stake fee amount
+    * @dev                      This function can only be called by the owner
+    * @param _stakeFeeAmount    ant coin stake fee amount for staking
     */
 
-    function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyOwner {
+    function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyMinterOrOwner {
         stakeFeeAmount = _stakeFeeAmount;
     }
 
     /**
-    * @notice Set ANTCoin contract address
-    * @dev This function can only be called by the owner
-    * @param _antCoin ANTCoin contract address
+    * @notice               Set Full Cycle Period for giving a Leveling Potion to token owner
+    * @dev                  This function can only be called by the owner
+    * @param _cyclePeriod   cycle period time
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setFullCyclePeriod(uint256 _cyclePeriod) external onlyMinterOrOwner {
+        fullCyclePeriod = _cyclePeriod;
+    }
+
+    /**
+    * @notice                       Set Benefit Cycle Period for giving a Leveling Potion to token owner
+    * @dev                          This function can only be called by the owner
+    * @param _benefitCyclePeriod    benefit period time
+    */
+
+    function setBenefitCyclePeriod(uint256 _benefitCyclePeriod) external onlyMinterOrOwner {
+        benefitCyclePeriod = _benefitCyclePeriod;
+    }
+
+    /**
+    * @notice           Set ANTCoin contract address
+    * @dev              This function can only be called by the owner
+    * @param _antCoin   ANTCoin contract address
+    */
+
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
     /**
-    * @notice Set premium ant contract address
-    * @dev This function can only be called by the owner
-    * @param _premiumANT Premium ANT contract address
+    * @notice               Set premium ant contract address
+    * @dev                  This function can only be called by the owner
+    * @param _premiumANT    Premium ANT contract address
     */
 
-    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
         premiumANT = _premiumANT;
     }
 
     /**
-    * @notice Set basic ant contract address
-    * @dev This function can only be called by the owner
-    * @param _basicANT Basic ANT contract address
+    * @notice           Set basic ant contract address
+    * @dev              This function can only be called by the owner
+    * @param _basicANT  Basic ANT contract address
     */
 
-    function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+    function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
         basicANT = _basicANT;
     }
 
@@ -412,27 +532,27 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to grant mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to get minter role
+    * @notice           Function to grant mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to get minter role
     */
     function addMinterRole(address _address) external onlyOwner {
         minters[_address] = true;
     }
 
     /**
-    * @notice Function to revoke mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to revoke minter role
+    * @notice           Function to revoke mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to revoke minter role
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
     }
 
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
+    * @notice       Allows owner to withdraw ETH funds to an address
+    * @dev          wraps _user in payable to fix address -> address payable
+    * @param to     Address for ETH to be send to
     * @param amount Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
@@ -440,10 +560,10 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
+    * @notice               Allows ownder to withdraw any accident tokens transferred to contract
     * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @param to             Address for token to be send to
+    * @param amount         Amount of token to send
     */
     function withdrawToken(
         address _tokenContract,

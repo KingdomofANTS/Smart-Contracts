@@ -62,6 +62,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         uint256 originTimestamp; // staked timestamp
         uint256 rewardIndex; // reward Index 0 = Common, 1 = Uncommon, 2 = Rare, 3 = Ultra rare, 4 => Legendary
         uint256 stakeAmount; // ant coin staked amount
+        uint256 lockPeriod; // ant lock period in the pool
     }
 
     // Bosses Pools Info
@@ -118,9 +119,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     // premium ant unstake event
     event BossesUnStakePremiumANT(uint256 id, address owner);
     
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], 'Bosses: Caller is not the minter');
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "Bosses: Caller is not the owner or minter");
         _;
     }
 
@@ -142,10 +142,10 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     */
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice       Transfer ETH and return the success status.
+    * @dev          This function only forwards 30,000 gas to the callee.
+    * @param to     Address for ETH to be send to
+    * @param value  Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -206,6 +206,24 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
+    * @notice Return Premium ANT Stake information array
+    */
+
+    function getPremiumANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory stakedInfo = new StakeANT[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            stakedInfo[i] = premiumANTBosses[tokenIds[i]];
+        }
+
+        return stakedInfo;
+    }
+
+    /**
     * @notice Return Basic ANT Stake information
     */
 
@@ -214,7 +232,25 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Staked Premium ANTs token ids
+    * @notice Return Basic ANT Stake information array
+    */
+
+    function getBasicANTMultiStakeInfo(uint256[] calldata tokenIds) external view returns(StakeANT[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new StakeANT[](0);
+        }
+
+        StakeANT[] memory stakedInfo = new StakeANT[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            stakedInfo[i] = basicANTBosses[tokenIds[i]];
+        }
+
+        return stakedInfo;
+    }
+
+    /**
+    * @notice       Return Staked Premium ANTs token ids
     * @param _owner user address to get the staked premium ant token ids
     */
 
@@ -223,7 +259,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Staked Basic ANTs token ids
+    * @notice       Return Staked Basic ANTs token ids
     * @param _owner user address to get the staked basic ant token ids
     */
 
@@ -232,7 +268,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Bosses Pool Info by pool index
+    * @notice           Return Bosses Pool Info by pool index
     * @param _poolIndex pool index
     */
 
@@ -242,12 +278,78 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Stake PremiumANT into Bosses Pool with ANTCoin Stake Amount
-    * @param _tokenId premium ant token id for stake
+    * @notice               Return Bosses Pool Info array by pool indexs
+    * @param poolIndexArray pool index array
+    */
+
+    function getBossesPoolMultiInfoByIndex(uint256[] calldata poolIndexArray) external view returns(BossesPool[] memory) {
+        uint256 poolIndexLengh = poolIndexArray.length;
+        if (poolIndexLengh == 0) {
+            return new BossesPool[](0);
+        }
+
+        BossesPool[] memory bossesPoolInfos = new BossesPool[](poolIndexLengh);
+        for(uint256 i = 0; i < poolIndexLengh; i++) {
+            require(poolIndexArray[i] < bossesPools.length, "Bosses: invalid pool index");
+            bossesPoolInfos[i] = bossesPools[poolIndexArray[i]];
+        }
+        return bossesPoolInfos;
+    }
+
+    /**
+    * @notice           Return Bosses tokens earning reward amount array
+    * @param tokenIds   premium ant token ids array
+    */
+
+    function pendingRewardMultiPremiumANT(uint256[] calldata tokenIds) external view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory pendingRewards = new uint256[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT memory _stakeANTInfo = premiumANTBosses[tokenIds[i]];
+            BossesPool memory _bossesPool = bossesPools[_stakeANTInfo.rewardIndex];
+            uint256 stakeAmount = _stakeANTInfo.stakeAmount;
+            uint256 earningReward = _calculateReward(stakeAmount, _bossesPool.rewardAPY);
+            pendingRewards[i] = earningReward;
+        }
+
+        return pendingRewards;
+    }
+
+    /**
+    * @notice           Return Bosses tokens earning reward amount array
+    * @param tokenIds   basic ant token ids array
+    */
+
+    function pendingRewardMultiBasicANT(uint256[] calldata tokenIds) external view returns(uint256[] memory) {
+        uint256 tokenIdsLength = tokenIds.length;
+        if (tokenIdsLength == 0) {
+            return new uint256[](0);
+        }
+
+        uint256[] memory pendingRewards = new uint256[](tokenIdsLength);
+        for(uint256 i = 0; i < tokenIdsLength; i++) {
+            StakeANT memory _stakeANTInfo = basicANTBosses[tokenIds[i]];
+            BossesPool memory _bossesPool = bossesPools[_stakeANTInfo.rewardIndex];
+            uint256 stakeAmount = _stakeANTInfo.stakeAmount;
+            uint256 earningReward = _calculateReward(stakeAmount, _bossesPool.rewardAPY);
+            pendingRewards[i] = earningReward;
+        }
+
+        return pendingRewards;
+    }
+
+    /**
+    * @notice           Stake PremiumANT into Bosses Pool with ANTCoin Stake Amount
+    * @param _tokenId   premium ant token id for stake
     */
 
     function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused nonReentrant {
         require(premiumANT.ownerOf(_tokenId) == _msgSender(), 'Bosses: you are not owner of this token');
+        require(_antCAmount > 0, "Bosses: stake amount should be >= 0");
         require(_antCAmount <= limitANTCoinStakeAmount, 'Bosses: ant coin stake amount exceed the limit amount');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Bosses: insufficient ant coin balance');
         require(bossesPools.length > 0, "Bosses: bosses pools info has not been set yet");
@@ -260,7 +362,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             owner: _msgSender(),
             originTimestamp: block.timestamp,
             rewardIndex: _randomRewardIndex,
-            stakeAmount: _antCAmount
+            stakeAmount: _antCAmount,
+            lockPeriod: stakePeriod
         });
 
         premiumANTStakedNFTs[_msgSender()].push(_tokenId);
@@ -273,12 +376,13 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Stake BasicANT into Bosses Pool with ANTCoin stake amount
-    * @param _tokenId basic ant token id for stake
+    * @notice           Stake BasicANT into Bosses Pool with ANTCoin stake amount
+    * @param _tokenId   basic ant token id for stake
     */
 
     function stakeBasicANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused nonReentrant {
         require(basicANT.ownerOf(_tokenId) == _msgSender(), 'Bosses: you are not owner of this token');
+        require(_antCAmount > 0, "Bosses: stake amount should be >= 0");
         require(_antCAmount <= limitANTCoinStakeAmount, 'Bosses: ant coin stake amount exceed the limit amount');
         require(antCoin.balanceOf(_msgSender()) >= _antCAmount, 'Bosses: insufficient ant coin balance');
         require(bossesPools.length > 0, "Bosses: bosses pools info has not been set yet");
@@ -291,7 +395,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             owner: _msgSender(),
             originTimestamp: block.timestamp,
             rewardIndex: _randomRewardIndex,
-            stakeAmount: _antCAmount
+            stakeAmount: _antCAmount,
+            lockPeriod: stakePeriod
         });
         
         basicANTStakedNFTs[_msgSender()].push(_tokenId);
@@ -304,9 +409,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice UnStake PremiumANT from Bosses Pool with earning rewards
-    *         if you unstake ant early, you will lose 20% of ant coin staked amount
-    * @param _tokenId premium ant token id for unStake
+    * @notice           UnStake PremiumANT from Bosses Pool with earning rewards
+    *                   if you unstake ant early, you will lose 20% of ant coin staked amount
+    * @param _tokenId   premium ant token id for unStake
     */
 
     function unStakePremiumANT(uint256 _tokenId) external whenNotPaused nonReentrant {
@@ -314,7 +419,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         uint256 _stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
         require(_stakeANTInfo.owner == _msgSender(), 'Bosses: you are not owner of this premium ant');
 
-        if(_stakedPeriod < stakePeriod) {
+        if(_stakedPeriod < _stakeANTInfo.lockPeriod) {
             // early unStake
             uint256 burnAmount = _stakeANTInfo.stakeAmount * burnRate / 100;
             antCoin.burn(address(this), burnAmount);
@@ -325,7 +430,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             uint256 earningReward = _calculateReward(stakeAmount, _bossesPool.rewardAPY);
             antCoin.transfer(_stakeANTInfo.owner, stakeAmount);
             antCoin.mint(_stakeANTInfo.owner, earningReward);
-            premiumANT.downgradeLevel(_tokenId, _bossesPool.drainedLevel);
+            premiumANT.setLevel(_tokenId, _bossesPool.drainedLevel);
         }
 
         premiumANT.transferFrom(address(this), _msgSender(), _tokenId);
@@ -342,9 +447,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice UnStake baisc ant from Bosses Pool with earning rewards
-    *         if you unstake ant early, you will lose 20% of ant coin staked amount
-    * @param _tokenId basic ant token id for unStake
+    * @notice           UnStake baisc ant from Bosses Pool with earning rewards
+    *                   if you unstake ant early, you will lose 20% of ant coin staked amount
+    * @param _tokenId   basic ant token id for unStake
     */
 
     function unStakeBasicANT(uint256 _tokenId) external whenNotPaused nonReentrant {
@@ -352,7 +457,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
         uint256 _stakedPeriod = block.timestamp - _stakeANTInfo.originTimestamp;
         require(_stakeANTInfo.owner == _msgSender(), 'Bosses: you are not owner of this basic ant');
 
-        if(_stakedPeriod < stakePeriod) {
+        if(_stakedPeriod < _stakeANTInfo.lockPeriod) {
             // early unStake
             uint256 burnAmount = _stakeANTInfo.stakeAmount * burnRate / 100;
             antCoin.burn(address(this), burnAmount);
@@ -363,7 +468,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
             uint256 earningReward = _calculateReward(stakeAmount, _bossesPool.rewardAPY);
             antCoin.transfer(_stakeANTInfo.owner, stakeAmount);
             antCoin.mint(_stakeANTInfo.owner, earningReward);
-            basicANT.downgradeLevel(_tokenId, _bossesPool.drainedLevel);
+            basicANT.setLevel(_tokenId, _bossesPool.drainedLevel);
         }
 
         basicANT.transferFrom(address(this), _msgSender(), _tokenId);
@@ -389,15 +494,15 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     */
 
     /**
-    * @notice Function to add bosses pools info
-    * @dev This function can only be called by the owner
-    * @param _poolNames array of pool names
-    * @param _rewardAPYs array of reward apy
+    * @notice               Function to add bosses pools info
+    * @dev                  This function can only be called by the owner
+    * @param _poolNames     array of pool names
+    * @param _rewardAPYs    array of reward apy
     * @param _drainedLevels array of ant drain levels
     * @param _levelRequired array of required levels
     */
 
-    function setBossesPoolsInfo(string[] memory _poolNames, uint256[] memory _rewardAPYs, uint256[] memory _drainedLevels, uint256[] memory _levelRequired) external onlyOwner {
+    function setBossesPoolsInfo(string[] memory _poolNames, uint256[] memory _rewardAPYs, uint256[] memory _drainedLevels, uint256[] memory _levelRequired) external onlyMinterOrOwner {
         delete bossesPools; // initialize bosses pools info
         require((_poolNames.length == _rewardAPYs.length) && (_rewardAPYs.length == _drainedLevels.length) && (_drainedLevels.length == _levelRequired.length), "Bosses: invalid bosses pools info");
         for(uint256 i = 0; i < _poolNames.length; i++) {
@@ -411,29 +516,29 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to set the ant coin stake limit amount
-    * @dev This function can only be called by the owner
-    * @param _limitANTCoinStakeAmount ant coin stake limit amount for each ants & pools
+    * @notice                           Function to set the ant coin stake limit amount
+    * @dev                              This function can only be called by the owner
+    * @param _limitANTCoinStakeAmount   ant coin stake limit amount for each ants & pools
     */
 
-    function setLimitANTCoinStakeAmount(uint256 _limitANTCoinStakeAmount) external onlyOwner {
+    function setLimitANTCoinStakeAmount(uint256 _limitANTCoinStakeAmount) external onlyMinterOrOwner {
         limitANTCoinStakeAmount = _limitANTCoinStakeAmount;
     }
 
     /**
-    * @notice Function to set the burn rate if user unstake the ant early than stake period
-    * @dev This function can only be called by the owner
-    * @param _burnRate burn rate
+    * @notice           Function to set the burn rate if user unstake the ant early than stake period
+    * @dev              This function can only be called by the owner
+    * @param _burnRate  burn rate
     */
 
-    function setBurnRate(uint256 _burnRate) external onlyOwner {
+    function setBurnRate(uint256 _burnRate) external onlyMinterOrOwner {
         burnRate = _burnRate;
     }
 
     /**
-    * @notice Function to grant mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to get minter role
+    * @notice          Function to grant mint role
+    * @dev             This function can only be called by the owner
+    * @param _address  address to get minter role
     */
 
     function addMinterRole(address _address) external onlyOwner {
@@ -441,9 +546,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to revoke mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to revoke minter role
+    * @notice           Function to revoke mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to revoke minter role
     */
 
     function revokeMinterRole(address _address) external onlyOwner {
@@ -451,52 +556,52 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to set pool stake period timestamp
-    * @dev This function can only be called by the owner
-    * @param _stakePeriod stake period timestamp
+    * @notice               Function to set pool stake period timestamp
+    * @dev                  This function can only be called by the owner
+    * @param _stakePeriod   stake period timestamp
     */
 
-    function setStakePeriod(uint256 _stakePeriod) external onlyOwner {
+    function setStakePeriod(uint256 _stakePeriod) external onlyMinterOrOwner {
         stakePeriod = _stakePeriod;        
     }
 
     /**
-    * @notice Set Randomizer contract address
-    * @dev This function can only be called by the owner
-    * @param _randomizer Randomizer contract address
+    * @notice               Set Randomizer contract address
+    * @dev                  This function can only be called by the owner
+    * @param _randomizer    Randomizer contract address
     */
 
-    function setRandomizerContract(IRandomizer _randomizer) external onlyOwner {
+    function setRandomizerContract(IRandomizer _randomizer) external onlyMinterOrOwner {
         randomizer = _randomizer;
     }
 
     /**
-    * @notice Set ANTCoin contract address
-    * @dev This function can only be called by the owner
-    * @param _antCoin ANTCoin contract address
+    * @notice           Set ANTCoin contract address
+    * @dev              This function can only be called by the owner
+    * @param _antCoin   ANTCoin contract address
     */
 
-    function setANTCoinContract(IANTCoin _antCoin) external onlyOwner {
+    function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
         antCoin = _antCoin;
     }
 
     /**
-    * @notice Set premium ant contract address
-    * @dev This function can only be called by the owner
-    * @param _premiumANT Premium ANT contract address
+    * @notice               Set premium ant contract address
+    * @dev                  This function can only be called by the owner
+    * @param _premiumANT    Premium ANT contract address
     */
 
-    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyOwner {
+    function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
         premiumANT = _premiumANT;
     }
 
     /**
-    * @notice Set basic ant contract address
-    * @dev This function can only be called by the owner
-    * @param _basicANT Basic ANT contract address
+    * @notice           Set basic ant contract address
+    * @dev              This function can only be called by the owner
+    * @param _basicANT  Basic ANT contract address
     */
 
-    function setBasicANTContract(IBasicANT _basicANT) external onlyOwner {
+    function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
         basicANT = _basicANT;
     }
 
@@ -509,20 +614,20 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
-    * @param amount Amount of ETH to send
+    * @notice           Allows owner to withdraw ETH funds to an address
+    * @dev              wraps _user in payable to fix address -> address payable
+    * @param to         Address for ETH to be send to
+    * @param amount     Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
         require(_safeTransferETH(to, amount));
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
-    * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @notice                   Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract     Address for the token
+    * @param to                 Address for token to be send to
+    * @param amount             Amount of token to send
     */
     function withdrawToken(
         address _tokenContract,

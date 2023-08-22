@@ -19,8 +19,8 @@ describe("Workforce", function () {
         await ANTShopContract.deployed();
 
         // set ANTFood and LevelingPotions contract
-        await ANTShopContract.setTokenTypeInfo(0, "testBaseURI1");
-        await ANTShopContract.setTokenTypeInfo(1, "testBaseURI2");
+        await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "testBaseURI1");
+        await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "testBaseURI2");
 
         // Basic ANT smart contract deployment
         BasicANT = await ethers.getContractFactory('BasicANT');
@@ -82,22 +82,6 @@ describe("Workforce", function () {
             const role2 = await WorkforceContract.getMinterRole(user1.address);
             expect(role2).to.be.equal(false);
         });
-
-        it("setBatchIndexForExtraAPY: should work if caller is owner", async () => {
-            const batchIndexForExtraAPY = await WorkforceContract.batchIndexForExtraAPY();
-            expect(batchIndexForExtraAPY).to.be.equal(0);
-            await WorkforceContract.setBatchIndexForExtraAPY(1);
-            const expected = await WorkforceContract.batchIndexForExtraAPY();
-            expect(expected).to.be.equal(1);
-        })
-
-        it("setExtraAPY: should work if caller is owner", async () => {
-            const extraAPY = await WorkforceContract.extraAPY();
-            expect(extraAPY).to.be.equal(500);
-            await WorkforceContract.setExtraAPY(600);
-            const expected = await WorkforceContract.extraAPY();
-            expect(expected).to.be.equal(600);
-        })
 
         it("setInitLevelAfterUnstake: should work if caller is owner", async () => {
             const initLevelAfterUnstake = await WorkforceContract.initLevelAfterUnstake();
@@ -265,9 +249,8 @@ describe("Workforce", function () {
             await increaseTime(yearTimeStamp);
             const pendingAmount1 = await WorkforceContract.pendingRewardOfPremiumToken(1);
             const cycleStakePeriod = await WorkforceContract.cycleStakePeriod();
-            const extraAPY = premiumANTStakeInfo.batchIndex == 0 ? await WorkforceContract.extraAPY() : 0;
             const antExpereince = await PremiumANTContract.getANTExperience(1);
-            const expected = antCoinTransferAmount.mul(antExpereince.add(extraAPY)).mul(yearTimeStamp).div(cycleStakePeriod.mul(10 ** 4));
+            const expected = antCoinTransferAmount.mul(antExpereince).mul(yearTimeStamp).div(cycleStakePeriod.mul(10 ** 4));
             expect(Math.floor(Number(ethers.utils.formatEther(pendingAmount1)))).to.be.equal(Math.floor(Number(ethers.utils.formatEther(expected))))
             await increaseTime(yearTimeStamp * 4);
             const pendingAmount2 = await WorkforceContract.pendingRewardOfPremiumToken(1);
@@ -278,13 +261,11 @@ describe("Workforce", function () {
             await PremiumANTContract.connect(user1).mint(1, user1.address, 1);
             await ANTCoinContract.transfer(user1.address, antCoinTransferAmount)
             await WorkforceContract.connect(user1).stakePremiumANT(2, antCoinTransferAmount);
-            const premiumANTStakeInfo1 = await WorkforceContract.getPremiumANTStakeInfo(2);
             await increaseTime(yearTimeStamp);
             const pendingAmount3 = await WorkforceContract.pendingRewardOfPremiumToken(2);
             const cycleStakePeriod1 = await WorkforceContract.cycleStakePeriod();
-            const extraAPY1 = premiumANTStakeInfo1.batchIndex == 0 ? await WorkforceContract.extraAPY() : 0;
-            const antExpereince1 = await PremiumANTContract.getANTExperience(1);
-            const expected1 = antCoinTransferAmount.mul(antExpereince1.add(extraAPY1)).mul(yearTimeStamp).div(cycleStakePeriod1.mul(10 ** 4));
+            const antExpereince1 = await PremiumANTContract.getANTExperience(2);
+            const expected1 = antCoinTransferAmount.mul(antExpereince1).mul(yearTimeStamp).div(cycleStakePeriod1.mul(10 ** 4));
             expect(Math.floor(Number(ethers.utils.formatEther(pendingAmount3)))).to.be.equal(Math.floor(Number(ethers.utils.formatEther(expected1))))
             await increaseTime(yearTimeStamp * 4);
             const pendingAmount4 = await WorkforceContract.pendingRewardOfPremiumToken(2);
@@ -309,9 +290,8 @@ describe("Workforce", function () {
             await increaseTime(yearTimeStamp);
             const pendingAmount1 = await WorkforceContract.pendingRewardOfBasicToken(1);
             const cycleStakePeriod = await WorkforceContract.cycleStakePeriod();
-            const extraAPY = basicANTStakeInfo.batchIndex == 0 ? await WorkforceContract.extraAPY() : 0;
             const antExpereince = await BasicANTContract.getANTExperience(1);
-            const expected = antCoinTransferAmount.mul(antExpereince.add(extraAPY)).mul(yearTimeStamp).div(cycleStakePeriod.mul(10 ** 4));
+            const expected = antCoinTransferAmount.mul(antExpereince).mul(yearTimeStamp).div(cycleStakePeriod.mul(10 ** 4));
             expect(Math.floor(Number(ethers.utils.formatEther(pendingAmount1)))).to.be.equal(Math.floor(Number(ethers.utils.formatEther(expected))))
             await increaseTime(yearTimeStamp * 4);
             const pendingAmount2 = await WorkforceContract.pendingRewardOfBasicToken(1);
@@ -326,9 +306,8 @@ describe("Workforce", function () {
             await increaseTime(yearTimeStamp);
             const pendingAmount3 = await WorkforceContract.pendingRewardOfBasicToken(2);
             const cycleStakePeriod1 = await WorkforceContract.cycleStakePeriod();
-            const extraAPY1 = basicANTStakeInfo1.batchIndex == 0 ? await WorkforceContract.extraAPY() : 0;
-            const antExpereince1 = await BasicANTContract.getANTExperience(1);
-            const expected1 = antCoinTransferAmount.mul(antExpereince1.add(extraAPY1)).mul(yearTimeStamp).div(cycleStakePeriod1.mul(10 ** 4));
+            const antExpereince1 = await BasicANTContract.getANTExperience(2);
+            const expected1 = antCoinTransferAmount.mul(antExpereince1).mul(yearTimeStamp).div(cycleStakePeriod1.mul(10 ** 4));
             expect(Math.floor(Number(ethers.utils.formatEther(pendingAmount3)))).to.be.equal(Math.floor(Number(ethers.utils.formatEther(expected1))))
             await increaseTime(yearTimeStamp * 4);
             const pendingAmount4 = await WorkforceContract.pendingRewardOfBasicToken(2);
@@ -500,7 +479,7 @@ describe("Workforce", function () {
         })
 
         it("setLimitAntCoinStakeAmount: should fail if caller is not the owner", async () => {
-            await expect(WorkforceContract.connect(badActor).setLimitAntCoinStakeAmount(100)).to.be.revertedWith("Ownable: caller is not the owner")
+            await expect(WorkforceContract.connect(badActor).setLimitAntCoinStakeAmount(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter")
         })
 
         it("setLimitAntCoinStakeAmount: shoudl work if caller is the owner", async () => {

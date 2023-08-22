@@ -8,12 +8,11 @@ describe("Purse", function () {
         [deployer, controller, badActor, user1, user2, user3, ...user] = await ethers.getSigners();
 
         // Randomizer smart contract deployment
-        const keyHash = "0x01f7a05a9b9582bd382add6f255d31774e3846da15c0f45959a3b0266cb40d6b";
-        const linkToken = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
-        const vrfCordinator = "0xa555fC018435bef5A13C6c6870a9d4C11DEC329C";
-        const vrfFee = "1000000000000000000"
+        const polyKeyHash = "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
+        const polyVrfCoordinator = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed"
+        const subScriptionId = 5715;
         Randomizer = await ethers.getContractFactory("Randomizer");
-        RandomizerContract = await Randomizer.deploy(keyHash, linkToken, vrfCordinator, vrfFee);
+        RandomizerContract = await Randomizer.deploy(polyKeyHash, polyVrfCoordinator, subScriptionId);
         await RandomizerContract.deployed();
 
         MockRandomizer = await ethers.getContractFactory("MockRandomizer");
@@ -31,7 +30,7 @@ describe("Purse", function () {
         ANTShopContract = await ANTShop.deploy();
         await ANTShopContract.deployed();
 
-        
+
         // ANTLottery smart contract deployment
         ANTLottery = await ethers.getContractFactory("ANTLottery");
         ANTLotteryContract = await ANTLottery.deploy(MockRandomizerContract.address, ANTCoinContract.address);
@@ -49,8 +48,8 @@ describe("Purse", function () {
 
         await PurseContract.addMinterRole(MarketplaceContract.address);
         await ANTShopContract.addMinterRole(PurseContract.address);
-        await ANTShopContract.setTokenTypeInfo(0, "ANTFoodURI");
-        await ANTShopContract.setTokenTypeInfo(1, "LevelingPotionsURI");
+        await ANTShopContract.setTokenTypeInfo(0, "ANTFood", "ANTFoodURI");
+        await ANTShopContract.setTokenTypeInfo(1, "Leveling Potions", "LevelingPotionsURI");
         await ANTLotteryContract.addMinterRole(MarketplaceContract.address);
         await ANTLotteryContract.addMinterRole(PurseContract.address);
         await ANTCoinContract.addMinterRole(ANTLotteryContract.address)
@@ -86,7 +85,7 @@ describe("Purse", function () {
         });
 
         it("setAntFoodTokenId: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).setAntFoodTokenId(0)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(PurseContract.connect(badActor).setAntFoodTokenId(0)).to.be.revertedWith("Purse: Caller is not the owner or minter");
         })
 
         it("setAntFoodTokenId: should work if caller is the owner", async () => {
@@ -98,7 +97,7 @@ describe("Purse", function () {
         })
 
         it("setLevelingPotionTokenId: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).setLevelingPotionTokenId(0)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(PurseContract.connect(badActor).setLevelingPotionTokenId(0)).to.be.revertedWith("Purse: Caller is not the owner or minter");
         })
 
         it("setLevelingPotionTokenId: should work if caller is the owner", async () => {
@@ -111,7 +110,7 @@ describe("Purse", function () {
 
 
         it("setRandomizerContract: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).setRandomizerContract(user1.address)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(PurseContract.connect(badActor).setRandomizerContract(user1.address)).to.be.revertedWith("Purse: Caller is not the owner or minter");
         })
 
         it("setRandomizerContract: should work if caller is the owner", async () => {
@@ -126,7 +125,7 @@ describe("Purse", function () {
         // ["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])
 
         it("addMultiPurseCategories: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).addMultiPurseCategories(["name"], [100], [40], [40], [20], [1], [1], [1], [1])).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(PurseContract.connect(badActor).addMultiPurseCategories(["name"], [100], [40], [40], [20], [1], [1], [1], [1])).to.be.revertedWith("Purse: Caller is not the owner or minter");
         })
 
         it("addMultiPurseCategories: should fail if param array length doens't match", async () => {
@@ -151,7 +150,7 @@ describe("Purse", function () {
         })
 
         it("updatePurseCategories: should fail if caller is not the owner", async () => {
-            await expect(PurseContract.connect(badActor).updatePurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100])).to.be.revertedWith("Ownable: caller is not the owner")
+            await expect(PurseContract.connect(badActor).updatePurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100])).to.be.revertedWith("Purse: Caller is not the owner or minter")
         })
 
         it("updatePurseCategories: should fail if updated purse categories array length doesn't match", async () => {
@@ -180,7 +179,7 @@ describe("Purse", function () {
 
         it("mint: should fail if caller is not minter", async () => {
             await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])
-            await expect(PurseContract.connect(user1).mint(user1.address, 2)).to.be.revertedWith("Purse: Caller is not the minter")
+            await expect(PurseContract.connect(user1).mint(user1.address, 2)).to.be.revertedWith("Purse: Caller is not the owner or minter")
         })
 
         it("buyPurseTokens: should fail if matic mint amount is not enough", async () => {
@@ -240,8 +239,14 @@ describe("Purse", function () {
             await ANTLotteryContract.connect(user1).startLottery(Number(blockTimestamp) + Number(MIN_LENGTH_LOTTERY) + 100, [2000, 2000, 2000, 2000, 1000, 1000]);
             await PurseContract.addMultiPurseCategories(["Common", "UnCommon", "Rare", "Ultra Rare", "Legendary"], [45, 25, 20, 7, 3], [20, 5, 25, 25, 35], [5, 20, 25, 25, 35], [75, 75, 50, 50, 30], [5, 10, 10, 20, 50], [1, 1, 1, 2, 5], [10, 25, 30, 50, 100], [0, 0, 0, 0, 0])
             await MarketplaceContract.setPurseMintInfo(true, 100000, ANTCoinContract.address, 10000000);
-            await MarketplaceContract.connect(user1).buyPurseTokens(user1.address, 1, { value: 100000 * 1 });
-            await expect(PurseContract.connect(user1).usePurseToken(1)).to.be.not.reverted;
+            await MarketplaceContract.connect(user1).buyPurseTokens(user1.address, 50, { value: 100000 * 100 });
+            await MarketplaceContract.connect(user1).buyPurseTokens(user1.address, 50, { value: 100000 * 100 });
+            await expect(PurseContract.connect(user1).usePurseToken(5)).to.be.not.reverted;
+            await expect(PurseContract.connect(user1).usePurseToken(8)).to.be.not.reverted;
+            await expect(PurseContract.connect(user1).usePurseToken(2)).to.be.not.reverted;
+            await expect(PurseContract.connect(user1).usePurseToken(10)).to.be.not.reverted;
+            await expect(PurseContract.connect(user1).usePurseToken(29)).to.be.not.reverted;
+            await expect(PurseContract.connect(user1).usePurseToken(30)).to.be.not.reverted;
         })
     });
 });

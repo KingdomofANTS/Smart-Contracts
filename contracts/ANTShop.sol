@@ -41,21 +41,21 @@ W: https://kingdomofants.io
 pragma solidity ^0.8.13;
 
 import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import '@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import "./interfaces/IANTShop.sol";
 
-contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
+contract ANTShop is ERC1155, ERC1155Holder, IANTShop, Ownable, Pausable {
 
     // minters
     mapping(address => bool) private minters;
     // token type info
     mapping(uint256 => TypeInfo) private typeInfo;
 
-    // modifier to check _msgSender has minter role
-    modifier onlyMinter() {
-        require(minters[_msgSender()], "ANTShop: Caller is not the minter");
+    modifier onlyMinterOrOwner() {
+        require(minters[_msgSender()] || _msgSender() == owner(), "ANTShop: Caller is not the owner or minter");
         _;
     }
 
@@ -78,10 +78,10 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     */
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice       Transfer ETH and return the success status.
+    * @dev          This function only forwards 30,000 gas to the callee.
+    * @param to     Address for ETH to be send to
+    * @param value  Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -98,36 +98,43 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     */
 
     /**
-    * @notice Override `balanceOf` function of ERC1155 to use in IANTShop interface
-    * @param account account address to get the balance
-    * @param id token id
+    * @notice         Override `balanceOf` function of ERC1155 to use in IANTShop interface
+    * @param account  account address to get the balance
+    * @param id       token id
     */
 
     function balanceOf(address account, uint256 id) public view override(ERC1155, IANTShop) returns(uint256) {
       return super.balanceOf(account, id);
     }
 
-    /**
-    * @dev See {IERC1155-isApprovedForAll}.
-    */
-    function isApprovedForAll(address account, address operator) public view virtual override returns (bool) {
-        if(minters[account] || minters[operator]){
-          return true;
-        }
-        return super.isApprovedForAll(account, operator);
-    }
+    // /**
+    // * @dev See {IERC1155-isApprovedForAll}.
+    // */
+    // function isApprovedForAll(address account, address operator) public view virtual override returns (bool) {
+    //     if(minters[account] || minters[operator]){
+    //       return true;
+    //     }
+    //     return super.isApprovedForAll(account, operator);
+    // }
 
     /**
     * @notice Override `safeTransferFrom` function of ERC1155
     */
 
     function safeTransferFrom(address from, address to , uint256 id, uint256 amount, bytes memory data) public override(ERC1155, IANTShop) {
-      super.safeTransferFrom(from, to, id, amount, data);
+      // allow controller contracts to be send without approval
+      if (!minters[_msgSender()]) {
+        require(
+          from == _msgSender() || isApprovedForAll(from, _msgSender()),
+          'ANTShop: Caller is not owner nor approved'
+        );
+      }
+      _safeTransferFrom(from, to, id, amount, data);
     }
 
     /**
-    * @notice returns info about a Type
-    * @param typeId the typeId to return info for
+    * @notice         returns info about a Type
+    * @param typeId   the typeId to return info for
     */
     function getInfoForType(uint256 typeId) external override view returns (TypeInfo memory) {
         require(typeInfo[typeId].isSet, "ANTShop: invalid type id");
@@ -161,7 +168,7 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     */
 
     /**
-    * @notice Function to grant mint role
+    * @notice         Function to grant mint role
     * @param _address address to get minter role
     */
     function addMinterRole(address _address) external onlyOwner {
@@ -169,7 +176,7 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     }
 
     /**
-    * @notice Function to revoke mint role
+    * @notice         Function to revoke mint role
     * @param _address address to revoke minter role
     */
     function revokeMinterRole(address _address) external onlyOwner {
@@ -177,14 +184,14 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     }
 
     /**
-    * @notice Mint tokens to recipient address
-    * @dev This function can only be called by the minter
-    * @param typeId typeId for setting the token info 0 => ANTFood, 1 => LevelingPotion
-    * @param quantity the number of tokens to mint
-    * @param recipient recipient address for mint token
+    * @notice           Mint tokens to recipient address
+    * @dev              This function can only be called by the minter
+    * @param typeId     typeId for setting the token info 0 => ANTFood, 1 => LevelingPotion
+    * @param quantity   the number of tokens to mint
+    * @param recipient  recipient address for mint token
     */
 
-    function mint(uint256 typeId, uint256 quantity, address recipient) external override whenNotPaused onlyMinter {
+    function mint(uint256 typeId, uint256 quantity, address recipient) external override whenNotPaused onlyMinterOrOwner {
         require(typeInfo[typeId].isSet, "ANTShop: invalid type id");
         typeInfo[typeId].mints += quantity;
         _mint(recipient, typeId, quantity, '');
@@ -192,14 +199,14 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     }
 
     /**
-    * @notice Burn a token
-    * @dev This function can only be called by the minter
-    * @param typeId typeId for setting the token info 0 => ANTFood, 1 => LevelingPotion
+    * @notice         Burn a token
+    * @dev            This function can only be called by the minter
+    * @param typeId   typeId for setting the token info 0 => ANTFood, 1 => LevelingPotion
     * @param quantity the number of tokens to burn
     * @param burnFrom token owner address to burn
     */
 
-    function burn(uint256 typeId, uint256 quantity, address burnFrom) external override whenNotPaused onlyMinter {
+    function burn(uint256 typeId, uint256 quantity, address burnFrom) external override whenNotPaused onlyMinterOrOwner {
         require(typeInfo[typeId].mints - typeInfo[typeId].burns > 0, "ANTShop: None minted");
         typeInfo[typeId].burns += quantity;
         _burn(burnFrom , typeId, quantity);
@@ -207,13 +214,14 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     }
 
     /**
-    * @notice Set Token type info _typeId = 0 => ANTFood, _typeID = 1 => LevelingPotion
-    * @dev This function can only be called by the minter
-    * @param _typeId typeId for setting the token info
-    * @param _baseURI tokenURI for token
+    * @notice           Set Token type info _typeId = 0 => ANTFood, _typeID = 1 => LevelingPotion
+    * @dev              This function can only be called by the minter
+    * @param _typeId    typeId for setting the token info
+    * @param _baseURI   tokenURI for token
     */
 
-    function setTokenTypeInfo(uint256 _typeId, string memory _baseURI) external onlyOwner {
+    function setTokenTypeInfo(uint256 _typeId, string memory _name, string memory _baseURI) external onlyMinterOrOwner {
+        typeInfo[_typeId].name = _name;
         typeInfo[_typeId].baseURI = _baseURI;
         typeInfo[_typeId].isSet = true;
     }
@@ -226,21 +234,25 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
         else _unpause();
     }
 
+    receive() external payable {
+        // handle incoming Ether here
+    }
+
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
-    * @param amount Amount of ETH to send
+    * @notice         Allows owner to withdraw ETH funds to an address
+    * @dev            wraps _user in payable to fix address -> address payable
+    * @param to       Address for ETH to be send to
+    * @param amount   Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
         require(_safeTransferETH(to, amount));
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
+    * @notice               Allows ownder to withdraw any accident tokens transferred to contract
     * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @param to             Address for token to be send to
+    * @param amount         Amount of token to send
     */
     function withdrawToken(
         address _tokenContract,
@@ -249,5 +261,10 @@ contract ANTShop is ERC1155, IANTShop, Ownable, Pausable {
     ) public onlyOwner {
         IERC20 tokenContract = IERC20(_tokenContract);
         tokenContract.transfer(to, amount);
+    }
+
+    /// @inheritdoc	ERC165
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, ERC1155Receiver) returns (bool) {
+      return super.supportsInterface(interfaceId);
     }
 }
