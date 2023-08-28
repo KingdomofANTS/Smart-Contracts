@@ -76,6 +76,9 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     uint256 public constant MIN_LENGTH_LOTTERY = 7 days - 1 hours;
     uint256 public constant MAX_LENGTH_LOTTERY = 7 days + 1 hours;
 
+    // uint256 public constant MIN_LENGTH_LOTTERY = 5 minutes - 10 seconds;
+    // uint256 public constant MAX_LENGTH_LOTTERY = 5 minutes + 10 seconds;
+
     // The sum of the values below must be 100.
     uint256 public injectionNextLotteryPercentage = 60;
     uint256 public burnPercentage = 40;
@@ -646,8 +649,19 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     }
 
     /**
-    * @notice           Function to grant mint role
-    * @param _address   address to get minter role
+     * @notice Set a randomizer contract address
+     * @dev This function can only be called by the owner
+     * @param _randomizer the randomizer address
+     */
+
+    function setRandomizerContract(IRandomizer _randomizer) external onlyOwner {
+        require(address(_randomizer) != address(0x0), "ANTLottery: randomizer contract address can't be null");
+        randomizer = _randomizer;
+    }
+
+    /**
+    * @notice Function to grant mint role
+    * @param _address address to get minter role
     */
     function addMinterRole(address _address) external onlyOwner {
         minters[_address] = true;
