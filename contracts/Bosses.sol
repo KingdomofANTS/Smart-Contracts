@@ -142,10 +142,10 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     */
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice       Transfer ETH and return the success status.
+    * @dev          This function only forwards 30,000 gas to the callee.
+    * @param to     Address for ETH to be send to
+    * @param value  Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -250,7 +250,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Staked Premium ANTs token ids
+    * @notice       Return Staked Premium ANTs token ids
     * @param _owner user address to get the staked premium ant token ids
     */
 
@@ -259,7 +259,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Staked Basic ANTs token ids
+    * @notice       Return Staked Basic ANTs token ids
     * @param _owner user address to get the staked basic ant token ids
     */
 
@@ -268,7 +268,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Bosses Pool Info by pool index
+    * @notice           Return Bosses Pool Info by pool index
     * @param _poolIndex pool index
     */
 
@@ -278,7 +278,7 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Bosses Pool Info array by pool indexs
+    * @notice               Return Bosses Pool Info array by pool indexs
     * @param poolIndexArray pool index array
     */
 
@@ -297,8 +297,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Bosses tokens earning reward amount array
-    * @param tokenIds premium ant token ids array
+    * @notice           Return Bosses tokens earning reward amount array
+    * @param tokenIds   premium ant token ids array
     */
 
     function pendingRewardMultiPremiumANT(uint256[] calldata tokenIds) external view returns(uint256[] memory) {
@@ -320,8 +320,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Bosses tokens earning reward amount array
-    * @param tokenIds basic ant token ids array
+    * @notice           Return Bosses tokens earning reward amount array
+    * @param tokenIds   basic ant token ids array
     */
 
     function pendingRewardMultiBasicANT(uint256[] calldata tokenIds) external view returns(uint256[] memory) {
@@ -343,8 +343,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Stake PremiumANT into Bosses Pool with ANTCoin Stake Amount
-    * @param _tokenId premium ant token id for stake
+    * @notice           Stake PremiumANT into Bosses Pool with ANTCoin Stake Amount
+    * @param _tokenId   premium ant token id for stake
     */
 
     function stakePremiumANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused nonReentrant {
@@ -376,8 +376,8 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Stake BasicANT into Bosses Pool with ANTCoin stake amount
-    * @param _tokenId basic ant token id for stake
+    * @notice           Stake BasicANT into Bosses Pool with ANTCoin stake amount
+    * @param _tokenId   basic ant token id for stake
     */
 
     function stakeBasicANT(uint256 _tokenId, uint256 _antCAmount) external whenNotPaused nonReentrant {
@@ -409,9 +409,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice UnStake PremiumANT from Bosses Pool with earning rewards
-    *         if you unstake ant early, you will lose 20% of ant coin staked amount
-    * @param _tokenId premium ant token id for unStake
+    * @notice           UnStake PremiumANT from Bosses Pool with earning rewards
+    *                   if you unstake ant early, you will lose 20% of ant coin staked amount
+    * @param _tokenId   premium ant token id for unStake
     */
 
     function unStakePremiumANT(uint256 _tokenId) external whenNotPaused nonReentrant {
@@ -494,10 +494,10 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     */
 
     /**
-    * @notice Function to add bosses pools info
-    * @dev This function can only be called by the owner
-    * @param _poolNames array of pool names
-    * @param _rewardAPYs array of reward apy
+    * @notice               Function to add bosses pools info
+    * @dev                  This function can only be called by the owner
+    * @param _poolNames     array of pool names
+    * @param _rewardAPYs    array of reward apy
     * @param _drainedLevels array of ant drain levels
     * @param _levelRequired array of required levels
     */
@@ -516,9 +516,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to set the ant coin stake limit amount
-    * @dev This function can only be called by the owner
-    * @param _limitANTCoinStakeAmount ant coin stake limit amount for each ants & pools
+    * @notice                           Function to set the ant coin stake limit amount
+    * @dev                              This function can only be called by the owner
+    * @param _limitANTCoinStakeAmount   ant coin stake limit amount for each ants & pools
     */
 
     function setLimitANTCoinStakeAmount(uint256 _limitANTCoinStakeAmount) external onlyMinterOrOwner {
@@ -526,9 +526,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to set the burn rate if user unstake the ant early than stake period
-    * @dev This function can only be called by the owner
-    * @param _burnRate burn rate
+    * @notice           Function to set the burn rate if user unstake the ant early than stake period
+    * @dev              This function can only be called by the owner
+    * @param _burnRate  burn rate
     */
 
     function setBurnRate(uint256 _burnRate) external onlyMinterOrOwner {
@@ -536,9 +536,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to grant mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to get minter role
+    * @notice          Function to grant mint role
+    * @dev             This function can only be called by the owner
+    * @param _address  address to get minter role
     */
 
     function addMinterRole(address _address) external onlyOwner {
@@ -546,9 +546,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to revoke mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to revoke minter role
+    * @notice           Function to revoke mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to revoke minter role
     */
 
     function revokeMinterRole(address _address) external onlyOwner {
@@ -556,9 +556,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to set pool stake period timestamp
-    * @dev This function can only be called by the owner
-    * @param _stakePeriod stake period timestamp
+    * @notice               Function to set pool stake period timestamp
+    * @dev                  This function can only be called by the owner
+    * @param _stakePeriod   stake period timestamp
     */
 
     function setStakePeriod(uint256 _stakePeriod) external onlyMinterOrOwner {
@@ -566,9 +566,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set Randomizer contract address
-    * @dev This function can only be called by the owner
-    * @param _randomizer Randomizer contract address
+    * @notice               Set Randomizer contract address
+    * @dev                  This function can only be called by the owner
+    * @param _randomizer    Randomizer contract address
     */
 
     function setRandomizerContract(IRandomizer _randomizer) external onlyMinterOrOwner {
@@ -576,9 +576,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set ANTCoin contract address
-    * @dev This function can only be called by the owner
-    * @param _antCoin ANTCoin contract address
+    * @notice           Set ANTCoin contract address
+    * @dev              This function can only be called by the owner
+    * @param _antCoin   ANTCoin contract address
     */
 
     function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
@@ -586,9 +586,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set premium ant contract address
-    * @dev This function can only be called by the owner
-    * @param _premiumANT Premium ANT contract address
+    * @notice               Set premium ant contract address
+    * @dev                  This function can only be called by the owner
+    * @param _premiumANT    Premium ANT contract address
     */
 
     function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
@@ -596,9 +596,9 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set basic ant contract address
-    * @dev This function can only be called by the owner
-    * @param _basicANT Basic ANT contract address
+    * @notice           Set basic ant contract address
+    * @dev              This function can only be called by the owner
+    * @param _basicANT  Basic ANT contract address
     */
 
     function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
@@ -614,20 +614,20 @@ contract Bosses is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
-    * @param amount Amount of ETH to send
+    * @notice           Allows owner to withdraw ETH funds to an address
+    * @dev              wraps _user in payable to fix address -> address payable
+    * @param to         Address for ETH to be send to
+    * @param amount     Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
         require(_safeTransferETH(to, amount));
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
-    * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @notice                   Allows ownder to withdraw any accident tokens transferred to contract
+    * @param _tokenContract     Address for the token
+    * @param to                 Address for token to be send to
+    * @param amount             Amount of token to send
     */
     function withdrawToken(
         address _tokenContract,

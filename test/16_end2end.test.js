@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { BigNumber, utils } = require("ethers");
+const { utils } = require("ethers");
 const { ethers, network } = require("hardhat")
 
 describe("End2End", function () {
@@ -47,13 +47,12 @@ describe("End2End", function () {
         await PremiumANTContract.setBatchInfo(1, "Wise ANT", "testBaseURI2", 100, 1);
         await PremiumANTContract.setBatchInfo(2, "Fighter ANT", "testBaseURI2", 100, 1);
 
-        // ramdomizer
+        // Randomizer smart contract deployment
         const polyKeyHash = "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
         const polyVrfCoordinator = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed"
-        const polyLinkToken = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
-        const vrFee = "1000000000000"
-        Randomizer = await hre.ethers.getContractFactory("Randomizer");
-        RandomizerContract = await Randomizer.deploy(polyKeyHash, polyVrfCoordinator, polyLinkToken, vrFee);
+        const subScriptionId = 5715;
+        Randomizer = await ethers.getContractFactory("Randomizer");
+        RandomizerContract = await Randomizer.deploy(polyKeyHash, polyVrfCoordinator, subScriptionId);
         await RandomizerContract.deployed();
 
         // ant lottery
@@ -549,8 +548,6 @@ describe("End2End", function () {
         describe("Workforce", async () => {
             it("should work all setting functions properly", async () => {
                 await expect(WorkforceContract.connect(badActor).setLimitAntCoinStakeAmount(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
-                await expect(WorkforceContract.connect(badActor).setBatchIndexForExtraAPY(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
-                await expect(WorkforceContract.connect(badActor).setExtraAPY(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
                 await expect(WorkforceContract.connect(badActor).setInitLevelAfterUnstake(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
                 await expect(WorkforceContract.connect(badActor).setCycleStakePeriod(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");
                 await expect(WorkforceContract.connect(badActor).setMaxStakePeriod(100)).to.be.revertedWith("Workforce: Caller is not the owner or minter");

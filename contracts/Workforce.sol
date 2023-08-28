@@ -93,10 +93,6 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     uint256 public totalPremiumANTStaked;
     // initialize level after unstaking ant
     uint256 public initLevelAfterUnstake = 1;
-    // premium or basic ant batch index for getting extra apy
-    uint256 public batchIndexForExtraAPY = 0;
-    // extra apy for work ants
-    uint256 public extraAPY = 500; // 500 => 5.00 %
     // antcoin stake limit amount for each ants
     uint256 public limitAntCoinStakeAmount = 60000 ether;
 
@@ -237,12 +233,11 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         StakeANT memory _stakeANTInfo = basicANTWorkforce[_tokenId];
         uint256 antExperience = basicANT.getANTExperience(_tokenId); // 3000 => 30.00%
         uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
-        uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
         if(stakePeriod > maxStakePeriod) {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod.mul(10 ** 4));
+            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience).mul(maxStakePeriod).div(cycleStakePeriod.mul(10 ** 4));
         }
         else {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod.mul(10 ** 4));
+            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience).mul(stakePeriod).div(cycleStakePeriod.mul(10 ** 4));
         }
     }
 
@@ -262,12 +257,11 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
             StakeANT memory _stakeANTInfo = basicANTWorkforce[_tokenIds[i]];
             uint256 antExperience = basicANT.getANTExperience(_tokenIds[i]); // 3000 => 30.00%
             uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
-            uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
             if(stakePeriod > maxStakePeriod) {
-                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod.mul(10 ** 4));
+                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience).mul(maxStakePeriod).div(cycleStakePeriod.mul(10 ** 4));
             }
             else {
-                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod.mul(10 ** 4));
+                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience).mul(stakePeriod).div(cycleStakePeriod.mul(10 ** 4));
             }
         }
 
@@ -281,13 +275,12 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
     function pendingRewardOfPremiumToken(uint256 _tokenId) public view returns(uint256 pendingAmount) {
         StakeANT memory _stakeANTInfo = premiumANTWorkforce[_tokenId];
         uint256 antExperience = premiumANT.getANTExperience(_tokenId); // 3000 => 30.00%
-        uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
         uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
         if(stakePeriod > maxStakePeriod) {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod).div(10 ** 4);
+            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience).mul(maxStakePeriod).div(cycleStakePeriod).div(10 ** 4);
         }
         else {
-            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod).div(10 ** 4);
+            pendingAmount = _stakeANTInfo.antCStakeAmount.mul(antExperience).mul(stakePeriod).div(cycleStakePeriod).div(10 ** 4);
         }
     }
 
@@ -305,13 +298,12 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
         for(uint256 i = 0; i < tokenIdsLength; i++) {
             StakeANT memory _stakeANTInfo = premiumANTWorkforce[_tokenIds[i]];
             uint256 antExperience = premiumANT.getANTExperience(_tokenIds[i]); // 3000 => 30.00%
-            uint256 _extraAPY = _stakeANTInfo.batchIndex == batchIndexForExtraAPY ? extraAPY : 0; // extra 5% APY for worker ant
             uint256 stakePeriod = block.timestamp.sub(_stakeANTInfo.originTimestamp);
             if(stakePeriod > maxStakePeriod) {
-                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(maxStakePeriod).div(cycleStakePeriod).div(10 ** 4);
+                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience).mul(maxStakePeriod).div(cycleStakePeriod).div(10 ** 4);
             }
             else {
-                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience.add(_extraAPY)).mul(stakePeriod).div(cycleStakePeriod).div(10 ** 4);
+                _pendingAmounts[i] = _stakeANTInfo.antCStakeAmount.mul(antExperience).mul(stakePeriod).div(cycleStakePeriod).div(10 ** 4);
             }
         }
         return _pendingAmounts;
@@ -484,26 +476,6 @@ contract Workforce is Ownable, Pausable, ReentrancyGuard {
 
     function setInitLevelAfterUnstake(uint256 _level) external onlyMinterOrOwner {
         initLevelAfterUnstake = _level;
-    }
-
-    /**
-    * @notice Set extra apy percentage
-    * @dev This function can only be called by the owner
-    * @param _extraAPY extra apy percentage e.g. 500 = 5.00 %
-    */
-
-    function setExtraAPY(uint256 _extraAPY) external onlyMinterOrOwner {
-        extraAPY = _extraAPY;
-    }
-
-    /**
-    * @notice Set batch index for extra apy
-    * @dev This function can only be called by the owner
-    * @param _batchIndexForExtraAPY batch index value for extra apy
-    */
-
-    function setBatchIndexForExtraAPY(uint256 _batchIndexForExtraAPY) external onlyMinterOrOwner {
-        batchIndexForExtraAPY = _batchIndexForExtraAPY;
     }
 
     /**

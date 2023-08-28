@@ -132,10 +132,10 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     */
 
     /**
-    * @notice Transfer ETH and return the success status.
-    * @dev This function only forwards 30,000 gas to the callee.
-    * @param to Address for ETH to be send to
-    * @param value Amount of ETH to send
+    * @notice       Transfer ETH and return the success status.
+    * @dev          This function only forwards 30,000 gas to the callee.
+    * @param to     Address for ETH to be send to
+    * @param value  Amount of ETH to send
     */
     function _safeTransferETH(address to, uint256 value) internal returns (bool) {
         (bool success, ) = to.call{ value: value, gas: 30_000 }(new bytes(0));
@@ -215,8 +215,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
 
 
     /**
-    * @notice Return Staked Premium ANTs token ids
-    * @param _owner user address to get the staked premium ant token ids
+    * @notice           Return Staked Premium ANTs token ids
+    * @param _owner     user address to get the staked premium ant token ids
     */
 
     function getPremiumANTStakedByAddress(address _owner) public view returns(uint256[] memory) {
@@ -224,7 +224,7 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return Staked Basic ANTs token ids
+    * @notice       Return Staked Basic ANTs token ids
     * @param _owner user address to get the staked basic ant token ids
     */
 
@@ -233,8 +233,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return penidng potions reward amount 1,000 = 1 potion
-    * @param tokenId premium ant token id for getting reward
+    * @notice           Return penidng potions reward amount 1,000 = 1 potion
+    * @param tokenId    premium ant token id for getting reward
     */
 
     function pendingRewardOfPremiumToken(uint256 tokenId) public view returns(uint256) {
@@ -250,8 +250,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return penidng potions reward amount arrray. 1,000 = 1 potion
-    * @param tokenIds premium ant token ids for getting the earning amount
+    * @notice           Return penidng potions reward amount arrray. 1,000 = 1 potion
+    * @param tokenIds   premium ant token ids for getting the earning amount
     */
 
     function pendingRewardOfMultiPremiumTokens(uint256[] calldata tokenIds) public view returns(uint256[] memory) {
@@ -278,8 +278,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return penidng potions reward amount 1,000 = 1 potion
-    * @param tokenId basic ant token id for getting reward
+    * @notice           Return penidng potions reward amount 1,000 = 1 potion
+    * @param tokenId    basic ant token id for getting reward
     */
 
     function pendingRewardOfBasicToken(uint256 tokenId) public view returns(uint256) {
@@ -295,8 +295,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Return penidng potions reward amount arrray. 1,000 = 1 potion
-    * @param tokenIds basic ant token ids for getting the earning amount
+    * @notice            Return penidng potions reward amount arrray. 1,000 = 1 potion
+    * @param tokenIds    basic ant token ids for getting the earning amount
     */
 
     function pendingRewardOfMultiBasicTokens(uint256[] calldata tokenIds) public view returns(uint256[] memory) {
@@ -323,8 +323,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to stake premium ant to Leveling ground with stake fee
-    * @param tokenId premium ant token id for staking
+    * @notice           Function to stake premium ant to Leveling ground with stake fee
+    * @param tokenId    premium ant token id for staking
     */
 
     function stakePremiumANT(uint256 tokenId) external {
@@ -348,8 +348,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to stake basic ant to Leveling ground with stake fee
-    * @param tokenId basic ant token id for staking
+    * @notice           Function to stake basic ant to Leveling ground with stake fee
+    * @param tokenId    basic ant token id for staking
     */
 
     function stakeBasicANT(uint256 tokenId) external {
@@ -373,8 +373,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to unStake premium ant from Leveling Ground
-    * @param tokenId premium ant token id for unStaking
+    * @notice           Function to unStake premium ant from Leveling Ground
+    * @param tokenId    premium ant token id for unStaking
     */
 
     function unStakePremiumANT(uint256 tokenId) external {
@@ -394,8 +394,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to unStake basic ant from Leveling Ground
-    * @param tokenId basic ant token id for unStaking
+    * @notice           Function to unStake basic ant from Leveling Ground
+    * @param tokenId    basic ant token id for unStaking
     */
 
     function unStakeBasicANT(uint256 tokenId) external {
@@ -424,8 +424,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     */
 
     /**
-    * @notice Set premium wise ant reward faster speed e.g. 2 = 2x
-    * @dev This function can only be called by the owner
+    * @notice                           Set premium wise ant reward faster speed e.g. 2 = 2x
+    * @dev                              This function can only be called by the owner
     * @param _premiumWiseANTRewardSpeed reward speed times
     */
 
@@ -434,9 +434,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set basic wise ant reward faster speed e.g. 2 = 2x
-    * @dev This function can only be called by the owner
-    * @param _basicWiseANTRewardSpeed reward speed times
+    * @notice                           Set basic wise ant reward faster speed e.g. 2 = 2x
+    * @dev                              This function can only be called by the owner
+    * @param _basicWiseANTRewardSpeed   reward speed times
     */
 
     function setBasicWiseANTRewardSpeed(uint256 _basicWiseANTRewardSpeed) external onlyMinterOrOwner {
@@ -444,9 +444,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set premium wise ant batch index
-    * @dev This function can only be called by the owner
-    * @param _index batch index for wise ant
+    * @notice           Set premium wise ant batch index
+    * @dev              This function can only be called by the owner
+    * @param _index     batch index for wise ant
     */
 
     function setPremiumWiseANTBatchIndex(uint256 _index) external onlyMinterOrOwner {
@@ -454,8 +454,8 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set basic wise ant batch index
-    * @dev This function can only be called by the owner
+    * @notice       Set basic wise ant batch index
+    * @dev          This function can only be called by the owner
     * @param _index batch index for wise ant
     */
 
@@ -464,9 +464,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set stake fee amount
-    * @dev This function can only be called by the owner
-    * @param _stakeFeeAmount ant coin stake fee amount for staking
+    * @notice                   Set stake fee amount
+    * @dev                      This function can only be called by the owner
+    * @param _stakeFeeAmount    ant coin stake fee amount for staking
     */
 
     function setStakeFeeAmount(uint256 _stakeFeeAmount) external onlyMinterOrOwner {
@@ -474,9 +474,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set Full Cycle Period for giving a Leveling Potion to token owner
-    * @dev This function can only be called by the owner
-    * @param _cyclePeriod cycle period time
+    * @notice               Set Full Cycle Period for giving a Leveling Potion to token owner
+    * @dev                  This function can only be called by the owner
+    * @param _cyclePeriod   cycle period time
     */
 
     function setFullCyclePeriod(uint256 _cyclePeriod) external onlyMinterOrOwner {
@@ -484,9 +484,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set Benefit Cycle Period for giving a Leveling Potion to token owner
-    * @dev This function can only be called by the owner
-    * @param _benefitCyclePeriod benefit period time
+    * @notice                       Set Benefit Cycle Period for giving a Leveling Potion to token owner
+    * @dev                          This function can only be called by the owner
+    * @param _benefitCyclePeriod    benefit period time
     */
 
     function setBenefitCyclePeriod(uint256 _benefitCyclePeriod) external onlyMinterOrOwner {
@@ -494,9 +494,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set ANTCoin contract address
-    * @dev This function can only be called by the owner
-    * @param _antCoin ANTCoin contract address
+    * @notice           Set ANTCoin contract address
+    * @dev              This function can only be called by the owner
+    * @param _antCoin   ANTCoin contract address
     */
 
     function setANTCoinContract(IANTCoin _antCoin) external onlyMinterOrOwner {
@@ -504,9 +504,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set premium ant contract address
-    * @dev This function can only be called by the owner
-    * @param _premiumANT Premium ANT contract address
+    * @notice               Set premium ant contract address
+    * @dev                  This function can only be called by the owner
+    * @param _premiumANT    Premium ANT contract address
     */
 
     function setPremiumANTContract(IPremiumANT _premiumANT) external onlyMinterOrOwner {
@@ -514,9 +514,9 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Set basic ant contract address
-    * @dev This function can only be called by the owner
-    * @param _basicANT Basic ANT contract address
+    * @notice           Set basic ant contract address
+    * @dev              This function can only be called by the owner
+    * @param _basicANT  Basic ANT contract address
     */
 
     function setBasicANTContract(IBasicANT _basicANT) external onlyMinterOrOwner {
@@ -532,27 +532,27 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function to grant mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to get minter role
+    * @notice           Function to grant mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to get minter role
     */
     function addMinterRole(address _address) external onlyOwner {
         minters[_address] = true;
     }
 
     /**
-    * @notice Function to revoke mint role
-    * @dev This function can only be called by the owner
-    * @param _address address to revoke minter role
+    * @notice           Function to revoke mint role
+    * @dev              This function can only be called by the owner
+    * @param _address   address to revoke minter role
     */
     function revokeMinterRole(address _address) external onlyOwner {
         minters[_address] = false;
     }
 
     /**
-    * @notice Allows owner to withdraw ETH funds to an address
-    * @dev wraps _user in payable to fix address -> address payable
-    * @param to Address for ETH to be send to
+    * @notice       Allows owner to withdraw ETH funds to an address
+    * @dev          wraps _user in payable to fix address -> address payable
+    * @param to     Address for ETH to be send to
     * @param amount Amount of ETH to send
     */
     function withdraw(address payable to, uint256 amount) public onlyOwner {
@@ -560,10 +560,10 @@ contract LevelingGround is Pausable, Ownable, ReentrancyGuard {
     }
 
     /**
-    * @notice Allows ownder to withdraw any accident tokens transferred to contract
+    * @notice               Allows ownder to withdraw any accident tokens transferred to contract
     * @param _tokenContract Address for the token
-    * @param to Address for token to be send to
-    * @param amount Amount of token to send
+    * @param to             Address for token to be send to
+    * @param amount         Amount of token to send
     */
     function withdrawToken(
         address _tokenContract,
