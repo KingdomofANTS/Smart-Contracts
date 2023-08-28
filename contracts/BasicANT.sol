@@ -77,7 +77,7 @@ contract BasicANT is ERC721AQueryable, IBasicANT, Ownable, Pausable, ReentrancyG
     uint256 public antFoodTokenId = 0;
     // Leveling Potion token id of ANTShop
     uint256 public levelingPotionTokenId = 1;
-    // ANT Coin fee when use Leveling Potion to upgrade the BaiscANT
+    // ANT Coin fee when use Leveling Potion to upgrade the BasicANT
     uint256 public upgradeANTFee = 5 ether;
     // Worker ant batch index for extra apy
     uint256 public antIndexForExtraAPY = 0;

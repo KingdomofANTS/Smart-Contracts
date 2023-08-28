@@ -32,11 +32,11 @@ async function main() {
   await ANTCoinContract.addMinterRole(BasicANTContract.address);
 
   const basicANTMaticMintPrice = ethers.utils.parseEther("0.001")
-  const baiscANTANTCoinMintAmount = ethers.utils.parseEther("1000");
+  const basicANTANTCoinMintAmount = ethers.utils.parseEther("1000");
 
-  await BasicANTContract.setBatchInfo(0, "Worker ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
-  await BasicANTContract.setBatchInfo(1, "Wise ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
-  await BasicANTContract.setBatchInfo(2, "Fighter ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, baiscANTANTCoinMintAmount);
+  await BasicANTContract.setBatchInfo(0, "Worker ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, basicANTANTCoinMintAmount);
+  await BasicANTContract.setBatchInfo(1, "Wise ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, basicANTANTCoinMintAmount);
+  await BasicANTContract.setBatchInfo(2, "Fighter ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", basicANTMaticMintPrice, ANTCoinContract.address, basicANTANTCoinMintAmount);
 
   // premium ant
   const PremiumANT = await hre.ethers.getContractFactory("PremiumANT");
@@ -163,7 +163,7 @@ async function main() {
   await VestingContract.setReleaseCycle(25920); // 0.3 day
   await WorkforceContract.setMaxStakePeriod(3600 * 24 * 30); // 30 days
   await WorkforceContract.setCycleStakePeriod(3600 * 24 * 10); // 10 days
-  await BasicANTContract.setBatchInfo(0, "Worker ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", utils.parseEther("30"), ANTCoinContract.address, baiscANTANTCoinMintAmount);
+  await BasicANTContract.setBatchInfo(0, "Worker ANT", "https://gateway.pinata.cloud/ipfs/QmWsYC3fCyxWb9yBGNTKMfz9QtpApEcWKHhAzCN4StBgvT", utils.parseEther("30"), ANTCoinContract.address, basicANTANTCoinMintAmount);
   await MarketplaceContract.setMintInfo(0, utils.parseEther("0.6"), ANTCoinContract.address, utils.parseEther("100"));
   await MarketplaceContract.setMintInfo(1, utils.parseEther("3"), ANTCoinContract.address, utils.parseEther("100"));
   await MarketplaceContract.setPurseMintInfo(true, utils.parseEther("3"), ANTCoinContract.address, utils.parseEther("100"));

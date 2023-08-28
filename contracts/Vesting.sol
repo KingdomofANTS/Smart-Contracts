@@ -74,8 +74,8 @@ contract Vesting is Pausable, ReentrancyGuard, Ownable {
     mapping(address => bool) private minters;
     // mapping of user wallet addresses for receving the tokens from vesting pools
     mapping(uint256 => address[]) public userAddresses;
-    // one time release timestamp
     
+    // one time release timestamp
     uint256 public releaseCycle = 30 days;
     
     // make sure vesting pool info and pool index is correct
