@@ -132,6 +132,8 @@ contract Randomizer is VRFConsumerBaseV2, ConfirmedOwner, IRandomizer {
         requestIds.push(requestId);
         lastRequestId = requestId;
         requestIds.push(requestId);
+        randomResult = uint32(1000000 + (lastRequestId % 1000000));
+        latestLotteryId = IANTLottery(antLottery).viewCurrentLotteryId();
         emit RequestSent(requestId, numWords);
     }
  
@@ -200,8 +202,6 @@ contract Randomizer is VRFConsumerBaseV2, ConfirmedOwner, IRandomizer {
         require(s_requests[_requestId].exists, "request not found");
         s_requests[_requestId].fulfilled = true;
         s_requests[_requestId].randomWords = _randomWords;
-        randomResult = uint32(1000000 + (_randomWords[0] % 1000000));
-        latestLotteryId = IANTLottery(antLottery).viewCurrentLotteryId();
         emit RequestFulfilled(_requestId, _randomWords);
     }
 

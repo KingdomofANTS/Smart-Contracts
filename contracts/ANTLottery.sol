@@ -76,6 +76,9 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     uint256 public constant MIN_LENGTH_LOTTERY = 7 days - 1 hours;
     uint256 public constant MAX_LENGTH_LOTTERY = 7 days + 1 hours;
 
+    // uint256 public constant MIN_LENGTH_LOTTERY = 5 minutes - 10 seconds;
+    // uint256 public constant MAX_LENGTH_LOTTERY = 5 minutes + 10 seconds;
+
     // The sum of the values below must be 100.
     uint256 public injectionNextLotteryPercentage = 60;
     uint256 public burnPercentage = 40;
