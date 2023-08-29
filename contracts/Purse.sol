@@ -49,6 +49,7 @@ import './interfaces/IRandomizer.sol';
 import './interfaces/IANTShop.sol';
 import './interfaces/IPurse.sol';
 import './interfaces/IANTLottery.sol';
+import 'hardhat/console.sol';
 
 contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
 
@@ -343,11 +344,12 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
 
     function mint(address recipient, uint256 quantity) external override onlyMinterOrOwner {
         for(uint256 i = 1; i <= quantity; i ++) {
-            purseInfo[minted + i] = getPurseCategoryRarity(minted + i);
-            purseCategories[purseInfo[minted + i]].minted += 1;
+            uint256 tokenId = minted + i;
+            purseInfo[tokenId] = getPurseCategoryRarity(tokenId);
+            purseCategories[purseInfo[tokenId]].minted += 1;
         }
         minted += quantity;
-        _mint(recipient, quantity);
+        _safeMint(recipient, quantity, '');
         emit Mint(recipient, quantity);
     }
 
