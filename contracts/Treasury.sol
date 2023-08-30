@@ -100,6 +100,10 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         _;
     }
 
+    event OwnerDepositETH(uint256 depositAmount);
+    event BuyKOATTTokens(address buyer, uint256 amount);
+    event SellKOATTTokens(address seller, uint256 amount);
+
     constructor(
         address _quickswapRouter,
         address antCAddress
@@ -130,6 +134,11 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
     function _clearActiveAssets() internal {
         delete (_activeAssets);
     }
+
+    /**
+     * @notice Function to check asset address is exist
+     * @param _assetAddress asset address to check
+     */
 
     function _checkAddressInActiveAssets(address _assetAddress) private view returns (bool isAllowed) {
         for (uint256 i = 0; i < _activeAssets.length; i++) {
@@ -195,9 +204,12 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
-    function getAssetUSDValue(
-        uint256 _activeAssetIndex
-    ) public view returns (uint256 balance) {
+    /**
+     * @notice Function to calculate the usd value of an asset
+     * @param _activeAssetIndex asset index number
+     */
+    
+    function getAssetUSDValue(uint256 _activeAssetIndex) public view returns (uint256 balance) {
         Asset memory _asset = _activeAssets[_activeAssetIndex];
         uint256 assetBalance = IERC20(_asset.asset).balanceOf(address(this));
         if (_asset.asset == _wETH) {
@@ -242,11 +254,13 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         return amounts2[1];
     }
 
+    /**
+     * @notice Function to get ANTCoin LP token's USD value
+     * @param _lpTokenAmount LP token amount to calculate USD value
+     */
+
     function getANTCoinLPTokenUSDValue(uint256 _lpTokenAmount) public view returns (uint256) {
-        require(
-            address(antCLPPair) != address(0x0),
-            "Treasury: Invalid LP Pair address"
-        );
+        require(address(antCLPPair) != address(0x0), "Treasury: Invalid LP Pair address");
 
         uint256 totalSupplyOfLPPair = antCLPPair.totalSupply();
         uint256 deadWallet1Supply = antCLPPair.balanceOf(deadWallet1);
@@ -271,6 +285,11 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
 
         return lpTokenPriceForReturn;
     }
+
+    /**
+     * @notice Function to get LP token amount from usd value
+     * @param _usdValue usd value to calculate the LP token amount
+     */
 
     function getLPTokenAmountFromUSDValue(uint256 _usdValue) public view returns (uint256) {
         require(
@@ -328,6 +347,13 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Function to buy KOATT tokens
+     * @param _KOATTAmount KOATT amount to buy
+     * @param _assetAddress asset address that uses for purchase kOATT tokens
+     * @param _assetAmount asset amount that uses for purchase KOATT tokens
+     */
+
     function buyKOATTTokens(uint256 _KOATTAmount, address _assetAddress, uint256 _assetAmount) external payable nonReentrant whenNotPaused isAvailableAsset(_assetAddress) {
         uint256 expectedAssetAmount = getAssetAmountForKOATT(_KOATTAmount, _assetAddress);
         require(_assetAmount >= expectedAssetAmount, "Treasury: Insufficient Asset Amount");
@@ -346,7 +372,14 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         }
 
         _mint(_msgSender(), _KOATTAmount);
+
+        emit BuyKOATTTokens(_msgSender(), _KOATTAmount);
     }
+
+    /**
+     * @notice Function to sell KOATT tokens
+     * @param _KOATTAmount KOATT amount to sell
+     */
 
     function sellKOATTTokens(uint256 _KOATTAmount) external nonReentrant whenNotPaused {
         require(balanceOf(_msgSender()) >= _KOATTAmount, "Treasury: Insufficient KOATT balance");
@@ -363,6 +396,8 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         _sellANTCoinToUsers(antCTokenSaleValue, _msgSender());
         _sellANTCLPTokensToUsers(lpTokenSaleValue, _msgSender());
         _sellTreasuryAssetsToUsers(assetsSaleValue, assetsUSDValue, _msgSender());
+
+        emit SellKOATTTokens(_msgSender(), _KOATTAmount);
     }
 
     function _sellANTCoinToUsers(uint256 _antCTokenSaleValue, address _recipient) internal {
@@ -522,6 +557,8 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
         _depositToANTCTreasury((depositETH * distributeRates[0]) / 100);
         _addLiquidity((depositETH * distributeRates[1]) / 100);
         _distributeToAssets((depositETH * distributeRates[2]) / 100);
+
+        emit OwnerDepositETH(depositETH);
     }
 
     /**
@@ -605,10 +642,7 @@ contract Treasury is ERC20, Ownable, Pausable, ReentrancyGuard {
     }
 
     function setDistributeRates(uint256[3] calldata _rates) external onlyOwner {
-        require(
-            _rates[0] + _rates[1] + _rates[2] == 100,
-            "Treasury: total value should be 100"
-        );
+        require(_rates[0] + _rates[1] + _rates[2] == 100, "Treasury: total value should be 100");
         distributeRates = _rates;
     }
 

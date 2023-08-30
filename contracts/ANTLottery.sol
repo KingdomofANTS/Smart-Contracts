@@ -676,6 +676,14 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     }
 
     /**
+    * enables owner to pause / unpause contract
+    */
+    function setPaused(bool _paused) external onlyOwner {
+        if (_paused) _pause();
+        else _unpause();
+    }
+
+    /**
     * @notice       Allows owner to withdraw ETH funds to an address
     * @dev          wraps _user in payable to fix address -> address payable
     * @param to     Address for ETH to be send to
@@ -698,13 +706,5 @@ contract ANTLottery is Ownable, Pausable, IANTLottery, ReentrancyGuard {
     ) public onlyOwner {
         IERC20 tokenContract = IERC20(_tokenContract);
         tokenContract.transfer(to, amount);
-    }
-
-    /**
-    * enables owner to pause / unpause contract
-    */
-    function setPaused(bool _paused) external onlyOwner {
-        if (_paused) _pause();
-        else _unpause();
     }
 }

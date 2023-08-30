@@ -44,6 +44,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/security/Pausable.sol';
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import 'erc721a/contracts/extensions/ERC721AQueryable.sol';
 import './interfaces/IRandomizer.sol';
 import './interfaces/IANTShop.sol';
@@ -51,7 +52,7 @@ import './interfaces/IPurse.sol';
 import './interfaces/IANTLottery.sol';
 import 'hardhat/console.sol';
 
-contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
+contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable, ReentrancyGuard {
 
     using SafeMath for uint256;
 
@@ -284,7 +285,7 @@ contract Purse is ERC721AQueryable, IPurse, Ownable, Pausable {
     * @param tokenId    purse token id to get reward
     */
 
-    function usePurseToken(uint256 tokenId) external whenNotPaused {
+    function usePurseToken(uint256 tokenId) external whenNotPaused nonReentrant {
         require(ownerOf(tokenId) == _msgSender(), "Purse: you are not owner of this token");
 
         PurseCategory storage purseCategory = purseCategories[purseInfo[tokenId]];
